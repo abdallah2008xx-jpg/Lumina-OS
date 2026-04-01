@@ -69,7 +69,15 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-refresh-release-metadata",
     "archiso-profile\airootfs\usr\local\bin\ahmados-update-center",
     "archiso-profile\airootfs\usr\local\bin\ahmados-welcome",
+    "archiso-profile\airootfs\usr\local\bin\lumina-export-diagnostics",
+    "archiso-profile\airootfs\usr\local\bin\lumina-run-smoke-checks",
+    "archiso-profile\airootfs\usr\local\bin\lumina-firstboot",
+    "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
+    "archiso-profile\airootfs\usr\local\bin\lumina-refresh-release-metadata",
+    "archiso-profile\airootfs\usr\local\bin\lumina-update-center",
+    "archiso-profile\airootfs\usr\local\bin\lumina-welcome",
     "archiso-profile\airootfs\home\live\.local\bin\ahmados-apply-session-defaults",
+    "archiso-profile\airootfs\home\live\.local\bin\lumina-apply-session-defaults",
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-firstboot.desktop",
     "archiso-profile\airootfs\usr\share\applications\ahmados-export-diagnostics.desktop",
     "archiso-profile\airootfs\usr\share\applications\ahmados-firstboot-report.desktop",
@@ -233,6 +241,30 @@ if (Test-Path $smokeCheckPath) {
     $smokeContent = Get-Content -Raw $smokeCheckPath
     if ($smokeContent -notmatch "Smoke Check Report") {
         Add-Warning "ahmados-run-smoke-checks may not be writing the expected report."
+    }
+}
+
+$expectedExecMappings = @{
+    "archiso-profile\airootfs\home\live\.config\autostart\ahmados-firstboot.desktop" = "Exec=/usr/local/bin/lumina-firstboot"
+    "archiso-profile\airootfs\home\live\.config\autostart\ahmados-session-defaults.desktop" = "Exec=/home/live/.local/bin/lumina-apply-session-defaults"
+    "archiso-profile\airootfs\home\live\.config\autostart\ahmados-welcome.desktop" = "Exec=/usr/local/bin/lumina-welcome --once"
+    "archiso-profile\airootfs\usr\share\applications\ahmados-export-diagnostics.desktop" = "Exec=/usr/local/bin/lumina-export-diagnostics"
+    "archiso-profile\airootfs\usr\share\applications\ahmados-firstboot-report.desktop" = "Exec=/usr/local/bin/lumina-open-firstboot-report"
+    "archiso-profile\airootfs\usr\share\applications\ahmados-run-smoke-checks.desktop" = "Exec=/usr/local/bin/lumina-run-smoke-checks --open"
+    "archiso-profile\airootfs\usr\share\applications\ahmados-update-center.desktop" = "Exec=/usr/local/bin/lumina-update-center"
+    "archiso-profile\airootfs\usr\share\applications\ahmados-welcome.desktop" = "Exec=/usr/local/bin/lumina-welcome"
+}
+
+foreach ($desktopPath in $expectedExecMappings.Keys) {
+    $fullPath = Join-Path $RepoRoot $desktopPath
+    if (-not (Test-Path $fullPath)) {
+        continue
+    }
+
+    $desktopContent = Get-Content -Raw $fullPath
+    $expectedExec = $expectedExecMappings[$desktopPath]
+    if ($desktopContent -notmatch [regex]::Escape($expectedExec)) {
+        Add-Error "Launcher does not use the expected Lumina runtime alias: $desktopPath"
     }
 }
 

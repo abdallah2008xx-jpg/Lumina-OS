@@ -27,6 +27,7 @@ This project follows a simple rule for now:
 - GitHub release-context validation before publish
 - Generated shareable updates from current project state
 - Short English and Arabic shareable briefs
+- Compatibility-preserving `lumina-*` runtime aliases for the main live-session commands
 
 ### Changed
 - Live-system UI wording now presents the distro as `Lumina-OS`
@@ -37,6 +38,7 @@ This project follows a simple rule for now:
 - Update Center now prefers GitHub release metadata and records why bundled fallback metadata is used when needed
 - GitHub publishing now validates evidence/readiness state before creating a release unless the gate is intentionally skipped
 - Build manifests now carry the shared `Run Label` so build, VM, and release evidence can be linked directly
+- Live-session launchers and autostart entries now call `lumina-*` entrypoints while legacy `ahmados-*` commands remain as compatibility shims
 
 ### Pending Before First Tagged Release
 - First real `stable` build in Arch

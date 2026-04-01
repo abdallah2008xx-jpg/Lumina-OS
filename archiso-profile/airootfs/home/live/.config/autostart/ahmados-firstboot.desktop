@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Lumina-OS First Boot
-Exec=/usr/local/bin/ahmados-firstboot
+Exec=/usr/local/bin/lumina-firstboot
 OnlyShowIn=KDE;
 NoDisplay=true
 X-KDE-autostart-phase=4

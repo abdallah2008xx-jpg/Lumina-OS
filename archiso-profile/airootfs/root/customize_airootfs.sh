@@ -10,6 +10,7 @@ fi
 
 passwd -d live
 chmod 755 /home/live/.local/bin/ahmados-apply-session-defaults
+chmod 755 /home/live/.local/bin/lumina-apply-session-defaults
 chown -R live:live /home/live
 
 systemctl enable NetworkManager.service

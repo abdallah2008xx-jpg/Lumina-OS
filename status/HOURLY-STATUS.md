@@ -5,24 +5,23 @@ Update it once per work block or roughly every hour.
 
 ## Current Block
 - **Date:** 2026-04-01
-- **Time:** 10:43 PDT
-- **Focus:** Generating short English and Arabic shareable briefs from project state for direct posting
+- **Time:** 11:09 PDT
+- **Focus:** Adding compatibility-preserving `lumina-*` runtime aliases and switching live launchers to the new names
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
-- Added a brief generator for short English and Arabic shareable updates
-- Extended the workflow smoke test to verify both brief outputs
-- Added validation coverage and docs for shareable briefs
-- Linked the main README to the short brief files as well
+- Added `lumina-*` wrapper entrypoints for the live-session tools while keeping the older `ahmados-*` commands intact underneath
+- Switched desktop launchers and KDE autostart entries to the new `lumina-*` commands
+- Extended validation coverage so launcher `Exec=` lines must keep pointing at the Lumina aliases
 
 ## In Progress
-- Re-validating the repo after the shareable-brief pass and preparing the next commit
+- Re-validating the repo after the Lumina runtime-alias pass and preparing the next commit
 
 ## Next Hour
-- Run validation and push the shareable-brief pass to GitHub
+- Run validation and push the runtime-alias pass to GitHub
 - Keep the build/test workflow stable and ready for the first Arch-side `stable` build
 - Move execution to an actual Arch environment for the first real ISO build
-- Use the new generated briefs after the first real labeled VM cycle
+- Verify the new `lumina-*` launchers inside the first real labeled VM cycle
 
 ## Blockers
 - Actual ISO building is blocked in the current Windows workspace; `mkarchiso` must run inside an Arch environment
@@ -41,6 +40,7 @@ Update it once per work block or roughly every hour.
 - Treat publish context as its own gate so the chosen manifest must still match the current candidate
 - Treat public progress updates as generated artifacts, not hand-maintained text
 - Treat short social-style updates as derived artifacts from the same canonical project state
+- Prefer compatibility-preserving aliases for now instead of renaming deep runtime IDs before the first real ISO validation
 
 ## Ready-to-Send Mini Update
-Lumina-OS can now generate short English and Arabic shareable briefs from the current project state, so quick progress posts stay aligned with the repo without manual rewriting.
+Lumina-OS now launches its main live-session tools through `lumina-*` aliases while still keeping the old `ahmados-*` entrypoints behind the scenes for compatibility before the first real ISO validation.

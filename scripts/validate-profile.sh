@@ -81,7 +81,15 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-refresh-release-metadata"
     "${profile_path}/airootfs/usr/local/bin/ahmados-update-center"
     "${profile_path}/airootfs/usr/local/bin/ahmados-welcome"
+    "${profile_path}/airootfs/usr/local/bin/lumina-export-diagnostics"
+    "${profile_path}/airootfs/usr/local/bin/lumina-run-smoke-checks"
+    "${profile_path}/airootfs/usr/local/bin/lumina-firstboot"
+    "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
+    "${profile_path}/airootfs/usr/local/bin/lumina-refresh-release-metadata"
+    "${profile_path}/airootfs/usr/local/bin/lumina-update-center"
+    "${profile_path}/airootfs/usr/local/bin/lumina-welcome"
     "${profile_path}/airootfs/home/live/.local/bin/ahmados-apply-session-defaults"
+    "${profile_path}/airootfs/home/live/.local/bin/lumina-apply-session-defaults"
     "${profile_path}/airootfs/home/live/.config/autostart/ahmados-firstboot.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-export-diagnostics.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-firstboot-report.desktop"
@@ -216,6 +224,23 @@ smoke_checks="${profile_path}/airootfs/usr/local/bin/ahmados-run-smoke-checks"
 if [[ -f "${smoke_checks}" && ! grep -qi "Smoke Check Report" "${smoke_checks}" ]]; then
     add_warning "ahmados-run-smoke-checks may not be writing the expected report."
 fi
+
+while IFS='|' read -r desktop_path expected_exec; do
+    [[ -n "${desktop_path}" ]] || continue
+
+    if [[ -f "${desktop_path}" ]] && ! grep -Fq "${expected_exec}" "${desktop_path}"; then
+        add_error "Launcher does not use the expected Lumina runtime alias: ${desktop_path#${repo_root}/}"
+    fi
+done <<EOF
+${profile_path}/airootfs/home/live/.config/autostart/ahmados-firstboot.desktop|Exec=/usr/local/bin/lumina-firstboot
+${profile_path}/airootfs/home/live/.config/autostart/ahmados-session-defaults.desktop|Exec=/home/live/.local/bin/lumina-apply-session-defaults
+${profile_path}/airootfs/home/live/.config/autostart/ahmados-welcome.desktop|Exec=/usr/local/bin/lumina-welcome --once
+${profile_path}/airootfs/usr/share/applications/ahmados-export-diagnostics.desktop|Exec=/usr/local/bin/lumina-export-diagnostics
+${profile_path}/airootfs/usr/share/applications/ahmados-firstboot-report.desktop|Exec=/usr/local/bin/lumina-open-firstboot-report
+${profile_path}/airootfs/usr/share/applications/ahmados-run-smoke-checks.desktop|Exec=/usr/local/bin/lumina-run-smoke-checks --open
+${profile_path}/airootfs/usr/share/applications/ahmados-update-center.desktop|Exec=/usr/local/bin/lumina-update-center
+${profile_path}/airootfs/usr/share/applications/ahmados-welcome.desktop|Exec=/usr/local/bin/lumina-welcome
+EOF
 
 for json_candidate in \
     "${profile_path}/airootfs/usr/share/ahmados/update-center/releases.json" \

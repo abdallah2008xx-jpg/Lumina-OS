@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Lumina-OS Session Defaults
-Exec=/home/live/.local/bin/ahmados-apply-session-defaults
+Exec=/home/live/.local/bin/lumina-apply-session-defaults
 OnlyShowIn=KDE;
 NoDisplay=true
 X-KDE-autostart-phase=2

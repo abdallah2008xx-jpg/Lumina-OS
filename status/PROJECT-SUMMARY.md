@@ -19,6 +19,7 @@ This file gives one fast answer to two questions:
 - Lumina-OS Welcome exists as a real QML surface inside the live image
 - Lumina-OS Update Center exists as a real QML surface inside the live image
 - live-session defaults, firstboot reporting, smoke checks, and diagnostics export are implemented
+- compatibility-preserving `lumina-*` runtime aliases now front the main live-session commands while older `ahmados-*` command names stay available underneath
 
 ### Build And Validation Workflow
 - Windows-side and Arch-side profile validation exist
@@ -58,6 +59,7 @@ This file gives one fast answer to two questions:
 - verify Welcome behavior after closing the app
 - verify Update Center metadata behavior
 - verify firstboot report, smoke checks, and diagnostics export from a built ISO
+- verify the `lumina-*` launcher aliases behave correctly inside the built ISO
 
 ### Release Readiness
 - generate the first real build manifest from a successful Arch build
@@ -68,6 +70,7 @@ This file gives one fast answer to two questions:
 
 ### Optional Follow-Up After First Real ISO
 - decide whether to rename internal compatibility identifiers such as `ahmados-*`
+- decide whether to rename deeper theme/package IDs such as `com.ahmados.*` after the first validated ISO
 - deepen release/update automation after the first stable evidence-backed build
 
 ## Current State Right Now

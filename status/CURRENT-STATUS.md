@@ -66,6 +66,7 @@
 - GitHub publish now has a local context gate so the selected manifest must match the current release candidate before release creation
 - shareable updates can now be generated from current readiness, validation, and release-candidate state
 - short English and Arabic shareable briefs can now be generated from the same current project state
+- compatibility-preserving `lumina-*` runtime aliases now exist for live-session commands while the older `ahmados-*` entrypoints remain available
 
 ## Active Focus
 - prepare and execute the first serious Arch-side build attempt
@@ -97,6 +98,7 @@
 - keep GitHub release context checks aligned with the current candidate so a stale manifest cannot be published by accident
 - keep generated shareable updates aligned with the real project state so public progress messages are consistent
 - keep short shareable briefs aligned with the long shareable update so external messages stay concise and accurate
+- keep the new `lumina-*` runtime aliases aligned with launchers and autostart entries while legacy `ahmados-*` entrypoints remain as compatibility shims
 
 ## Next
 - run `stable` and `login-test` builds in a real Arch environment
@@ -128,6 +130,7 @@
 - review the first real GitHub release context report before an actual publish
 - review the first generated shareable update after a real build/test cycle
 - review the first generated English and Arabic shareable briefs after a real build/test cycle
+- confirm the live session launches through the new `lumina-*` aliases inside the first built ISO
 - validate the new build-manifest run-label linkage during the first real `stable` cycle
 - validate the first generated cycle handoff during the first real `stable` cycle
 - observe the first GitHub Actions run that includes the workflow smoke tests

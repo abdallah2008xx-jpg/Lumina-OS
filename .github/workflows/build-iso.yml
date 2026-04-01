@@ -97,14 +97,14 @@ jobs:
             archlinux:base-devel \
             bash -lc '
               set -euo pipefail
-              ./scripts/bootstrap-arch-build-env.sh --install
-              ./scripts/build-iso-arch.sh \
+              bash ./scripts/bootstrap-arch-build-env.sh --install
+              bash ./scripts/build-iso-arch.sh \
                 --mode "${MODE}" \
                 --run-label "${RUN_LABEL}" \
                 --work "/repo/build/github-work/${MODE}" \
                 --out "/repo/build/github-out/${MODE}" \
                 --stage-root "/repo/build/github-stage"
-              ./scripts/export-build-handoff.sh \
+              bash ./scripts/export-build-handoff.sh \
                 --mode "${MODE}" \
                 --run-label "${RUN_LABEL}" \
                 --out-dir "/repo/build/github-handoff/${MODE}"

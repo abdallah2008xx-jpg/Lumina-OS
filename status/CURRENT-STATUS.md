@@ -73,12 +73,14 @@
 - GitHub Actions artifact zips can now be imported directly into the same handoff path used by Arch-side transfers
 - GitHub Actions artifact zips can now be imported and turned into a local VM cycle in one command
 - GitHub Actions artifacts can now also be downloaded directly from a run id and mode, then bridged into a local VM cycle without a manual zip step
+- GitHub Actions based VM cycles can now be finished from the diagnostics bundle plus the same run context, so the evidence chain no longer needs a manual label handoff at the end
 - GitHub Actions now has a real remote ISO build workflow so first build attempts no longer depend only on local Arch access
 - the first real remote GitHub Actions matrix build succeeded on run `#8` for both `stable` and `login-test`
 
 ## Active Focus
 - import the first successful GitHub Actions build handoff into the repo-side evidence chain
 - validate the new direct GitHub Actions download helper against the first real VM cycle path
+- validate the new GitHub Actions cycle-finish wrapper against the first real diagnostics-import path
 - validate the new Welcome and Update Center behavior inside a built ISO
 - validate the firstboot runtime report and cache generation inside a built ISO
 - capture the first real build and VM evidence trail
@@ -114,11 +116,13 @@
 - keep downloaded GitHub Actions artifacts flowing into the same import path as manual Arch-side handoffs
 - keep the one-command GitHub Actions -> VM-cycle bridge aligned with the shared run-label evidence chain
 - keep the new direct GitHub Actions download helper aligned with the same bridge so run-id-based fetches stay reproducible
+- keep the new GitHub Actions cycle-finish wrapper aligned with diagnostics import so remote-build validation stays symmetrical from start to finish
 - keep the new GitHub ISO build workflow aligned with the local handoff and evidence chain so successful remote builds feed the same process
 
 ## Next
 - download the first successful GitHub Actions artifact zip and run the new one-command VM-cycle bridge
 - or fetch that artifact directly from GitHub with the new run-id download helper and start the VM cycle without a manual zip step
+- finish the first GitHub Actions-backed VM cycle through the new diagnostics-bundle wrapper so the end of the evidence chain is just as automated as the start
 - test the real Welcome choice application inside a built ISO
 - test the metadata-backed Update Center inside a built ISO
 - inspect the generated firstboot report inside a built ISO

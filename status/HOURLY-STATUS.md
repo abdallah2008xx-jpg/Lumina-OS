@@ -6,7 +6,7 @@ Update it once per work block or roughly every hour.
 ## Current Block
 - **Date:** 2026-04-01
 - **Time:** 11:49 PDT
-- **Focus:** Reducing operator steps between the first successful GitHub Actions build and the first local VM validation cycle
+- **Focus:** Making the GitHub Actions -> local VM validation path symmetrical from cycle start through diagnostics import
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
@@ -19,18 +19,20 @@ Update it once per work block or roughly every hour.
 - Added a direct GitHub Actions artifact-import path so downloaded workflow zips can go straight into local VM validation
 - Added a one-command GitHub Actions artifact -> VM-cycle bridge for faster first-ISO validation
 - Added direct GitHub Actions artifact download by `RunId + mode` so the bridge no longer depends on a manual zip download first
+- Added a matching GitHub Actions cycle-finish wrapper so diagnostics import can reuse the same run context without retyping labels manually
 
 ## In Progress
-- Updating docs and generated status files so the new direct-download path is part of the normal first-VM-cycle workflow
+- Updating docs and generated status files so the GitHub Actions start/finish wrappers become the normal first-VM-cycle workflow
 
 ## Next Hour
 - Fetch the first successful GitHub Actions artifact directly from the run and start the first local VM cycle from it
 - Start the first labeled `stable` VM cycle from the successful remote build
 - Verify the complete handoff path during the first real GitHub Actions -> Windows -> VM transfer
+- Verify the new diagnostics-bundle finish wrapper during the first real VM cycle
 - Review the first real evidence trail after the successful remote build
 
 ## Blockers
-- The build itself is no longer blocked, but the first real GitHub Actions download/import path and the first VM validation cycle still need to be completed
+- The build itself is no longer blocked, but the first real GitHub Actions start/finish path and the first VM validation cycle still need to be completed
 
 ## Decisions / Notes
 - Prefer GitHub as the intended release-metadata source now that the real repo exists
@@ -53,6 +55,7 @@ Update it once per work block or roughly every hour.
 - Use GitHub Actions as the first practical build engine when local Arch remains blocked
 - Treat the first successful remote build as the handoff point into VM validation, not the end of the process
 - Prefer run-id-based artifact download when the successful build already exists on GitHub, so operators do not need to hunt for the right zip manually
+- Prefer a matching run-id-based finish wrapper so the same remote build context survives diagnostics import and final evidence sync
 
 ## Ready-to-Send Mini Update
-Lumina-OS reached its first successful remote GitHub Actions matrix build for `stable` and `login-test`; the next step is pulling that artifact directly into the local VM workflow and recording the first real validation cycle.
+Lumina-OS reached its first successful remote GitHub Actions matrix build for `stable` and `login-test`; the next step is carrying that same run context through both VM-cycle start and finish while recording the first real validation evidence.

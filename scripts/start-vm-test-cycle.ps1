@@ -81,6 +81,25 @@ function Get-FileByRunLabel {
         Select-Object -First 1
 }
 
+function Get-MetadataValue {
+    param(
+        [string]$Content,
+        [string]$Label
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Content)) {
+        return ""
+    }
+
+    $pattern = "(?m)^- " + [regex]::Escape($Label) + ": (.+)$"
+    $match = [regex]::Match($Content, $pattern)
+    if ($match.Success) {
+        return $match.Groups[1].Value.Trim()
+    }
+
+    return ""
+}
+
 function Get-SafeFileSegment {
     param([string]$Value)
 
@@ -135,14 +154,29 @@ if (-not [string]::IsNullOrWhiteSpace($resolvedBuildManifestPath)) {
     $resolvedRepoBuildRoot = [System.IO.Path]::GetFullPath((Join-Path $RepoRoot "status\builds"))
 
     if (-not $resolvedBuildManifestPath.StartsWith($resolvedRepoBuildRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
-        $resolvedBuildManifestPath = (
-            & $buildManifestImportScript `
-                -ManifestPath $resolvedBuildManifestPath `
-                -Label $resolvedRunLabel `
-                -RepoRoot $RepoRoot `
-                -OutputPathOnly |
-            Select-Object -Last 1
-        ).ToString().Trim()
+        $externalManifestContent = Get-Content -Raw $resolvedBuildManifestPath
+        $externalRunLabel = Get-MetadataValue -Content $externalManifestContent -Label "Run Label"
+        $candidateRunLabel = if ([string]::IsNullOrWhiteSpace($externalRunLabel)) { $resolvedRunLabel } else { $externalRunLabel }
+        $existingImportedManifest = if ([string]::IsNullOrWhiteSpace($candidateRunLabel)) {
+            $null
+        }
+        else {
+            Get-FileByRunLabel -Path (Join-Path $RepoRoot "status\builds") -Filter "*.md" -RunLabel $candidateRunLabel
+        }
+
+        if ($existingImportedManifest) {
+            $resolvedBuildManifestPath = $existingImportedManifest.FullName
+        }
+        else {
+            $resolvedBuildManifestPath = (
+                & $buildManifestImportScript `
+                    -ManifestPath $resolvedBuildManifestPath `
+                    -Label $resolvedRunLabel `
+                    -RepoRoot $RepoRoot `
+                    -OutputPathOnly |
+                Select-Object -Last 1
+            ).ToString().Trim()
+        }
     }
 }
 

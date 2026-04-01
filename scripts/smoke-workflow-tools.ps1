@@ -27,6 +27,7 @@ $githubArtifactImportScript = Join-Path $PSScriptRoot "import-github-actions-art
 $githubArtifactDownloadScript = Join-Path $PSScriptRoot "download-github-actions-artifact.ps1"
 $isoImportScript = Join-Path $PSScriptRoot "import-iso-artifact.ps1"
 $githubArtifactCycleScript = Join-Path $PSScriptRoot "start-github-actions-vm-cycle.ps1"
+$githubArtifactCycleFinishScript = Join-Path $PSScriptRoot "finish-github-actions-vm-cycle.ps1"
 $prepareReleasePackageScript = Join-Path $PSScriptRoot "prepare-release-package.ps1"
 $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
 $releaseCandidateScript = Join-Path $PSScriptRoot "prepare-release-candidate.ps1"
@@ -66,6 +67,10 @@ if (-not (Test-Path $isoImportScript)) {
 
 if (-not (Test-Path $githubArtifactCycleScript)) {
     throw "Missing smoke-test target: $githubArtifactCycleScript"
+}
+
+if (-not (Test-Path $githubArtifactCycleFinishScript)) {
+    throw "Missing smoke-test target: $githubArtifactCycleFinishScript"
 }
 
 if (-not (Test-Path $prepareReleasePackageScript)) {
@@ -243,6 +248,12 @@ try {
     $artifactZipPath = Join-Path $tempRoot "lumina-gha-artifact.zip"
     Compress-Archive -Path (Join-Path $artifactRoot "*") -DestinationPath $artifactZipPath -Force
 
+    $diagnosticsBundleDir = Join-Path $tempRoot "diagnostics-bundle"
+    New-Item -ItemType Directory -Force -Path $diagnosticsBundleDir | Out-Null
+    Set-Content -Path (Join-Path $diagnosticsBundleDir "summary.md") -Value "# Summary`r`n`r`n- Exported At: 2026-04-01T12:00:00" -Encoding UTF8
+    Set-Content -Path (Join-Path $diagnosticsBundleDir "firstboot-report.md") -Value "# Firstboot`r`n`r`n- Result: pass" -Encoding UTF8
+    Set-Content -Path (Join-Path $diagnosticsBundleDir "smoke-check-report.md") -Value "# Smoke`r`n`r`n- Result: pass" -Encoding UTF8
+
     $artifactImportSummary = & $githubArtifactImportScript `
         -ArtifactPath $artifactZipPath `
         -ArtifactName "lumina-os-stable-gha-stable-8-1" `
@@ -270,6 +281,30 @@ try {
     Assert-Condition -Condition ($null -ne $ghaStartedSessionFile) -Message "GitHub Actions artifact cycle did not create a session summary."
     $ghaStartedSessionContent = Get-Content -Raw $ghaStartedSessionFile.FullName
     Assert-Condition -Condition ($ghaStartedSessionContent -match [regex]::Escape("- Run Label: $handoffRunLabel")) -Message "GitHub Actions artifact cycle did not reuse the reported run label."
+
+    & $githubArtifactCycleFinishScript `
+        -BundlePath $diagnosticsBundleDir `
+        -ArtifactPath $artifactZipPath `
+        -Mode stable `
+        -VmType VirtualBox `
+        -Firmware UEFI `
+        -RunId "23863815968" `
+        -ArtifactName "lumina-os-stable-gha-stable-8-1" `
+        -RepoRoot $tempRoot | Out-Null
+
+    $ghaFinishedSessionFile = Get-ChildItem -Path (Join-Path $tempRoot "status\test-sessions") -Filter "*.md" -Recurse |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+    Assert-Condition -Condition ($null -ne $ghaFinishedSessionFile) -Message "GitHub Actions cycle finish did not keep a session summary."
+    $ghaFinishedSessionContent = Get-Content -Raw $ghaFinishedSessionFile.FullName
+    Assert-Condition -Condition ($ghaFinishedSessionContent -match [regex]::Escape("- Diagnostics Bundle: $diagnosticsBundleDir")) -Message "GitHub Actions cycle finish did not record the diagnostics bundle path."
+
+    $ghaAuditFile = Get-ChildItem -Path (Join-Path $tempRoot "status\test-session-audits") -Filter "*.md" -Recurse |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+    Assert-Condition -Condition ($null -ne $ghaAuditFile) -Message "GitHub Actions cycle finish did not create a session audit."
+    $ghaAuditContent = Get-Content -Raw $ghaAuditFile.FullName
+    Assert-Condition -Condition ($ghaAuditContent -match [regex]::Escape("- Run Label: $handoffRunLabel")) -Message "GitHub Actions cycle finish did not carry the expected run label into the session audit."
 
     $linuxOnlyBuildRunLabel = "ci-imported-iso-smoke"
     $linuxOnlyBuildPath = Join-Path $tempRoot "linux-only-build-manifest.md"

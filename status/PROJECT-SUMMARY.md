@@ -33,6 +33,7 @@ This file gives one fast answer to two questions:
 - downloaded GitHub Actions artifact zips can now be imported directly into the same handoff path
 - downloaded GitHub Actions artifact zips can now initialize the local VM evidence chain in one command
 - GitHub Actions artifacts can now also be downloaded directly from a run id and mode before entering the same local VM evidence chain
+- GitHub Actions based VM cycles can now also be finished from the diagnostics bundle plus the same run context instead of manually re-entering the run label
 - GitHub Actions now has a remote ISO build workflow to trigger real build attempts without waiting on local Arch access
 - the first real GitHub Actions matrix build has now completed successfully for `stable` and `login-test`
 - generated cycle handoffs now exist for one-file execution of a real run
@@ -58,6 +59,7 @@ This file gives one fast answer to two questions:
 ### Real Execution Work
 - import the first successful GitHub Actions build handoff artifacts into the repo-side evidence chain
 - validate the new direct GitHub Actions artifact-download path during the first local VM cycle
+- validate the new GitHub Actions cycle-finish wrapper during the first local diagnostics import
 - run the first real VM validation cycle for both modes
 
 ### Runtime Verification

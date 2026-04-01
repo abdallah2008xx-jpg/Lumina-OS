@@ -52,6 +52,13 @@ If the build came from GitHub Actions, you can go from the downloaded artifact z
 .\scripts\start-github-actions-vm-cycle.ps1 -ArtifactPath "C:\Path\To\artifact.zip" -Mode stable -VmType VirtualBox -Firmware UEFI -RunId 23863815968
 ```
 
+If you have a GitHub token available, the same start helper can also download the artifact for you directly from the run:
+
+```powershell
+$env:LUMINA_GITHUB_TOKEN = "ghp_your_token_here"
+.\scripts\start-github-actions-vm-cycle.ps1 -Mode stable -VmType VirtualBox -Firmware UEFI -RunId 23863815968
+```
+
 If you only want the VM report by itself, use:
 
 ```powershell
@@ -81,6 +88,21 @@ If the run was started with a label, pass the same label again during finish:
 ```powershell
 .\scripts\finish-vm-test-cycle.ps1 -BundlePath "C:\Path\To\ahmados-diagnostics-....tar.gz" -Mode stable -VmType VirtualBox -Firmware UEFI -RunLabel stable-vbox-pass-01
 ```
+
+If the cycle started from GitHub Actions, you can also finish it from the diagnostics bundle plus the same run context:
+
+```powershell
+.\scripts\finish-github-actions-vm-cycle.ps1 -BundlePath "C:\Path\To\Lumina-OS-Diagnostics" -ArtifactPath "C:\Path\To\artifact.zip" -Mode stable -VmType VirtualBox -Firmware UEFI -RunId 23863815968
+```
+
+Or, with a token available, finish from the diagnostics bundle and run id alone:
+
+```powershell
+$env:LUMINA_GITHUB_TOKEN = "ghp_your_token_here"
+.\scripts\finish-github-actions-vm-cycle.ps1 -BundlePath "C:\Path\To\Lumina-OS-Diagnostics" -Mode stable -VmType VirtualBox -Firmware UEFI -RunId 23863815968
+```
+
+That wrapper resolves the GitHub Actions handoff again if needed, carries the same run label forward, then calls `finish-vm-test-cycle.ps1` with the correct imported build-manifest context.
 
 The finish step now also updates:
 - `status/test-session-audits/`

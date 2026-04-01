@@ -33,6 +33,7 @@ This file gives one fast answer to two questions:
 - release publishing can now refresh the same candidate summary automatically instead of leaving stale pre-publish state behind
 - GitHub publish now checks that the chosen release manifest still matches the current release candidate before creation
 - shareable update generation now turns the current internal state into a ready-to-send progress summary
+- short English and Arabic shareable briefs now provide copy-paste-ready external updates
 - release packaging and GitHub release publishing now both have dedicated scripts and status records
 - release publishing is now guarded by a dedicated release-package validation pass
 - GitHub Actions now smoke-tests key workflow tools instead of only running structural validation

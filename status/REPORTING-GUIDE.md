@@ -6,6 +6,8 @@ Keep reporting lightweight.
 - `PROJECT-SUMMARY.md` -> fast done-vs-remaining project snapshot
 - `CURRENT-STATUS.md` -> very short overall project snapshot
 - `SHAREABLE-UPDATE.md` -> generated update suitable for sharing outside the repo
+- `SHAREABLE-BRIEF.md` -> short English shareable version
+- `SHAREABLE-BRIEF-AR.md` -> short Arabic shareable version
 - `HOURLY-STATUS.md` -> latest work-block update
 - `PROGRESS-LOG.md` -> chronological milestone log
 - `STATUS-YYYY-MM-DD.md` -> day-specific summary if needed
@@ -41,6 +43,7 @@ Keep reporting lightweight.
 14. Refresh the same release candidate after publish so the current summary reflects the published state
 15. Keep the GitHub release context report with the release package so publish intent stays auditable
 16. Refresh `SHAREABLE-UPDATE.md` when the public-facing project state changes
+17. Refresh the short shareable briefs when you want a copy-paste-ready update for chat or social posting
 
 ## What to Record
 - What was finished

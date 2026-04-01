@@ -53,5 +53,6 @@ Current project outputs include:
 
 - Fast summary of what is done and what remains: `status/PROJECT-SUMMARY.md`
 - Public/shareable project update: `status/SHAREABLE-UPDATE.md`
+- Short shareable briefs: `status/SHAREABLE-BRIEF.md` and `status/SHAREABLE-BRIEF-AR.md`
 - Current release-candidate state: `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md`
 - Release package records: `status/releases/README.md`

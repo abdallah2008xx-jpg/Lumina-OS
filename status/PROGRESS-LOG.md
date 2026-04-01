@@ -79,3 +79,4 @@
 - Added release-candidate sync so GitHub publish can update the same summary to a published state
 - Added GitHub release-context validation so publish now checks manifest/candidate alignment before release creation
 - Added generated shareable updates so public-facing progress can be refreshed from the current project state
+- Added short English and Arabic shareable briefs for copy-paste-ready progress updates

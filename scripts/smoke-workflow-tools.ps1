@@ -25,6 +25,7 @@ $releaseCandidateScript = Join-Path $PSScriptRoot "prepare-release-candidate.ps1
 $syncReleaseCandidateScript = Join-Path $PSScriptRoot "sync-release-candidate-status.ps1"
 $releaseContextScript = Join-Path $PSScriptRoot "validate-github-release-context.ps1"
 $shareableUpdateScript = Join-Path $PSScriptRoot "sync-shareable-update.ps1"
+$shareableBriefsScript = Join-Path $PSScriptRoot "sync-shareable-briefs.ps1"
 $releaseValidator = Join-Path $PSScriptRoot "validate-release-package.ps1"
 
 if (-not (Test-Path $handoffScript)) {
@@ -49,6 +50,10 @@ if (-not (Test-Path $releaseContextScript)) {
 
 if (-not (Test-Path $shareableUpdateScript)) {
     throw "Missing smoke-test target: $shareableUpdateScript"
+}
+
+if (-not (Test-Path $shareableBriefsScript)) {
+    throw "Missing smoke-test target: $shareableBriefsScript"
 }
 
 if (-not (Test-Path $releaseValidator)) {
@@ -224,6 +229,21 @@ try {
     $shareableContent = Get-Content -Raw $shareableUpdatePath
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Candidate State: published")) -Message "Shareable update did not include the published release-candidate state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- run the first real stable build in Arch")) -Message "Shareable update did not include the expected next step."
+
+    $shareableBriefPath = & $shareableBriefsScript `
+        -ShareableUpdatePath (Join-Path $tempRoot "status\\SHAREABLE-UPDATE.md") `
+        -ReleaseCandidatePath (Join-Path $tempRoot "status\\release-candidates\\CURRENT-RELEASE-CANDIDATE.md") `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $shareableBriefPath) -Message "English shareable brief was not created."
+    $shareableBriefContent = Get-Content -Raw $shareableBriefPath
+    Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Candidate State: published")) -Message "English shareable brief did not include the published release-candidate state."
+
+    $shareableArabicBriefPath = Join-Path $tempRoot "status\\SHAREABLE-BRIEF-AR.md"
+    Assert-Condition -Condition (Test-Path $shareableArabicBriefPath) -Message "Arabic shareable brief was not created."
+    $shareableArabicBriefContent = Get-Content -Raw $shareableArabicBriefPath
+    Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Candidate State: published")) -Message "Arabic shareable brief did not include the published release-candidate state."
 }
 finally {
     if (Test-Path $tempRoot) {

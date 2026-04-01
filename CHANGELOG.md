@@ -26,6 +26,7 @@ This project follows a simple rule for now:
 - Release-candidate sync after GitHub publish
 - GitHub release-context validation before publish
 - Generated shareable updates from current project state
+- Short English and Arabic shareable briefs
 
 ### Changed
 - Live-system UI wording now presents the distro as `Lumina-OS`

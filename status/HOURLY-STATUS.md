@@ -5,24 +5,24 @@ Update it once per work block or roughly every hour.
 
 ## Current Block
 - **Date:** 2026-04-01
-- **Time:** 10:34 PDT
-- **Focus:** Generating shareable updates directly from project state so public progress messages stay in sync
+- **Time:** 10:43 PDT
+- **Focus:** Generating short English and Arabic shareable briefs from project state for direct posting
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
-- Added a shareable-update generator rooted in current status, readiness, validation, and release-candidate state
-- Extended the workflow smoke test to verify a published-state shareable update
-- Added validation coverage and docs for generated shareable updates
-- Linked the main README to the generated shareable update file
+- Added a brief generator for short English and Arabic shareable updates
+- Extended the workflow smoke test to verify both brief outputs
+- Added validation coverage and docs for shareable briefs
+- Linked the main README to the short brief files as well
 
 ## In Progress
-- Re-validating the repo after the shareable-update pass and preparing the next commit
+- Re-validating the repo after the shareable-brief pass and preparing the next commit
 
 ## Next Hour
-- Run validation and push the shareable-update pass to GitHub
+- Run validation and push the shareable-brief pass to GitHub
 - Keep the build/test workflow stable and ready for the first Arch-side `stable` build
 - Move execution to an actual Arch environment for the first real ISO build
-- Use the new generated shareable update after the first real labeled VM cycle
+- Use the new generated briefs after the first real labeled VM cycle
 
 ## Blockers
 - Actual ISO building is blocked in the current Windows workspace; `mkarchiso` must run inside an Arch environment
@@ -40,6 +40,7 @@ Update it once per work block or roughly every hour.
 - Treat the published state as another tracked transition, not something inferred manually from GitHub only
 - Treat publish context as its own gate so the chosen manifest must still match the current candidate
 - Treat public progress updates as generated artifacts, not hand-maintained text
+- Treat short social-style updates as derived artifacts from the same canonical project state
 
 ## Ready-to-Send Mini Update
-Lumina-OS can now generate a shareable project update directly from current readiness, validation, and release-candidate state, so public progress posts stay aligned with the repo.
+Lumina-OS can now generate short English and Arabic shareable briefs from the current project state, so quick progress posts stay aligned with the repo without manual rewriting.

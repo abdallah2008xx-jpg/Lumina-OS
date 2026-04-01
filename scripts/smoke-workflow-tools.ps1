@@ -19,6 +19,25 @@ function Assert-Condition {
     }
 }
 
+function Get-MetadataValue {
+    param(
+        [string]$Content,
+        [string]$Label
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Content)) {
+        return ""
+    }
+
+    $pattern = "(?m)^- " + [regex]::Escape($Label) + ": (.+)$"
+    $match = [regex]::Match($Content, $pattern)
+    if ($match.Success) {
+        return $match.Groups[1].Value.Trim()
+    }
+
+    return ""
+}
+
 function Test-SessionHasExpectedBuildManifest {
     param(
         [string]$SessionContent,
@@ -384,8 +403,16 @@ try {
     Assert-Condition -Condition ($candidateContent -match [regex]::Escape("- Candidate State: ready-to-publish")) -Message "Release candidate summary is not ready-to-publish."
     Assert-Condition -Condition ($candidateContent -match [regex]::Escape("- Run Label: $smokeRunLabel")) -Message "Release candidate summary does not contain the expected run label."
 
-    $releaseManifestPath = Get-ChildItem -Path $tempRoot -Filter "release-manifest.md" -Recurse | Select-Object -First 1 | ForEach-Object { $_.FullName }
-    $validationReportPath = Get-ChildItem -Path $tempRoot -Filter "release-validation.md" -Recurse | Select-Object -First 1 | ForEach-Object { $_.FullName }
+    $releaseManifestPath = Get-MetadataValue -Content $candidateContent -Label "Release Manifest"
+    $validationReportPath = Get-MetadataValue -Content $candidateContent -Label "Validation Report"
+
+    if (-not [string]::IsNullOrWhiteSpace($releaseManifestPath) -and (Test-Path $releaseManifestPath)) {
+        $releaseManifestPath = (Resolve-Path $releaseManifestPath).Path
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($validationReportPath) -and (Test-Path $validationReportPath)) {
+        $validationReportPath = (Resolve-Path $validationReportPath).Path
+    }
 
     Assert-Condition -Condition (-not [string]::IsNullOrWhiteSpace($releaseManifestPath) -and (Test-Path $releaseManifestPath)) -Message "Release manifest was not created by release candidate prep."
     Assert-Condition -Condition (-not [string]::IsNullOrWhiteSpace($validationReportPath) -and (Test-Path $validationReportPath)) -Message "Release validation report was not created by release candidate prep."

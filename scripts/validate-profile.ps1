@@ -84,6 +84,7 @@ $requiredPaths = @(
     "scripts\start-vm-test-cycle.ps1",
     "scripts\finish-vm-test-cycle.ps1",
     "scripts\new-cycle-handoff.ps1",
+    "scripts\smoke-workflow-tools.ps1",
     "scripts\audit-test-session.ps1",
     "scripts\sync-test-blockers.ps1",
     "scripts\sync-readiness-status.ps1",

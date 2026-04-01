@@ -8,10 +8,14 @@ param(
     [string]$RunLabel = "",
     [string]$ReleaseVersion = "",
     [switch]$OutputPathOnly,
-    [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+    [string]$RepoRoot = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+    $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+}
 
 function Get-SafeFileSegment {
     param([string]$Value)

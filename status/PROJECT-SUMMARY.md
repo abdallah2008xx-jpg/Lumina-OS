@@ -29,6 +29,7 @@ This file gives one fast answer to two questions:
 - generated cycle handoffs now exist for one-file execution of a real run
 - release packaging and GitHub release publishing now both have dedicated scripts and status records
 - release publishing is now guarded by a dedicated release-package validation pass
+- GitHub Actions now smoke-tests key workflow tools instead of only running structural validation
 
 ### GitHub And Team Workflow
 - the repo is connected to GitHub under `Lumina-OS`

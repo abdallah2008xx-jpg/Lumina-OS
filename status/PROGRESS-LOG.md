@@ -71,3 +71,5 @@
 - Extended `Run Label` coverage back into the build stage so build manifests can now be matched directly to VM and release evidence
 - Added `scripts/new-cycle-handoff.ps1` plus `status/cycle-handoffs/` so a full stable or login-test run can be generated as one stored runbook
 - Smoke-tested the generated cycle handoff output and fixed command formatting so the stored runbook is readable as-is
+- Added `scripts/smoke-workflow-tools.ps1` and wired it into GitHub Actions so the handoff and release-validation path is exercised on CI
+- Fixed a cleanup bug in the workflow smoke test and confirmed the smoke suite now passes locally

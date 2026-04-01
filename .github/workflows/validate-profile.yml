@@ -17,3 +17,7 @@ jobs:
       - name: Run PowerShell profile validation
         shell: powershell
         run: powershell -ExecutionPolicy Bypass -File .\scripts\validate-profile.ps1
+
+      - name: Run workflow smoke tests
+        shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File .\scripts\smoke-workflow-tools.ps1

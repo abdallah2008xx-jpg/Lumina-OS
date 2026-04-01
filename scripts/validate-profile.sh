@@ -95,6 +95,7 @@ required_paths=(
     "${repo_root}/scripts/start-vm-test-cycle.ps1"
     "${repo_root}/scripts/finish-vm-test-cycle.ps1"
     "${repo_root}/scripts/new-cycle-handoff.ps1"
+    "${repo_root}/scripts/smoke-workflow-tools.ps1"
     "${repo_root}/scripts/audit-test-session.ps1"
     "${repo_root}/scripts/sync-test-blockers.ps1"
     "${repo_root}/scripts/sync-readiness-status.ps1"

@@ -54,3 +54,6 @@ If a task took real effort, changed project direction, or affected boot/build be
 When starting and finishing a VM cycle, prefer the same `Run Label` so VM reports, session summaries, diagnostics imports, audits, blocker reviews, and readiness snapshots all stay linked to the same exact run.
 
 Use the same `Run Label` during the Arch build as well, so the build manifest can be matched to the later VM and release records without depending on whichever build was most recent.
+
+## CI Note
+GitHub Actions now runs both structural validation and a workflow smoke test. If CI fails, check whether a workflow script changed behavior even if the repo structure still looks correct.

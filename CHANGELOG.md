@@ -19,6 +19,7 @@ This project follows a simple rule for now:
 - GitHub release publishing automation via `scripts/publish-github-release.ps1`
 - Release-package validation gating via `scripts/validate-release-package.ps1`
 - Generated cycle handoffs via `scripts/new-cycle-handoff.ps1`
+- Workflow smoke testing via `scripts/smoke-workflow-tools.ps1`
 
 ### Changed
 - Live-system UI wording now presents the distro as `Lumina-OS`

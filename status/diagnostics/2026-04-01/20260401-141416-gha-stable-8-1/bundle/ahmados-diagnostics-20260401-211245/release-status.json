@@ -1,0 +1,9 @@
+{
+  "checkedAt": "2026-04-01T21:12:47+00:00",
+  "requestedSource": "github",
+  "source": "bundled",
+  "installedVersion": "0.1.0-dev",
+  "fallbackReason": "github-returned-no-releases",
+  "releaseUrl": "https://api.github.com/repos/abdallah2008xx-jpg/Lumina-OS/releases",
+  "releaseCount": 2
+}

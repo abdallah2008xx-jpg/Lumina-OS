@@ -77,12 +77,13 @@
 - GitHub Actions now has a real remote ISO build workflow so first build attempts no longer depend only on local Arch access
 - the first real remote GitHub Actions matrix build succeeded on run `#8` for both `stable` and `login-test`
 - the `stable` handoff from GitHub Actions run `#8` has now been imported into this workspace and the first local VM cycle was initialized on run label `gha-stable-8-1`
+- the first real `stable` VM validation cycle completed on run label `gha-stable-8-1` and is currently blocked by three runtime findings
 
 ## Active Focus
 - import the `login-test` handoff from GitHub Actions run `#8` into the repo-side evidence chain
 - validate the new direct GitHub Actions download helper against the first real VM cycle path
 - validate the new GitHub Actions cycle-finish wrapper against the first real diagnostics-import path
-- find or enable a usable local VM runtime on this workstation so the imported ISO can actually be booted
+- fix the runtime blockers found in the first real `stable` VM cycle
 - validate the new Welcome and Update Center behavior inside a built ISO
 - validate the firstboot runtime report and cache generation inside a built ISO
 - capture the first real build and VM evidence trail
@@ -120,10 +121,11 @@
 - keep the new direct GitHub Actions download helper aligned with the same bridge so run-id-based fetches stay reproducible
 - keep the new GitHub Actions cycle-finish wrapper aligned with diagnostics import so remote-build validation stays symmetrical from start to finish
 - keep the new GitHub ISO build workflow aligned with the local handoff and evidence chain so successful remote builds feed the same process
+- keep the first real `stable` VM findings visible at the top level so future fixes can be verified against them deliberately
 
 ## Next
 - let the `login-test` GitHub Actions artifact finish importing into the same local evidence chain
-- boot the already imported `stable` ISO once a usable local VM runtime is available on this workstation
+- fix the three recorded `stable` blockers, then rerun the `stable` VM cycle
 - finish the first GitHub Actions-backed VM cycle through the new diagnostics-bundle wrapper so the end of the evidence chain is just as automated as the start
 - test the real Welcome choice application inside a built ISO
 - test the metadata-backed Update Center inside a built ISO

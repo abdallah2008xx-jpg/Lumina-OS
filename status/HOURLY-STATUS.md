@@ -5,8 +5,8 @@ Update it once per work block or roughly every hour.
 
 ## Current Block
 - **Date:** 2026-04-01
-- **Time:** 13:31 PDT
-- **Focus:** Importing the first successful remote build outputs into the local evidence chain and identifying the last machine-level blocker to real VM boot
+- **Time:** 14:16 PDT
+- **Focus:** Recording the first real `stable` VM validation cycle and turning its findings into tracked blockers
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
@@ -21,20 +21,22 @@ Update it once per work block or roughly every hour.
 - Added direct GitHub Actions artifact download by `RunId + mode` so the bridge no longer depends on a manual zip download first
 - Added a matching GitHub Actions cycle-finish wrapper so diagnostics import can reuse the same run context without retyping labels manually
 - Imported the `stable` handoff from GitHub Actions run `#8` and initialized the first local VM cycle on `gha-stable-8-1`
-- Confirmed this workstation currently has no detected local VM runtime command for VirtualBox, VMware, or QEMU
+- Booted the imported `stable` ISO in VirtualBox and confirmed the guest reaches a live Plasma X11 session
+- Exported and imported real diagnostics from the running `stable` VM, then closed the first real cycle through blockers/readiness/validation
+- Captured three concrete blockers from the first real `stable` cycle: black host-side VirtualBox screenshots, early firstboot timing, and smoke-check session detection gaps
 
 ## In Progress
 - Importing the `login-test` handoff from GitHub Actions run `#8` into the same local evidence chain
-- Updating docs and generated status files so the imported `stable` cycle and the current machine blocker are recorded clearly
+- Updating docs and generated status files so the first real `stable` findings are reflected clearly at the project level
 
 ## Next Hour
 - Let the `login-test` artifact import finish in the background
-- Move the imported `stable` ISO onto a machine with a real VM runtime or enable one here
-- Boot the imported `stable` ISO and capture the first actual findings
-- Verify the new diagnostics-bundle finish wrapper during the first real VM cycle
+- Fix the three blockers recorded in `gha-stable-8-1`
+- Rerun the `stable` VM cycle after the fixes
+- Verify the new diagnostics-bundle finish wrapper again on a clean rerun if needed
 
 ## Blockers
-- The build and `stable` handoff import are no longer blocked, but this workstation currently exposes no detected VM runtime command (`VBoxManage`, `vmrun`, or `qemu-system-x86_64`) for the actual boot step
+- The first real `stable` cycle is blocked by three runtime issues: black host-side VirtualBox screenshots despite a live desktop, firstboot report timing that misses Welcome artifacts, and smoke-check session detection reporting `unknown`
 
 ## Decisions / Notes
 - Prefer GitHub as the intended release-metadata source now that the real repo exists
@@ -58,7 +60,7 @@ Update it once per work block or roughly every hour.
 - Treat the first successful remote build as the handoff point into VM validation, not the end of the process
 - Prefer run-id-based artifact download when the successful build already exists on GitHub, so operators do not need to hunt for the right zip manually
 - Prefer a matching run-id-based finish wrapper so the same remote build context survives diagnostics import and final evidence sync
-- Treat missing local VM tooling as a machine-level blocker distinct from ISO/build readiness, because the imported `stable` evidence chain already exists
+- Treat the first real `stable` cycle as a success for boot/access testing, but blocked for promotion until the three runtime issues are fixed
 
 ## Ready-to-Send Mini Update
-Lumina-OS now has the `stable` build from GitHub Actions run `#8` imported locally and linked to its first VM evidence chain; the remaining blocker on this workstation is simply the absence of a detected VM runtime for actually booting the ISO.
+Lumina-OS completed its first real `stable` VM validation cycle: the guest reaches Plasma X11 and diagnostics export works, but the cycle is currently blocked by three runtime findings that now need fixes before rerun.

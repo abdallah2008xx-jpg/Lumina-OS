@@ -1,0 +1,20 @@
+[
+  {
+    "name": "0.1.1-preview",
+    "tag_name": "v0.1.1-preview",
+    "draft": false,
+    "prerelease": true,
+    "body": "Theme integration, real Welcome choices, and the first metadata-backed Update Center pass.",
+    "html_url": "https://github.com/",
+    "published_at": "2026-04-01T12:00:00Z"
+  },
+  {
+    "name": "0.1.0-dev",
+    "tag_name": "v0.1.0-dev",
+    "draft": false,
+    "prerelease": true,
+    "body": "Current live image baseline with branded wallpapers, SDDM, Plasma defaults, and the first QML system app shells.",
+    "html_url": "https://github.com/",
+    "published_at": "2026-03-31T12:00:00Z"
+  }
+]

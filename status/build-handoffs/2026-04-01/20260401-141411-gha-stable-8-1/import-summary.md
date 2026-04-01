@@ -1,0 +1,18 @@
+﻿# Lumina-OS Build Handoff Import
+
+- Imported At: 2026-04-01T14:14:16
+- Handoff Path: C:\Users\abdal\AppData\Local\Temp\lumina-gha-artifact-90d068ae69924f88b953d8db4729ca02\build\github-handoff\stable
+- Handoff Manifest: C:\Users\abdal\AppData\Local\Temp\lumina-gha-artifact-90d068ae69924f88b953d8db4729ca02\build\github-handoff\stable\handoff-manifest.md
+- Import Label: gha-stable-8-1
+- Reported Mode: stable
+- Reported Run Label: gha-stable-8-1
+- Imported Build Manifest: C:\Users\abdal\Downloads\AhmadOS-Rebuild\status\builds\2026-04-01\build-imported-20260401-141411-stable-gha-stable-8-1.md
+- Imported ISO Path: C:\Users\abdal\Downloads\AhmadOS-Rebuild\build\imported-iso\2026-04-01\20260401-141411-gha-stable-8-1\lumina-os-0.1.0-dev-x86_64.iso
+
+## Source Files
+- Source Build Manifest: C:\Users\abdal\AppData\Local\Temp\lumina-gha-artifact-90d068ae69924f88b953d8db4729ca02\build\github-handoff\stable\build-manifest.md
+- Source ISO Path: C:\Users\abdal\AppData\Local\Temp\lumina-gha-artifact-90d068ae69924f88b953d8db4729ca02\build\github-handoff\stable\lumina-os-0.1.0-dev-x86_64.iso
+
+## Next Step
+- reuse the same run label in start-vm-test-cycle.ps1
+- later run prepare-release-candidate.ps1 from this workspace against the imported ISO and linked evidence

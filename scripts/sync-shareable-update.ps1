@@ -109,6 +109,18 @@ function Get-ResolvedPathOrDefault {
     return $Value
 }
 
+function Get-FirstNonEmptyValue {
+    param([string[]]$Values)
+
+    foreach ($value in $Values) {
+        if (-not [string]::IsNullOrWhiteSpace($value) -and $value -ne "not-recorded-yet") {
+            return $value
+        }
+    }
+
+    return ""
+}
+
 $resolvedStatusPath = if ([string]::IsNullOrWhiteSpace($StatusPath)) {
     Join-Path $RepoRoot "status\CURRENT-STATUS.md"
 }
@@ -156,13 +168,19 @@ $immediateNext = Get-TopItems -Items $nextItems -Count 5
 $readinessState = Get-MetadataValue -Content $readinessContent -Label "Readiness State"
 $validationState = Get-MetadataValue -Content $validationContent -Label "Overall State"
 $candidateState = Get-MetadataValue -Content $releaseCandidateContent -Label "Candidate State"
-$runLabel = Get-MetadataValue -Content $releaseCandidateContent -Label "Run Label"
-$version = Get-MetadataValue -Content $releaseCandidateContent -Label "Version"
+$runLabel = Get-FirstNonEmptyValue @(
+    (Get-MetadataValue -Content $releaseCandidateContent -Label "Run Label"),
+    (Get-MetadataValue -Content $readinessContent -Label "Run Label")
+)
+$version = Get-FirstNonEmptyValue @(
+    (Get-MetadataValue -Content $releaseCandidateContent -Label "Version")
+)
 
 $headline = switch ($true) {
     { $candidateState -eq "published" } { "Lumina-OS now has a published release candidate trail with linked release evidence."; break }
     { $candidateState -eq "ready-to-publish" } { "Lumina-OS now has a release candidate prepared and validated, pending publish."; break }
     { $readinessState -eq "needs-vm-validation" -or $validationState -eq "builds-succeeded-awaiting-vm" } { "Lumina-OS has completed its first successful remote ISO build and is now moving into VM validation."; break }
+    { $readinessState -eq "blocked" -or $validationState -eq "blocked" } { "Lumina-OS completed a real VM validation cycle and surfaced concrete runtime blockers that should be fixed before promotion."; break }
     { $readinessState -eq "ready-for-next-stage" -and $validationState -notin @("needs-first-build", "blocked") } { "Lumina-OS has a clean internal validation trail and is ready for the next execution stage."; break }
     default { "Lumina-OS has strong build/test/release workflow coverage and is waiting on the first real Arch-side execution cycle." }
 }
@@ -207,12 +225,13 @@ $(Format-Items -Items $recentProgress)
 
 ## What Is Ready
 - The core build/test/release workflow is scaffolded and validated locally.
-- Linked evidence now covers build manifests, VM reports, session audits, readiness, validation matrix, and release-candidate state.
+- Linked evidence now covers build manifests, VM reports, session audits, blockers, readiness, validation matrix, and release-candidate state.
 - GitHub publish now has local release-context validation before release creation.
 
 ## What Is Still Missing
-- The first imported build handoff and first real VM evidence chain.
-- The first real release candidate built from a real ISO.
+- The recorded runtime blockers from the latest real VM cycle still need fixes.
+- The `login-test` mode still needs the same level of real VM coverage.
+- The first real release candidate built from a real ISO is still pending.
 - The first real published Lumina-OS release on GitHub.
 
 ## Immediate Next Step

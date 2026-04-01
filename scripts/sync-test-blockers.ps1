@@ -184,6 +184,66 @@ function Format-Items {
     return ($Items | ForEach-Object { "- $_" }) -join "`r`n"
 }
 
+function Get-UniqueItems {
+    param([System.Collections.Generic.List[string]]$Items)
+
+    $result = [System.Collections.Generic.List[string]]::new()
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+
+    foreach ($item in $Items) {
+        $trimmed = $item.Trim()
+        if ([string]::IsNullOrWhiteSpace($trimmed)) {
+            continue
+        }
+
+        if ($seen.Add($trimmed)) {
+            $result.Add($trimmed) | Out-Null
+        }
+    }
+
+    return $result
+}
+
+function Get-MergedSourceItems {
+    param(
+        [System.Collections.Generic.List[string]]$SessionItems,
+        [System.Collections.Generic.List[string]]$VmItems,
+        [System.Collections.Generic.List[string]]$AuditItems
+    )
+
+    $orderedMap = [System.Collections.Specialized.OrderedDictionary]::new()
+
+    foreach ($entry in @(
+        @{ Source = "session"; Items = $SessionItems },
+        @{ Source = "vm"; Items = $VmItems },
+        @{ Source = "audit"; Items = $AuditItems }
+    )) {
+        foreach ($item in $entry.Items) {
+            $trimmed = $item.Trim()
+            if ([string]::IsNullOrWhiteSpace($trimmed)) {
+                continue
+            }
+
+            if (-not $orderedMap.Contains($trimmed)) {
+                $orderedMap[$trimmed] = [System.Collections.Generic.List[string]]::new()
+            }
+
+            $sourceList = [System.Collections.Generic.List[string]]$orderedMap[$trimmed]
+            if (-not $sourceList.Contains($entry.Source)) {
+                $sourceList.Add($entry.Source) | Out-Null
+            }
+        }
+    }
+
+    $result = [System.Collections.Generic.List[string]]::new()
+    foreach ($key in $orderedMap.Keys) {
+        $sources = [System.Collections.Generic.List[string]]$orderedMap[$key]
+        $result.Add("[$($sources -join ', ')] $key") | Out-Null
+    }
+
+    return $result
+}
+
 $resolvedSessionPath = $SessionPath
 if ([string]::IsNullOrWhiteSpace($resolvedSessionPath)) {
     $latestSession = if ([string]::IsNullOrWhiteSpace($RunLabel)) {
@@ -269,21 +329,13 @@ else {
     "clear"
 }
 
-$allOpenItems = [System.Collections.Generic.List[string]]::new()
-foreach ($item in $sessionBlockers) {
-    $allOpenItems.Add("[session] $item")
-}
-foreach ($item in $vmBlockers) {
-    $allOpenItems.Add("[vm] $item")
-}
-foreach ($item in $auditFailures) {
-    $allOpenItems.Add("[audit] $item")
-}
+$allOpenItems = Get-MergedSourceItems -SessionItems $sessionBlockers -VmItems $vmBlockers -AuditItems $auditFailures
 
 $attentionItems = [System.Collections.Generic.List[string]]::new()
 foreach ($item in $auditWarnings) {
     $attentionItems.Add("[audit-warning] $item")
 }
+$attentionItems = Get-UniqueItems $attentionItems
 
 $reviewContent = @"
 # Lumina-OS Blocker Review

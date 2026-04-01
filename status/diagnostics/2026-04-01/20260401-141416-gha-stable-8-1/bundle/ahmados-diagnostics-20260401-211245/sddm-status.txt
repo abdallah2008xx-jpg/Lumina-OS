@@ -1,0 +1,27 @@
+● sddm.service - Simple Desktop Display Manager
+     Loaded: loaded (/usr/lib/systemd/system/sddm.service; enabled; preset: disabled)
+     Active: active (running) since Wed 2026-04-01 21:02:02 UTC; 10min ago
+ Invocation: b74649072c5f4586b29a0b1bf860d05b
+       Docs: man:sddm(1)
+             man:sddm.conf(5)
+   Main PID: 545 (sddm)
+      Tasks: 4 (limit: 4620)
+     Memory: 203.1M (peak: 215.5M)
+        CPU: 3.923s
+     CGroup: /system.slice/sddm.service
+             ├─545 /usr/bin/sddm
+             └─547 /usr/lib/Xorg -nolisten tcp -background none -seat seat0 vt2 -auth /run/sddm/xauth_XpLXZC -noreset -displayfd 16
+
+Apr 01 21:02:08 lumina-os sddm[545]: Session "/usr/share/xsessions/plasmax11.desktop" selected, command: "/usr/bin/startplasma-x11" for VT 2
+Apr 01 21:02:08 lumina-os sddm-helper[558]: Detected locale "C" with character encoding "ANSI_X3.4-1968", which is not UTF-8.
+                                            Qt depends on a UTF-8 locale, and has switched to "C.UTF-8" instead.
+                                            If this causes problems, reconfigure your locale. See the locale(1) manual
+                                            for more information.
+Apr 01 21:02:08 lumina-os sddm-helper[558]: [PAM] Starting...
+Apr 01 21:02:08 lumina-os sddm-helper[558]: [PAM] Authenticating...
+Apr 01 21:02:08 lumina-os sddm-helper[558]: [PAM] returning.
+Apr 01 21:02:08 lumina-os sddm[545]: Authentication for user  "live"  successful
+Apr 01 21:02:08 lumina-os sddm-helper[558]: pam_unix(sddm-autologin:session): session opened for user live(uid=1000) by live(uid=0)
+Apr 01 21:02:09 lumina-os sddm-helper[558]: Writing cookie to "/tmp/xauth_PtjPXe"
+Apr 01 21:02:09 lumina-os sddm-helper[558]: Starting X11 session: "" "/usr/share/sddm/scripts/Xsession \"/usr/bin/startplasma-x11\""
+Apr 01 21:02:09 lumina-os sddm[545]: Session started true

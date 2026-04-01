@@ -77,6 +77,18 @@ function Convert-CodepointsToString {
     return -join ($Codepoints | ForEach-Object { [char]$_ })
 }
 
+function Get-FirstNonEmptyValue {
+    param([string[]]$Values)
+
+    foreach ($value in $Values) {
+        if (-not [string]::IsNullOrWhiteSpace($value) -and $value -ne "not-recorded-yet") {
+            return $value
+        }
+    }
+
+    return ""
+}
+
 $resolvedShareableUpdatePath = if ([string]::IsNullOrWhiteSpace($ShareableUpdatePath)) {
     Join-Path $RepoRoot "status\SHAREABLE-UPDATE.md"
 }
@@ -103,8 +115,14 @@ $releaseCandidateContent = Get-Content -Raw $resolvedReleaseCandidatePath
 $readinessState = Get-MetadataValue -Content $shareableContent -Label "Readiness State"
 $validationState = Get-MetadataValue -Content $shareableContent -Label "Validation Matrix State"
 $candidateState = Get-MetadataValue -Content $shareableContent -Label "Release Candidate State"
-$runLabel = Get-MetadataValue -Content $releaseCandidateContent -Label "Run Label"
-$version = Get-MetadataValue -Content $releaseCandidateContent -Label "Version"
+$runLabel = Get-FirstNonEmptyValue @(
+    (Get-MetadataValue -Content $releaseCandidateContent -Label "Run Label"),
+    (Get-MetadataValue -Content $shareableContent -Label "Current Run Label")
+)
+$version = Get-FirstNonEmptyValue @(
+    (Get-MetadataValue -Content $releaseCandidateContent -Label "Version"),
+    (Get-MetadataValue -Content $shareableContent -Label "Current Version")
+)
 
 $currentStateItems = Get-SectionItems -Content $shareableContent -Heading "Current State"
 $recentProgressItems = Get-SectionItems -Content $shareableContent -Heading "Recent Progress"

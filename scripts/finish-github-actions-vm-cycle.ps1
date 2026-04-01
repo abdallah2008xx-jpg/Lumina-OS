@@ -18,10 +18,14 @@ param(
     [string]$VmReportPath = "",
     [string]$SessionPath = "",
     [string]$RunLabel = "",
-    [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+    [string]$RepoRoot = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+    $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+}
 
 function Get-MetadataValue {
     param(

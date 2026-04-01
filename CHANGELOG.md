@@ -32,6 +32,7 @@ This project follows a simple rule for now:
 - ISO import support for release preparation after Arch builds that happen in a separate clone or VM
 - Complete build-handoff export/import support for Arch->Windows transfers
 - GitHub Actions remote ISO build workflow
+- First successful remote GitHub Actions matrix build for `stable` and `login-test`
 
 ### Changed
 - Live-system UI wording now presents the distro as `Lumina-OS`
@@ -47,9 +48,9 @@ This project follows a simple rule for now:
 - `prepare-release-package.ps1` can now fall back to a run-label-matched imported ISO when the build manifest still points at an Arch-only path
 - an Arch-side `export-build-handoff.sh` path and Windows-side `import-build-handoff.ps1` path now allow moving the manifest and ISO together as one transfer unit
 - the repo can now build `stable` and `login-test` remotely through `.github/workflows/build-iso.yml` and upload the resulting handoff artifacts
+- the remote GitHub Actions path now passes its first real matrix build after iterative CI fixes
 
 ### Pending Before First Tagged Release
-- First real `stable` build in Arch
-- First real `login-test` build in Arch
+- First imported successful build handoff inside the local evidence chain
 - First VM evidence chain for both modes
 - First published ISO, checksum, and release notes

@@ -31,6 +31,7 @@ This file gives one fast answer to two questions:
 - external Arch-side ISO artifacts can now be imported back into this workspace so release preparation can resolve a local file path
 - complete Arch-side build handoff folders can now be imported in one step when both files are transferred together
 - GitHub Actions now has a remote ISO build workflow to trigger real build attempts without waiting on local Arch access
+- the first real GitHub Actions matrix build has now completed successfully for `stable` and `login-test`
 - generated cycle handoffs now exist for one-file execution of a real run
 - generated cycle handoffs now adapt to `stable` and `login-test` instead of using one generic checklist
 - cycle-chain audits now verify that the recorded build/test evidence still points at the same run before release prep
@@ -52,9 +53,8 @@ This file gives one fast answer to two questions:
 ## What Is Still Remaining
 
 ### Real Execution Work
-- the first real `stable` build inside a real Arch environment
-- the first real `login-test` build inside a real Arch environment
-- the first real VM validation cycle for both modes
+- import the first successful GitHub Actions build handoff artifacts into the repo-side evidence chain
+- run the first real VM validation cycle for both modes
 
 ### Runtime Verification
 - verify real boot reliability in a VM
@@ -66,7 +66,7 @@ This file gives one fast answer to two questions:
 - verify the `lumina-*` launcher aliases behave correctly inside the built ISO
 
 ### Release Readiness
-- generate the first real build manifest from a successful Arch build
+- link the first successful remote build handoff into the local repo-side evidence chain
 - generate the first real VM evidence chain inside the repo
 - update readiness and validation matrix from real build/test evidence
 - generate the first release package with checksum and release notes draft
@@ -78,15 +78,14 @@ This file gives one fast answer to two questions:
 - deepen release/update automation after the first stable evidence-backed build
 
 ## Current State Right Now
-- Readiness: `needs-build`
-- Validation Matrix: `needs-first-build`
-- Biggest blocker: real ISO building still has to happen inside Arch, not in the current Windows workspace
+- Readiness: `needs-vm-validation`
+- Validation Matrix: `builds-succeeded-awaiting-vm`
+- Biggest blocker: the first successful remote build exists, but its handoff artifacts and VM evidence have not yet been imported into the local repo-side chain
 
 ## Recommended Next Order
-1. Run the first real `stable` build in Arch
+1. Import the successful GitHub Actions handoff artifacts from run `#8`
 2. Run a full labeled VM cycle for `stable`
 3. Confirm the new Welcome, Update Center, and SDDM polish inside the built ISO
-4. Run the first real `login-test` build in Arch
-5. Run a full labeled VM cycle for `login-test`
-6. Review readiness, blockers, and validation matrix
-7. Prepare and publish the first GitHub Release
+4. Run a full labeled VM cycle for `login-test`
+5. Review readiness, blockers, and validation matrix
+6. Prepare and publish the first GitHub Release

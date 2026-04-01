@@ -85,3 +85,9 @@
 - Added ISO import support so Arch-side artifacts can be copied into this workspace and resolved automatically during release preparation
 - Added complete build-handoff export/import support so Arch-side manifest+ISO transfers can be handled in one step
 - Added a GitHub Actions ISO build workflow so real remote build attempts can start without local Arch access
+- Fixed the first GitHub Actions workflow parser issue by moving matrix selection logic out of `job.if`
+- Fixed CI script execution by running Arch build helpers explicitly through `bash`
+- Added CI log capture and public failure-tail annotations so remote build failures can be debugged without authenticated log access
+- Made Arch bootstrap non-interactive for CI and fixed bash conditionals in `scripts/validate-profile.sh`
+- Added `grub` to the Arch bootstrap requirements so `mkarchiso` can validate the UEFI GRUB path on the host
+- Reached the first successful real GitHub Actions matrix build for `stable` and `login-test`

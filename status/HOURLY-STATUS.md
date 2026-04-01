@@ -5,26 +5,29 @@ Update it once per work block or roughly every hour.
 
 ## Current Block
 - **Date:** 2026-04-01
-- **Time:** 12:13 PDT
-- **Focus:** Adding a real GitHub Actions ISO build workflow so remote build attempts can start without local Arch access
+- **Time:** 11:30 PDT
+- **Focus:** Stabilizing the new GitHub Actions ISO build until the first real remote matrix build succeeds
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
-- Added `.github/workflows/build-iso.yml` to build `stable` and `login-test` remotely on GitHub Actions
-- Wired the workflow to export the same handoff structure used by the local Arch->Windows flow
-- Updated docs and status files so the remote-build path is part of the official process
+- Fixed the GitHub Actions workflow parser issue around matrix-based mode selection
+- Fixed remote script execution by calling Arch-side helpers through `bash`
+- Added remote build log capture plus public failure-tail annotations for CI debugging
+- Made Arch bootstrap non-interactive and added `grub` so `mkarchiso` host validation can pass remotely
+- Fixed a bash-conditional bug in `scripts/validate-profile.sh`
+- Reached the first successful real GitHub Actions matrix build for `stable` and `login-test`
 
 ## In Progress
-- Re-validating the repo after the GitHub remote-build workflow pass and preparing the next commit
+- Updating local status files to reflect the first successful remote build and preparing the artifact-import / VM-validation handoff
 
 ## Next Hour
-- Run validation and push the remote-build workflow to GitHub
-- Keep the build/test workflow stable and ready for the first Arch-side `stable` build
-- Review the first GitHub Actions ISO build and its uploaded handoff artifacts
-- Verify the complete handoff path during the first real Arch->Windows transfer if build and release work happen in different environments
+- Import the first successful GitHub Actions build handoff artifacts
+- Start the first labeled `stable` VM cycle from the successful remote build
+- Verify the complete handoff path during the first real GitHub Actions -> Windows -> VM transfer
+- Review the first real evidence trail after the successful remote build
 
 ## Blockers
-- Actual ISO building is blocked in the current Windows workspace; `mkarchiso` must run inside an Arch environment
+- The build itself is no longer blocked, but GitHub artifact download/import and the first VM validation cycle still need to be completed
 
 ## Decisions / Notes
 - Prefer GitHub as the intended release-metadata source now that the real repo exists
@@ -45,6 +48,7 @@ Update it once per work block or roughly every hour.
 - Treat external Arch-side ISO files as first-class release inputs and import them before release preparation in this workspace
 - Prefer one complete build handoff folder when the Arch side can export both files together
 - Use GitHub Actions as the first practical build engine when local Arch remains blocked
+- Treat the first successful remote build as the handoff point into VM validation, not the end of the process
 
 ## Ready-to-Send Mini Update
-Lumina-OS now has a real GitHub Actions ISO build workflow, so first build attempts can start remotely while still producing the same handoff structure used by the local Arch->Windows process.
+Lumina-OS reached its first successful remote GitHub Actions matrix build for `stable` and `login-test`; the next step is importing the handoff artifacts and starting VM validation on the resulting ISO.

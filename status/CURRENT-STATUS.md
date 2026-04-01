@@ -71,9 +71,10 @@
 - ISO artifacts can now be imported back into this workspace from a separate Arch clone or VM so release preparation can use a local Windows-accessible path
 - complete build handoff folders can now be imported in one step when the Arch side sends the manifest and ISO together
 - GitHub Actions now has a real remote ISO build workflow so first build attempts no longer depend only on local Arch access
+- the first real remote GitHub Actions matrix build succeeded on run `#8` for both `stable` and `login-test`
 
 ## Active Focus
-- prepare and execute the first serious Arch-side build attempt
+- import the first successful GitHub Actions build handoff into the repo-side evidence chain
 - validate the new Welcome and Update Center behavior inside a built ISO
 - validate the firstboot runtime report and cache generation inside a built ISO
 - capture the first real build and VM evidence trail
@@ -106,10 +107,11 @@
 - keep imported Arch-side build manifests linked into the same evidence chain when the real build happens outside this Windows workspace
 - keep imported ISO artifacts linked to the same run label when release preparation happens after a build in a separate Arch environment
 - keep complete build handoffs usable as one-step imports instead of forcing separate manifest and ISO handling when both files already travel together
-- keep the new GitHub ISO build workflow aligned with the local handoff and evidence chain so remote builds feed the same process
+- keep the new GitHub ISO build workflow aligned with the local handoff and evidence chain so successful remote builds feed the same process
 
 ## Next
-- run `stable` and `login-test` builds in a real Arch environment
+- download and import the first successful GitHub Actions build handoff artifacts
+- start the first labeled `stable` VM cycle from the successful remote build
 - test the real Welcome choice application inside a built ISO
 - test the metadata-backed Update Center inside a built ISO
 - inspect the generated firstboot report inside a built ISO
@@ -142,7 +144,7 @@
 - import the first real Arch-side build manifest if the first build happens in a separate clone or VM
 - import the first real ISO artifact if the first release-prep pass happens outside the original Arch build clone
 - import the first real complete build handoff if the Arch side sends one combined transfer folder
-- review the first real GitHub Actions ISO build and download its handoff artifact
+- review the first successful GitHub Actions ISO build and download its handoff artifact
 - validate the new build-manifest run-label linkage during the first real `stable` cycle
 - validate the first generated cycle handoff during the first real `stable` cycle
 - observe the first GitHub Actions run that includes the workflow smoke tests

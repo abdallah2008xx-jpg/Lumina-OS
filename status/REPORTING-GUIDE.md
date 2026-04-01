@@ -5,6 +5,7 @@ Keep reporting lightweight.
 ## Files
 - `PROJECT-SUMMARY.md` -> fast done-vs-remaining project snapshot
 - `CURRENT-STATUS.md` -> very short overall project snapshot
+- `SHAREABLE-UPDATE.md` -> generated update suitable for sharing outside the repo
 - `HOURLY-STATUS.md` -> latest work-block update
 - `PROGRESS-LOG.md` -> chronological milestone log
 - `STATUS-YYYY-MM-DD.md` -> day-specific summary if needed
@@ -15,6 +16,7 @@ Keep reporting lightweight.
 - `vm-tests/` -> VM test reports grouped by date
 - `diagnostics/` -> imported diagnostics bundles from live-session exports
 - `release-candidates/` -> current release-candidate summaries and publish readiness
+- `shareable-updates/` -> dated generated snapshots for external progress sharing
 - `releases/` -> prepared release manifests, draft notes, checksums, release validation reports, and GitHub publish records
 - `test-sessions/` -> linked build/test summaries across one run
 - `test-session-audits/` -> verification reports for the linked evidence chain
@@ -38,6 +40,7 @@ Keep reporting lightweight.
 13. Prepare a release candidate so publish readiness has one current summary file
 14. Refresh the same release candidate after publish so the current summary reflects the published state
 15. Keep the GitHub release context report with the release package so publish intent stays auditable
+16. Refresh `SHAREABLE-UPDATE.md` when the public-facing project state changes
 
 ## What to Record
 - What was finished

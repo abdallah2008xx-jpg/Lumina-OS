@@ -5,24 +5,24 @@ Update it once per work block or roughly every hour.
 
 ## Current Block
 - **Date:** 2026-04-01
-- **Time:** 10:21 PDT
-- **Focus:** Adding a local GitHub publish context gate so stale manifests cannot be published by accident
+- **Time:** 10:34 PDT
+- **Focus:** Generating shareable updates directly from project state so public progress messages stay in sync
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
-- Added a GitHub release context validator tied to the current release candidate and manifest
-- Wired GitHub publish to call the context gate before creating the release
-- Extended the workflow smoke test to verify the context gate before the simulated published-state transition
-- Updated release docs so publish now includes an explicit context-validation step
+- Added a shareable-update generator rooted in current status, readiness, validation, and release-candidate state
+- Extended the workflow smoke test to verify a published-state shareable update
+- Added validation coverage and docs for generated shareable updates
+- Linked the main README to the generated shareable update file
 
 ## In Progress
-- Re-validating the repo after the GitHub publish context pass and preparing the next commit
+- Re-validating the repo after the shareable-update pass and preparing the next commit
 
 ## Next Hour
-- Run validation and push the GitHub publish context pass to GitHub
+- Run validation and push the shareable-update pass to GitHub
 - Keep the build/test workflow stable and ready for the first Arch-side `stable` build
 - Move execution to an actual Arch environment for the first real ISO build
-- Use the new release-candidate summary and context report during the first real labeled VM cycle before publish
+- Use the new generated shareable update after the first real labeled VM cycle
 
 ## Blockers
 - Actual ISO building is blocked in the current Windows workspace; `mkarchiso` must run inside an Arch environment
@@ -39,6 +39,7 @@ Update it once per work block or roughly every hour.
 - Treat publish readiness as a first-class tracked state, not just a set of loose files under `status/releases/`
 - Treat the published state as another tracked transition, not something inferred manually from GitHub only
 - Treat publish context as its own gate so the chosen manifest must still match the current candidate
+- Treat public progress updates as generated artifacts, not hand-maintained text
 
 ## Ready-to-Send Mini Update
-Lumina-OS now validates the GitHub publish context against the current release candidate before release creation, so a stale manifest is much less likely to be published by mistake.
+Lumina-OS can now generate a shareable project update directly from current readiness, validation, and release-candidate state, so public progress posts stay aligned with the repo.

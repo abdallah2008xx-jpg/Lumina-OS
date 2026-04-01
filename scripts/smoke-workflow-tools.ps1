@@ -24,6 +24,7 @@ $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
 $releaseCandidateScript = Join-Path $PSScriptRoot "prepare-release-candidate.ps1"
 $syncReleaseCandidateScript = Join-Path $PSScriptRoot "sync-release-candidate-status.ps1"
 $releaseContextScript = Join-Path $PSScriptRoot "validate-github-release-context.ps1"
+$shareableUpdateScript = Join-Path $PSScriptRoot "sync-shareable-update.ps1"
 $releaseValidator = Join-Path $PSScriptRoot "validate-release-package.ps1"
 
 if (-not (Test-Path $handoffScript)) {
@@ -44,6 +45,10 @@ if (-not (Test-Path $syncReleaseCandidateScript)) {
 
 if (-not (Test-Path $releaseContextScript)) {
     throw "Missing smoke-test target: $releaseContextScript"
+}
+
+if (-not (Test-Path $shareableUpdateScript)) {
+    throw "Missing smoke-test target: $shareableUpdateScript"
 }
 
 if (-not (Test-Path $releaseValidator)) {
@@ -190,6 +195,35 @@ try {
     $publishedCandidateContent = Get-Content -Raw $publishedCandidateSummaryPath
     Assert-Condition -Condition ($publishedCandidateContent -match [regex]::Escape("- Candidate State: published")) -Message "Release candidate summary did not switch to published."
     Assert-Condition -Condition ($publishedCandidateContent -match [regex]::Escape("- Release URL: https://example.com/releases/v0.1.0-ci")) -Message "Published release candidate summary does not expose the release URL."
+
+    $statusDir = Join-Path $tempRoot "status"
+    New-Item -ItemType Directory -Force -Path $statusDir | Out-Null
+    Set-Content -Path (Join-Path $statusDir "CURRENT-STATUS.md") -Value @"
+# Current Status
+
+## Completed
+- build/test workflow is structured
+- release candidate workflow is structured
+- publish context gate exists
+
+## Next
+- run the first real stable build in Arch
+- run the first real VM cycle
+- prepare the first real release candidate
+"@ -Encoding UTF8
+
+    $shareableUpdatePath = & $shareableUpdateScript `
+        -StatusPath (Join-Path $statusDir "CURRENT-STATUS.md") `
+        -ReadinessPath $readinessPath `
+        -ValidationMatrixPath $validationPath `
+        -ReleaseCandidatePath (Join-Path $tempRoot "status\\release-candidates\\CURRENT-RELEASE-CANDIDATE.md") `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $shareableUpdatePath) -Message "Shareable update snapshot was not created."
+    $shareableContent = Get-Content -Raw $shareableUpdatePath
+    Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Candidate State: published")) -Message "Shareable update did not include the published release-candidate state."
+    Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- run the first real stable build in Arch")) -Message "Shareable update did not include the expected next step."
 }
 finally {
     if (Test-Path $tempRoot) {

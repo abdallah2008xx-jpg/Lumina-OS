@@ -1,0 +1,231 @@
+param(
+    [string]$StatusPath = "",
+    [string]$ReadinessPath = "",
+    [string]$ValidationMatrixPath = "",
+    [string]$ReleaseCandidatePath = "",
+    [switch]$OutputPathOnly,
+    [string]$RepoRoot = ""
+)
+
+$ErrorActionPreference = "Stop"
+
+if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+    $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+}
+
+function Get-MetadataValue {
+    param(
+        [string]$Content,
+        [string]$Label
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Content)) {
+        return ""
+    }
+
+    $pattern = "(?m)^- " + [regex]::Escape($Label) + ": (.+)$"
+    $match = [regex]::Match($Content, $pattern)
+    if ($match.Success) {
+        return $match.Groups[1].Value.Trim()
+    }
+
+    return ""
+}
+
+function Get-SectionItems {
+    param(
+        [string]$Content,
+        [string]$Heading
+    )
+
+    $items = [System.Collections.Generic.List[string]]::new()
+    if ([string]::IsNullOrWhiteSpace($Content)) {
+        return $items
+    }
+
+    $pattern = "(?s)^## " + [regex]::Escape($Heading) + "\r?\n(?<body>.*?)(?=^## |\z)"
+    $match = [regex]::Match($Content, $pattern, [System.Text.RegularExpressions.RegexOptions]::Multiline)
+    if (-not $match.Success) {
+        return $items
+    }
+
+    foreach ($rawLine in ($match.Groups["body"].Value -split "`r?`n")) {
+        $line = $rawLine.Trim()
+        if ($line.StartsWith("- ")) {
+            $items.Add($line.Substring(2).Trim()) | Out-Null
+        }
+    }
+
+    return $items
+}
+
+function Get-TopItems {
+    param(
+        [System.Collections.Generic.List[string]]$Items,
+        [int]$Count,
+        [switch]$FromEnd
+    )
+
+    $result = [System.Collections.Generic.List[string]]::new()
+    if ($Items.Count -eq 0) {
+        return $result
+    }
+
+    if ($FromEnd.IsPresent) {
+        $startIndex = [Math]::Max(0, $Items.Count - $Count)
+        for ($index = $startIndex; $index -lt $Items.Count; $index++) {
+            $result.Add($Items[$index]) | Out-Null
+        }
+    }
+    else {
+        for ($index = 0; $index -lt [Math]::Min($Count, $Items.Count); $index++) {
+            $result.Add($Items[$index]) | Out-Null
+        }
+    }
+
+    return $result
+}
+
+function Format-Items {
+    param([System.Collections.Generic.List[string]]$Items)
+
+    if ($Items.Count -eq 0) {
+        return "- none"
+    }
+
+    return ($Items | ForEach-Object { "- $_" }) -join "`r`n"
+}
+
+function Get-ResolvedPathOrDefault {
+    param(
+        [string]$Value,
+        [string]$DefaultValue
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        return $DefaultValue
+    }
+
+    return $Value
+}
+
+$resolvedStatusPath = if ([string]::IsNullOrWhiteSpace($StatusPath)) {
+    Join-Path $RepoRoot "status\CURRENT-STATUS.md"
+}
+else {
+    $StatusPath
+}
+
+$resolvedReadinessPath = if ([string]::IsNullOrWhiteSpace($ReadinessPath)) {
+    Join-Path $RepoRoot "status\readiness\CURRENT-READINESS.md"
+}
+else {
+    $ReadinessPath
+}
+
+$resolvedValidationMatrixPath = if ([string]::IsNullOrWhiteSpace($ValidationMatrixPath)) {
+    Join-Path $RepoRoot "status\validation-matrix\CURRENT-VALIDATION-MATRIX.md"
+}
+else {
+    $ValidationMatrixPath
+}
+
+$resolvedReleaseCandidatePath = if ([string]::IsNullOrWhiteSpace($ReleaseCandidatePath)) {
+    Join-Path $RepoRoot "status\release-candidates\CURRENT-RELEASE-CANDIDATE.md"
+}
+else {
+    $ReleaseCandidatePath
+}
+
+foreach ($requiredPath in @($resolvedStatusPath, $resolvedReadinessPath, $resolvedValidationMatrixPath, $resolvedReleaseCandidatePath)) {
+    if (-not (Test-Path $requiredPath)) {
+        throw "Missing required status input: $requiredPath"
+    }
+}
+
+$statusContent = Get-Content -Raw $resolvedStatusPath
+$readinessContent = Get-Content -Raw $resolvedReadinessPath
+$validationContent = Get-Content -Raw $resolvedValidationMatrixPath
+$releaseCandidateContent = Get-Content -Raw $resolvedReleaseCandidatePath
+
+$completedItems = Get-SectionItems -Content $statusContent -Heading "Completed"
+$nextItems = Get-SectionItems -Content $statusContent -Heading "Next"
+$recentProgress = Get-TopItems -Items $completedItems -Count 5 -FromEnd
+$immediateNext = Get-TopItems -Items $nextItems -Count 5
+
+$readinessState = Get-MetadataValue -Content $readinessContent -Label "Readiness State"
+$validationState = Get-MetadataValue -Content $validationContent -Label "Overall State"
+$candidateState = Get-MetadataValue -Content $releaseCandidateContent -Label "Candidate State"
+$runLabel = Get-MetadataValue -Content $releaseCandidateContent -Label "Run Label"
+$version = Get-MetadataValue -Content $releaseCandidateContent -Label "Version"
+
+$headline = switch ($true) {
+    { $candidateState -eq "published" } { "Lumina-OS now has a published release candidate trail with linked release evidence."; break }
+    { $candidateState -eq "ready-to-publish" } { "Lumina-OS now has a release candidate prepared and validated, pending publish."; break }
+    { $readinessState -eq "ready-for-next-stage" -and $validationState -notin @("needs-first-build", "blocked") } { "Lumina-OS has a clean internal validation trail and is ready for the next execution stage."; break }
+    default { "Lumina-OS has strong build/test/release workflow coverage and is waiting on the first real Arch-side execution cycle." }
+}
+
+$shareableSummary = [System.Collections.Generic.List[string]]::new()
+$shareableSummary.Add($headline) | Out-Null
+$shareableSummary.Add("Readiness state: $(Get-ResolvedPathOrDefault -Value $readinessState -DefaultValue "not-recorded-yet")") | Out-Null
+$shareableSummary.Add("Validation matrix state: $(Get-ResolvedPathOrDefault -Value $validationState -DefaultValue "not-recorded-yet")") | Out-Null
+$shareableSummary.Add("Release candidate state: $(Get-ResolvedPathOrDefault -Value $candidateState -DefaultValue "not-recorded-yet")") | Out-Null
+
+if (-not [string]::IsNullOrWhiteSpace($version) -and $version -ne "not-recorded-yet") {
+    $shareableSummary.Add("Current tracked release version: $version") | Out-Null
+}
+
+if (-not [string]::IsNullOrWhiteSpace($runLabel) -and $runLabel -ne "not-recorded-yet") {
+    $shareableSummary.Add("Current tracked run label: $runLabel") | Out-Null
+}
+
+$dateStamp = Get-Date -Format "yyyy-MM-dd"
+$timeStamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$shareableDir = Join-Path $RepoRoot ("status\shareable-updates\" + $dateStamp)
+$shareableSnapshotPath = Join-Path $shareableDir ("shareable-update-" + $timeStamp + ".md")
+$currentShareablePath = Join-Path $RepoRoot "status\SHAREABLE-UPDATE.md"
+
+New-Item -ItemType Directory -Force -Path $shareableDir | Out-Null
+
+$content = @"
+# Lumina-OS Shareable Update
+
+- Generated At: $(Get-Date -Format s)
+- Readiness State: $(Get-ResolvedPathOrDefault -Value $readinessState -DefaultValue "not-recorded-yet")
+- Validation Matrix State: $(Get-ResolvedPathOrDefault -Value $validationState -DefaultValue "not-recorded-yet")
+- Release Candidate State: $(Get-ResolvedPathOrDefault -Value $candidateState -DefaultValue "not-recorded-yet")
+- Current Run Label: $(Get-ResolvedPathOrDefault -Value $runLabel -DefaultValue "not-recorded-yet")
+- Current Version: $(Get-ResolvedPathOrDefault -Value $version -DefaultValue "not-recorded-yet")
+
+## Current State
+$(Format-Items -Items $shareableSummary)
+
+## Recent Progress
+$(Format-Items -Items $recentProgress)
+
+## What Is Ready
+- The core build/test/release workflow is scaffolded and validated locally.
+- Linked evidence now covers build manifests, VM reports, session audits, readiness, validation matrix, and release-candidate state.
+- GitHub publish now has local release-context validation before release creation.
+
+## What Is Still Missing
+- The first real Arch build and first real VM evidence chain.
+- The first real release candidate built from a real ISO.
+- The first real published Lumina-OS release on GitHub.
+
+## Immediate Next Step
+$(Format-Items -Items $immediateNext)
+"@
+
+Set-Content -Path $shareableSnapshotPath -Value $content -Encoding UTF8
+Set-Content -Path $currentShareablePath -Value $content -Encoding UTF8
+
+if ($OutputPathOnly) {
+    Write-Output $shareableSnapshotPath
+}
+else {
+    Write-Host "Updated Lumina-OS shareable update:"
+    Write-Host "Snapshot: $shareableSnapshotPath"
+    Write-Host "Current:  $currentShareablePath"
+}

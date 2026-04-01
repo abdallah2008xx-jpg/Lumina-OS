@@ -10,6 +10,7 @@ Keep reporting lightweight.
 - `STATUS-YYYY-MM-DD.md` -> day-specific summary if needed
 - `HOURLY-STATUS-TEMPLATE.md` -> copy from this for new updates
 - `builds/` -> Arch-side build manifests
+- `cycle-handoffs/` -> generated runbooks for full build/VM/release cycles
 - `vm-tests/` -> VM test reports grouped by date
 - `diagnostics/` -> imported diagnostics bundles from live-session exports
 - `releases/` -> prepared release manifests, draft notes, checksums, release validation reports, and GitHub publish records
@@ -25,11 +26,12 @@ Keep reporting lightweight.
 3. Refresh `CURRENT-STATUS.md` when the project state changes
 4. Use `STATUS-YYYY-MM-DD.md` for end-of-day recap if useful
 5. Keep build manifests and VM test reports once real ISO runs begin
-6. Import diagnostics bundles and connect them to a session summary after VM runs
-7. Audit the completed session summary before treating it as the current reference run
-8. Sync blockers so the current run has a central blocker state
-9. Sync readiness so the current run has a single high-level go/no-go status
-10. Sync the validation matrix so both build modes are tracked side by side
+6. Generate a cycle handoff before a serious run if you want one shared command sheet
+7. Import diagnostics bundles and connect them to a session summary after VM runs
+8. Audit the completed session summary before treating it as the current reference run
+9. Sync blockers so the current run has a central blocker state
+10. Sync readiness so the current run has a single high-level go/no-go status
+11. Sync the validation matrix so both build modes are tracked side by side
 
 ## What to Record
 - What was finished

@@ -57,6 +57,7 @@
 - GitHub release publishing now has a dedicated script and publish-record path
 - release publishing now has an explicit validation gate so unverified manifests cannot be published by accident
 - build manifests now carry `Run Label` values so build, VM, and release evidence can be linked more reliably
+- generated cycle handoffs now exist so a full `build -> VM -> release` run can be executed from one stored runbook
 
 ## Active Focus
 - prepare and execute the first serious Arch-side build attempt
@@ -79,6 +80,7 @@
 - keep the release metadata and publishing path ready for the first real GitHub Release
 - keep release validation reports aligned with the real evidence chain before any publish step
 - keep the same run label from build through VM and release instead of relying on latest-file matching
+- keep generated cycle handoffs aligned with the real script flow so operators can trust them during the first build
 
 ## Next
 - run `stable` and `login-test` builds in a real Arch environment
@@ -105,3 +107,4 @@
 - run the first end-to-end release package and GitHub publish flow after the first successful build
 - run the first release validation report from a real evidence-backed manifest
 - validate the new build-manifest run-label linkage during the first real `stable` cycle
+- validate the first generated cycle handoff during the first real `stable` cycle

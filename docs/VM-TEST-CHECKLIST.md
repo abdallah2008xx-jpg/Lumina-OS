@@ -3,6 +3,12 @@
 ## Goal
 Keep VM testing consistent across each ISO build.
 
+If you want one generated runbook that already includes the build, VM, and release steps, create a handoff first:
+
+```powershell
+.\scripts\new-cycle-handoff.ps1 -Mode stable -VmType VirtualBox -Firmware UEFI -ReleaseVersion 0.1.0
+```
+
 ## Report Creation
 Before starting a VM run, you can initialize both the VM report and session summary together with:
 

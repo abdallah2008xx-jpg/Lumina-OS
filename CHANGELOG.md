@@ -18,6 +18,7 @@ This project follows a simple rule for now:
 - A single-owner execution plan after the former Mohammad UI/UX track was absorbed into the main flow
 - GitHub release publishing automation via `scripts/publish-github-release.ps1`
 - Release-package validation gating via `scripts/validate-release-package.ps1`
+- Generated cycle handoffs via `scripts/new-cycle-handoff.ps1`
 
 ### Changed
 - Live-system UI wording now presents the distro as `Lumina-OS`

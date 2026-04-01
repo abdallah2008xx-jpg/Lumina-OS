@@ -29,6 +29,12 @@ The Windows helper below now runs the same validation automatically before print
 
 It now also prints a suggested `Run Label`. Reuse that same label during the VM cycle so the build manifest, VM report, session summary, readiness snapshot, and release package stay linked.
 
+If you want one generated runbook for the whole cycle, create it first:
+
+```powershell
+.\scripts\new-cycle-handoff.ps1 -Mode stable -VmType VirtualBox -Firmware UEFI -ReleaseVersion 0.1.0
+```
+
 If you are already inside an Arch VM, bootstrap the build environment with:
 
 ```bash

@@ -65,10 +65,12 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-export-diagnostics",
     "archiso-profile\airootfs\usr\local\bin\ahmados-run-smoke-checks",
     "archiso-profile\airootfs\usr\local\bin\ahmados-firstboot",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
     "archiso-profile\airootfs\usr\local\bin\ahmados-open-firstboot-report",
     "archiso-profile\airootfs\usr\local\bin\ahmados-refresh-release-metadata",
     "archiso-profile\airootfs\usr\local\bin\ahmados-update-center",
     "archiso-profile\airootfs\usr\local\bin\ahmados-welcome",
+    "archiso-profile\airootfs\usr\local\bin\lumina-capture-screenshot",
     "archiso-profile\airootfs\usr\local\bin\lumina-export-diagnostics",
     "archiso-profile\airootfs\usr\local\bin\lumina-run-smoke-checks",
     "archiso-profile\airootfs\usr\local\bin\lumina-firstboot",
@@ -78,6 +80,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-welcome",
     "archiso-profile\airootfs\home\live\.local\bin\ahmados-apply-session-defaults",
     "archiso-profile\airootfs\home\live\.local\bin\lumina-apply-session-defaults",
+    "archiso-profile\airootfs\usr\local\lib\ahmados-session-context.sh",
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-firstboot.desktop",
     "archiso-profile\airootfs\usr\share\applications\ahmados-export-diagnostics.desktop",
     "archiso-profile\airootfs\usr\share\applications\ahmados-firstboot-report.desktop",
@@ -96,6 +99,7 @@ $requiredPaths = @(
     "scripts\import-build-handoff.ps1",
     "scripts\import-github-actions-artifact.ps1",
     "scripts\download-github-actions-artifact.ps1",
+    "scripts\capture-virtualbox-guest-screenshot.ps1",
     "scripts\import-iso-artifact.ps1",
     "scripts\start-github-actions-vm-cycle.ps1",
     "scripts\finish-github-actions-vm-cycle.ps1",
@@ -162,7 +166,7 @@ if (Test-Path $packageFile) {
         Where-Object { $_.Trim() -and -not $_.Trim().StartsWith("#") } |
         ForEach-Object { $_.Trim() }
 
-    foreach ($requiredPackage in @("curl", "qt6-declarative", "qt6-svg", "systemsettings", "plasma-x11-session")) {
+    foreach ($requiredPackage in @("curl", "qt6-declarative", "qt6-svg", "systemsettings", "plasma-x11-session", "spectacle")) {
         if ($packages -notcontains $requiredPackage) {
             Add-Error "Missing expected package in packages.x86_64: $requiredPackage"
         }

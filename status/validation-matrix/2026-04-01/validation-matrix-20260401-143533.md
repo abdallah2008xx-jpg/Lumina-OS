@@ -1,0 +1,59 @@
+﻿# Lumina-OS Validation Matrix
+
+- Evaluated At: 2026-04-01T14:35:33
+- Overall State: blocked
+
+## Mode Summary
+- stable: blocked
+- login-test: needs-audit
+
+## Global Summary
+- Ready modes: 0 / 2
+- Blocked modes: 1
+- Attention modes: 0
+
+## stable
+- Mode State: blocked
+- Build State: build-recorded
+- Build Manifest: C:\Users\abdal\Downloads\AhmadOS-Rebuild\status\builds\2026-04-01\build-imported-20260401-141411-stable-gha-stable-8-1.md
+- Session Summary: C:\Users\abdal\Downloads\AhmadOS-Rebuild\status\test-sessions\2026-04-01\test-session-gha-stable-8-1.md
+- Session Audit: C:\Users\abdal\Downloads\AhmadOS-Rebuild\status\test-session-audits\2026-04-01\test-session-audit-gha-stable-8-1.md
+- Blocker Review: C:\Users\abdal\Downloads\AhmadOS-Rebuild\status\blockers\2026-04-01\blocker-review-gha-stable-8-1.md
+- ISO File: lumina-os-0.1.0-dev-x86_64.iso
+- ISO Full Path: /repo/build/github-out/stable/lumina-os-0.1.0-dev-x86_64.iso
+
+### Open Blockers
+- [session] Investigate why VirtualBox headless screenshots remain black while the guest desktop is visible from an internal X11 capture.
+- [session] Revisit firstboot timing so Welcome artifacts are present before `firstboot-report.md` is written.
+- [session] Revisit smoke-check environment detection so active Plasma session values are not reported as `unknown`.
+- [vm] Investigate why VirtualBox headless screenshots remain black while the guest desktop is visible from an internal X11 capture.
+- [vm] Revisit firstboot timing so Welcome artifacts are present before `firstboot-report.md` is written.
+- [vm] Revisit smoke-check environment detection so active Plasma session values are not reported as `unknown`.
+
+### Attention Items
+- none
+
+### Next Step
+- fix the open stable blockers before continuing
+
+## login-test
+- Mode State: needs-audit
+- Build State: build-recorded
+- Build Manifest: C:\Users\abdal\Downloads\AhmadOS-Rebuild\status\builds\2026-04-01\build-imported-20260401-143305-login-test-gha-login-test-8-1.md
+- Session Summary: C:\Users\abdal\Downloads\AhmadOS-Rebuild\status\test-sessions\2026-04-01\test-session-gha-login-test-8-1.md
+- Session Audit: not-recorded-yet
+- Blocker Review: not-recorded-yet
+- ISO File: lumina-os-0.1.0-dev-x86_64.iso
+- ISO Full Path: /repo/build/github-out/login-test/lumina-os-0.1.0-dev-x86_64.iso
+
+### Open Blockers
+- none
+
+### Attention Items
+- none
+
+### Next Step
+- generate or refresh the login-test session audit
+
+## Recommendation
+- at least one mode is blocked; fix that mode before treating the matrix as healthy

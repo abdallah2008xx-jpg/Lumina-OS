@@ -99,6 +99,29 @@ function Get-RecordedValue {
     return $FallbackValue
 }
 
+function Test-FileMatchesRunLabel {
+    param(
+        [string]$Path,
+        [string]$RunLabel
+    )
+
+    if ([string]::IsNullOrWhiteSpace($RunLabel)) {
+        return $true
+    }
+
+    if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path $Path)) {
+        return $false
+    }
+
+    $escapedRunLabel = [regex]::Escape($RunLabel)
+    if ([System.IO.Path]::GetFileName($Path) -match $escapedRunLabel) {
+        return $true
+    }
+
+    $content = Get-Content -Raw $Path -ErrorAction SilentlyContinue
+    return ($content -match ("(?m)^- Run Label: " + $escapedRunLabel + "$"))
+}
+
 function Get-ExistingMetadataValue {
     param(
         [string]$Content,
@@ -197,13 +220,19 @@ else {
     if ($byRunLabel) { $byRunLabel } else { Get-LatestModeFile -Path (Join-Path $RepoRoot "status\builds") -Filter "*.md" -Mode $Mode }
 }
 $latestVmReport = Get-LatestModeFile -Path (Join-Path $RepoRoot "status\vm-tests") -Filter "*.md" -Mode $Mode
-$latestDiagnosticsImport = Get-LatestFile -Path (Join-Path $RepoRoot "status\diagnostics") -Filter "import-manifest.md"
+$latestDiagnosticsImport = if ([string]::IsNullOrWhiteSpace($resolvedRunLabel)) {
+    Get-LatestFile -Path (Join-Path $RepoRoot "status\diagnostics") -Filter "import-manifest.md"
+}
+else {
+    Get-FileByRunLabel -Path (Join-Path $RepoRoot "status\diagnostics") -Filter "import-manifest.md" -RunLabel $resolvedRunLabel
+}
 
 $existingBuildManifestPath = Get-ExistingMetadataValue -Content $existingContent -Label "Build Manifest"
 $existingVmReportPath = Get-ExistingMetadataValue -Content $existingContent -Label "VM Report"
 $existingIsoPath = Get-ExistingMetadataValue -Content $existingContent -Label "ISO Path"
 $existingDiagnosticsBundlePath = Get-ExistingMetadataValue -Content $existingContent -Label "Diagnostics Bundle"
 $existingDiagnosticsImportPath = Get-ExistingMetadataValue -Content $existingContent -Label "Diagnostics Import"
+$existingDiagnosticsImportPath = if (Test-FileMatchesRunLabel -Path $existingDiagnosticsImportPath -RunLabel $resolvedRunLabel) { $existingDiagnosticsImportPath } else { "" }
 
 $buildManifestPath = Get-RecordedValue -PreferredValue $BuildManifestPath -FallbackValue (Get-RecordedValue -PreferredValue $(if ($latestBuildManifest) { $latestBuildManifest.FullName } else { "" }) -FallbackValue $(if ([string]::IsNullOrWhiteSpace($existingBuildManifestPath)) { "not-recorded-yet" } else { $existingBuildManifestPath }))
 $vmReportPath = Get-RecordedValue -PreferredValue $VmReportPath -FallbackValue (Get-RecordedValue -PreferredValue $(if ($latestVmReport) { $latestVmReport.FullName } else { "" }) -FallbackValue $(if ([string]::IsNullOrWhiteSpace($existingVmReportPath)) { "not-recorded-yet" } else { $existingVmReportPath }))

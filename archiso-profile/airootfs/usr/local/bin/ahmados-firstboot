@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+session_context_lib="/usr/local/lib/ahmados-session-context.sh"
+if [[ -f "${session_context_lib}" ]]; then
+    # shellcheck source=/usr/local/lib/ahmados-session-context.sh
+    source "${session_context_lib}"
+fi
+
 state_dir="${XDG_STATE_HOME:-${HOME}/.local/state}/ahmados"
 config_dir="${HOME}/.config/ahmados"
 config_file="${config_dir}/welcome.conf"
@@ -8,10 +14,17 @@ stamp_file="${state_dir}/firstboot-complete"
 report_file="${state_dir}/firstboot-report.md"
 release_cache="${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados/update-center/releases.json"
 release_status="${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados/update-center/status.json"
+session_defaults_stamp="${HOME}/.config/ahmados/session-defaults-applied"
+welcome_stamp="${HOME}/.config/ahmados/welcome-seen"
+refresh_mode=0
 
 mkdir -p "${state_dir}" "${config_dir}"
 
-if [[ -f "${stamp_file}" ]]; then
+if [[ "${1:-}" == "--refresh" ]]; then
+    refresh_mode=1
+fi
+
+if [[ "${refresh_mode}" -ne 1 && -f "${stamp_file}" ]]; then
     exit 0
 fi
 
@@ -85,9 +98,36 @@ file_state() {
     fi
 }
 
+wait_for_lumina_artifacts() {
+    local deadline=$((SECONDS + 45))
+    local welcome_pattern='/usr/share/ahmados/welcome/Main.qml|/usr/local/bin/ahmados-welcome|/usr/local/bin/lumina-welcome'
+
+    while (( SECONDS < deadline )); do
+        local config_ready=0
+        local defaults_ready=0
+
+        [[ -f "${config_file}" ]] && config_ready=1
+        [[ -f "${session_defaults_stamp}" ]] && defaults_ready=1
+
+        if (( config_ready && defaults_ready )); then
+            break
+        fi
+
+        if ! pgrep -u "$(id -u)" -f "${welcome_pattern}" >/dev/null 2>&1; then
+            if (( config_ready || defaults_ready )) || [[ -f "${welcome_stamp}" ]]; then
+                break
+            fi
+        fi
+
+        sleep 2
+    done
+}
+
 if command -v ahmados-refresh-release-metadata >/dev/null 2>&1; then
     ahmados-refresh-release-metadata || true
 fi
+
+wait_for_lumina_artifacts
 
 layout_choice="$(read_config_value "layout" "balanced")"
 appearance_choice="$(read_config_value "appearance" "light")"
@@ -96,10 +136,10 @@ channel_choice="$(read_config_value "channel" "stable")"
 language_choice="$(read_config_value "preferredLanguage" "ar")"
 
 generated_at="$(date -Iseconds)"
-hostname_value="$(hostname 2>/dev/null || printf '%s' 'unknown')"
+hostname_value="$(resolve_hostname_value 2>/dev/null || printf '%s' 'unknown')"
 kernel_value="$(uname -r 2>/dev/null || printf '%s' 'unknown')"
-session_type="${XDG_SESSION_TYPE:-unknown}"
-desktop_session="${XDG_CURRENT_DESKTOP:-unknown}"
+session_type="$(resolve_session_type 2>/dev/null || printf '%s' 'unknown')"
+desktop_session="$(resolve_desktop_session 2>/dev/null || printf '%s' 'unknown')"
 
 cat > "${report_file}" <<EOF
 # Lumina-OS First Boot Report
@@ -137,8 +177,8 @@ cat > "${report_file}" <<EOF
 - Welcome config: $(file_state "${config_file}")
 - Release cache: $(file_state "${release_cache}")
 - Release status: $(file_state "${release_status}")
-- Session defaults stamp: $(file_state "${HOME}/.config/ahmados/session-defaults-applied")
-- Welcome stamp: $(file_state "${HOME}/.config/ahmados/welcome-seen")
+- Session defaults stamp: $(file_state "${session_defaults_stamp}")
+- Welcome stamp: $(file_state "${welcome_stamp}")
 EOF
 
 desktop_dir="${HOME}/Desktop"

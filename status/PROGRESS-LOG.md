@@ -97,3 +97,5 @@
 - Added a matching GitHub Actions VM-cycle finish wrapper so diagnostics import, audits, blockers, readiness, and validation can reuse the same run context automatically
 - Imported the `stable` handoff from GitHub Actions run `#8` into the local workspace and initialized the first local VM cycle on run label `gha-stable-8-1`
 - Completed the first real `stable` VM validation cycle, confirmed Plasma X11 boots, and recorded three concrete runtime blockers for follow-up
+- Implemented source-side fixes for the three recorded `stable` blockers: deferred firstboot refresh, stronger session detection, and a VirtualBox guest-side screenshot fallback helper
+- Imported the `login-test` handoff from GitHub Actions run `#8` and initialized the first local `login-test` VM evidence chain on `gha-login-test-8-1`

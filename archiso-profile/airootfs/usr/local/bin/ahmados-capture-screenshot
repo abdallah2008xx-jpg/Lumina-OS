@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+session_context_lib="/usr/local/lib/ahmados-session-context.sh"
+if [[ -f "${session_context_lib}" ]]; then
+    # shellcheck source=/usr/local/lib/ahmados-session-context.sh
+    source "${session_context_lib}"
+fi
+
+output_path=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --output)
+            output_path="${2:-}"
+            shift 2
+            ;;
+        *)
+            echo "Unknown argument: $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+if [[ -z "${output_path}" ]]; then
+    timestamp="$(date +%Y%m%d-%H%M%S)"
+    output_dir="${HOME}/Pictures/Lumina-OS Screenshots"
+    output_path="${output_dir}/lumina-screenshot-${timestamp}.png"
+else
+    output_dir="$(dirname "${output_path}")"
+fi
+
+mkdir -p "${output_dir}"
+
+if ! command -v spectacle >/dev/null 2>&1; then
+    echo "spectacle is not available inside this Lumina-OS session." >&2
+    exit 1
+fi
+
+display_value="$(resolve_display_value 2>/dev/null || printf '%s' ':0')"
+xauthority_path="$(resolve_xauthority_path 2>/dev/null || printf '%s' "${HOME}/.Xauthority")"
+dbus_address="$(resolve_dbus_address 2>/dev/null || printf '%s' '')"
+runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+
+env \
+    DISPLAY="${display_value}" \
+    XAUTHORITY="${xauthority_path}" \
+    XDG_RUNTIME_DIR="${runtime_dir}" \
+    DBUS_SESSION_BUS_ADDRESS="${dbus_address}" \
+    spectacle --background --nonotify --fullscreen --output "${output_path}"
+
+if [[ ! -f "${output_path}" ]]; then
+    echo "Lumina-OS screenshot capture did not produce an output file." >&2
+    exit 1
+fi
+
+printf '%s\n' "${output_path}"

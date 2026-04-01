@@ -23,14 +23,14 @@ fi
 
 qmlscene6 "${app_qml}" || true
 
+if [[ "${mode}" == "once" ]]; then
+    touch "${stamp_file}"
+fi
+
 if command -v ahmados-apply-session-defaults >/dev/null 2>&1; then
     ahmados-apply-session-defaults --force || true
 fi
 
 if command -v ahmados-firstboot >/dev/null 2>&1; then
-    ahmados-firstboot || true
-fi
-
-if [[ "${mode}" == "once" ]]; then
-    touch "${stamp_file}"
+    ahmados-firstboot --refresh || true
 fi

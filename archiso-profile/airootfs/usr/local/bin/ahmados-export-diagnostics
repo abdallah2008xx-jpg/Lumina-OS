@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+session_context_lib="/usr/local/lib/ahmados-session-context.sh"
+if [[ -f "${session_context_lib}" ]]; then
+    # shellcheck source=/usr/local/lib/ahmados-session-context.sh
+    source "${session_context_lib}"
+fi
+
 state_root="${XDG_STATE_HOME:-${HOME}/.local/state}/ahmados"
 cache_root="${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados"
 config_root="${HOME}/.config/ahmados"
@@ -13,7 +19,7 @@ archive_path="${export_root}/${bundle_name}.tar.gz"
 mkdir -p "${state_root}" "${cache_root}" "${config_root}" "${export_root}" "${bundle_dir}"
 
 if command -v ahmados-firstboot >/dev/null 2>&1; then
-    ahmados-firstboot || true
+    ahmados-firstboot --refresh || true
 fi
 
 if command -v ahmados-refresh-release-metadata >/dev/null 2>&1; then
@@ -25,15 +31,18 @@ if command -v ahmados-run-smoke-checks >/dev/null 2>&1; then
 fi
 
 summary_file="${bundle_dir}/summary.md"
+hostname_value="$(resolve_hostname_value 2>/dev/null || printf '%s' 'unknown')"
+session_type="$(resolve_session_type 2>/dev/null || printf '%s' 'unknown')"
+desktop_session="$(resolve_desktop_session 2>/dev/null || printf '%s' 'unknown')"
 
 cat > "${summary_file}" <<EOF
 # Lumina-OS Diagnostics Export
 
 - Generated: $(date -Iseconds)
-- Hostname: $(hostname 2>/dev/null || printf '%s' 'unknown')
+- Hostname: ${hostname_value}
 - Kernel: $(uname -r 2>/dev/null || printf '%s' 'unknown')
-- Session Type: ${XDG_SESSION_TYPE:-unknown}
-- Desktop Session: ${XDG_CURRENT_DESKTOP:-unknown}
+- Session Type: ${session_type}
+- Desktop Session: ${desktop_session}
 
 ## Included Sources
 - firstboot report

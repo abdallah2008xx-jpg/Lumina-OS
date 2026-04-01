@@ -38,6 +38,8 @@ This file gives one fast answer to two questions:
 - the first real GitHub Actions matrix build has now completed successfully for `stable` and `login-test`
 - the `stable` handoff from run `#8` has now been imported locally, and the first local VM evidence chain was initialized on `gha-stable-8-1`
 - the first real `stable` VM validation cycle has now completed and confirmed that the guest reaches a live Plasma X11 session
+- source-side follow-up fixes are now in place for firstboot timing, smoke-check session detection, and VirtualBox guest-side screenshot fallback before the next `stable` rerun
+- the `login-test` handoff from run `#8` has now also been imported locally, and its first local VM evidence chain was initialized on `gha-login-test-8-1`
 - generated cycle handoffs now exist for one-file execution of a real run
 - generated cycle handoffs now adapt to `stable` and `login-test` instead of using one generic checklist
 - cycle-chain audits now verify that the recorded build/test evidence still points at the same run before release prep
@@ -59,8 +61,7 @@ This file gives one fast answer to two questions:
 ## What Is Still Remaining
 
 ### Real Execution Work
-- import the remaining `login-test` GitHub Actions handoff artifact into the same local evidence chain
-- fix the three blockers recorded in the first real `stable` VM cycle
+- rerun `stable` after the new firstboot, smoke-check, and screenshot-fallback fixes
 - validate the new direct GitHub Actions artifact-download path during the first local VM cycle
 - validate the new GitHub Actions cycle-finish wrapper during the first local diagnostics import
 - run the first real VM validation cycle for `login-test`
@@ -87,14 +88,13 @@ This file gives one fast answer to two questions:
 - deepen release/update automation after the first stable evidence-backed build
 
 ## Current State Right Now
-- Readiness: `needs-vm-validation`
-- Validation Matrix: `builds-succeeded-awaiting-vm`
-- Biggest blocker: `stable` has now been booted and audited, but the cycle is blocked by black host-side VirtualBox screenshots, early firstboot timing, and smoke-check session detection gaps
+- Readiness: `blocked`
+- Validation Matrix: `blocked`
+- Biggest blocker: `stable` has now been booted and audited, and source-side fixes are in place, but the cycle remains blocked until a rerun proves the firstboot, smoke-check, and VirtualBox screenshot issues are gone
 
 ## Recommended Next Order
-1. Finish importing the `login-test` GitHub Actions handoff from run `#8`
-2. Fix the three recorded blockers from `gha-stable-8-1`
-3. Rerun the labeled `stable` VM cycle and confirm the blockers are gone
-4. Run a full labeled VM cycle for `login-test`
-5. Review readiness, blockers, and validation matrix
-6. Prepare and publish the first GitHub Release
+1. Rerun the labeled `stable` VM cycle against the new fixes and confirm the blockers are gone
+2. Refresh blockers, readiness, validation matrix, and shareable status from the rerun
+3. Run a full labeled VM cycle for `login-test`
+4. Review readiness, blockers, and validation matrix
+5. Prepare and publish the first GitHub Release

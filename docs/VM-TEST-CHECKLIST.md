@@ -104,6 +104,14 @@ $env:LUMINA_GITHUB_TOKEN = "ghp_your_token_here"
 
 That wrapper resolves the GitHub Actions handoff again if needed, carries the same run label forward, then calls `finish-vm-test-cycle.ps1` with the correct imported build-manifest context.
 
+If VirtualBox host-side screenshots stay black even though the guest has clearly reached Plasma, capture a guest-side fallback screenshot through Guest Additions:
+
+```powershell
+.\scripts\capture-virtualbox-guest-screenshot.ps1 -VmName "LuminaOS-Stable-AutoTest-20260401-1355"
+```
+
+That helper first attempts `VBoxManage controlvm ... screenshotpng`, then falls back to `/usr/local/bin/lumina-capture-screenshot` inside the guest when the host-side PNG is effectively blank.
+
 The finish step now also updates:
 - `status/test-session-audits/`
 - `status/blockers/CURRENT-BLOCKERS.md`

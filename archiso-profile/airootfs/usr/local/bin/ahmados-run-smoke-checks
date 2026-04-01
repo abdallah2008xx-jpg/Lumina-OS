@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+session_context_lib="/usr/local/lib/ahmados-session-context.sh"
+if [[ -f "${session_context_lib}" ]]; then
+    # shellcheck source=/usr/local/lib/ahmados-session-context.sh
+    source "${session_context_lib}"
+fi
+
 state_root="${XDG_STATE_HOME:-${HOME}/.local/state}/ahmados"
 config_root="${HOME}/.config/ahmados"
 config_file="${config_root}/welcome.conf"
@@ -136,11 +142,14 @@ esac
 
 actual_colorscheme="$(read_ini_value "${kdeglobals_file}" "General" "ColorScheme" "unknown")"
 actual_lookandfeel="$(read_ini_value "${kdeglobals_file}" "KDE" "LookAndFeelPackage" "unknown")"
+session_type="$(resolve_session_type 2>/dev/null || printf '%s' 'unknown')"
+desktop_session="$(resolve_desktop_session 2>/dev/null || printf '%s' 'unknown')"
+hostname_value="$(resolve_hostname_value 2>/dev/null || printf '%s' 'unknown')"
 
-if [[ "${XDG_CURRENT_DESKTOP:-}" == *KDE* || "${XDG_CURRENT_DESKTOP:-}" == *Plasma* ]]; then
-    add_check "PASS" "Plasma Session" "current desktop is ${XDG_CURRENT_DESKTOP:-unknown}"
+if [[ "${desktop_session}" == *KDE* || "${desktop_session}" == *Plasma* ]]; then
+    add_check "PASS" "Plasma Session" "current desktop is ${desktop_session}"
 else
-    add_check "WARN" "Plasma Session" "current desktop is ${XDG_CURRENT_DESKTOP:-unknown}"
+    add_check "WARN" "Plasma Session" "current desktop is ${desktop_session}"
 fi
 
 command_check qmlscene6 "Qt Runtime"
@@ -180,9 +189,9 @@ cat > "${report_file}" <<EOF
 # Lumina-OS Smoke Check Report
 
 - Generated: $(date -Iseconds)
-- Hostname: $(hostname 2>/dev/null || printf '%s' 'unknown')
-- Session Type: ${XDG_SESSION_TYPE:-unknown}
-- Desktop Session: ${XDG_CURRENT_DESKTOP:-unknown}
+- Hostname: ${hostname_value}
+- Session Type: ${session_type}
+- Desktop Session: ${desktop_session}
 
 ## Saved Lumina-OS Expectations
 - Language: ${expected_language}

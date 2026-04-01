@@ -4,6 +4,7 @@ set -euo pipefail
 stamp_dir="${HOME}/.config/ahmados"
 stamp_file="${stamp_dir}/session-defaults-applied"
 config_file="${stamp_dir}/welcome.conf"
+kdeglobals_file="${HOME}/.config/kdeglobals"
 
 force_apply=0
 
@@ -93,9 +94,9 @@ if command -v plasma-apply-wallpaperimage >/dev/null 2>&1; then
 fi
 
 if command -v kwriteconfig6 >/dev/null 2>&1; then
-    kwriteconfig6 --file kdeglobals --group KDE --key LookAndFeelPackage "${lookandfeel_package}" || true
-    kwriteconfig6 --file kdeglobals --group General --key ColorScheme "${colorscheme_name}" || true
-    kwriteconfig6 --file kdeglobals --group General --key Name "Lumina-OS" || true
+    kwriteconfig6 --file "${kdeglobals_file}" --group KDE --key LookAndFeelPackage "${lookandfeel_package}" || true
+    kwriteconfig6 --file "${kdeglobals_file}" --group General --key ColorScheme "${colorscheme_name}" || true
+    kwriteconfig6 --file "${kdeglobals_file}" --group General --key Name "Lumina-OS" || true
 fi
 
 touch "${stamp_file}"

@@ -77,10 +77,12 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-export-diagnostics"
     "${profile_path}/airootfs/usr/local/bin/ahmados-run-smoke-checks"
     "${profile_path}/airootfs/usr/local/bin/ahmados-firstboot"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
     "${profile_path}/airootfs/usr/local/bin/ahmados-open-firstboot-report"
     "${profile_path}/airootfs/usr/local/bin/ahmados-refresh-release-metadata"
     "${profile_path}/airootfs/usr/local/bin/ahmados-update-center"
     "${profile_path}/airootfs/usr/local/bin/ahmados-welcome"
+    "${profile_path}/airootfs/usr/local/bin/lumina-capture-screenshot"
     "${profile_path}/airootfs/usr/local/bin/lumina-export-diagnostics"
     "${profile_path}/airootfs/usr/local/bin/lumina-run-smoke-checks"
     "${profile_path}/airootfs/usr/local/bin/lumina-firstboot"
@@ -90,6 +92,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-welcome"
     "${profile_path}/airootfs/home/live/.local/bin/ahmados-apply-session-defaults"
     "${profile_path}/airootfs/home/live/.local/bin/lumina-apply-session-defaults"
+    "${profile_path}/airootfs/usr/local/lib/ahmados-session-context.sh"
     "${profile_path}/airootfs/home/live/.config/autostart/ahmados-firstboot.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-export-diagnostics.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-firstboot-report.desktop"
@@ -107,6 +110,7 @@ required_paths=(
     "${repo_root}/scripts/import-build-handoff.ps1"
     "${repo_root}/scripts/import-github-actions-artifact.ps1"
     "${repo_root}/scripts/download-github-actions-artifact.ps1"
+    "${repo_root}/scripts/capture-virtualbox-guest-screenshot.ps1"
     "${repo_root}/scripts/import-iso-artifact.ps1"
     "${repo_root}/scripts/start-github-actions-vm-cycle.ps1"
     "${repo_root}/scripts/finish-github-actions-vm-cycle.ps1"
@@ -157,7 +161,7 @@ for required_path in "${required_paths[@]}"; do
 done
 
 if [[ -f "${profile_path}/packages.x86_64" ]]; then
-    for required_package in curl qt6-declarative qt6-svg systemsettings plasma-x11-session; do
+    for required_package in curl qt6-declarative qt6-svg systemsettings plasma-x11-session spectacle; do
         if ! grep -qx "${required_package}" "${profile_path}/packages.x86_64"; then
             add_error "Missing expected package in packages.x86_64: ${required_package}"
         fi

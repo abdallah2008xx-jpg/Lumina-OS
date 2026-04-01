@@ -5,8 +5,8 @@ Update it once per work block or roughly every hour.
 
 ## Current Block
 - **Date:** 2026-04-01
-- **Time:** 14:16 PDT
-- **Focus:** Recording the first real `stable` VM validation cycle and turning its findings into tracked blockers
+- **Time:** 14:22 PDT
+- **Focus:** Converting the first real `stable` VM findings into source-side fixes before the rerun
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
@@ -24,15 +24,20 @@ Update it once per work block or roughly every hour.
 - Booted the imported `stable` ISO in VirtualBox and confirmed the guest reaches a live Plasma X11 session
 - Exported and imported real diagnostics from the running `stable` VM, then closed the first real cycle through blockers/readiness/validation
 - Captured three concrete blockers from the first real `stable` cycle: black host-side VirtualBox screenshots, early firstboot timing, and smoke-check session detection gaps
+- Added a shared session-context helper for guest-side runtime detection
+- Updated firstboot to wait for Welcome/session-default artifacts and to refresh after Welcome closes
+- Fixed session-default writes so `ColorScheme` is written into the real `~/.config/kdeglobals` path
+- Updated smoke checks and diagnostics export to resolve session type/desktop with loginctl/process fallbacks instead of raw environment variables only
+- Added a VirtualBox guest-side screenshot fallback helper inside the ISO plus a host-side PowerShell capture helper
+- Finished importing the `login-test` handoff from run `#8` and initialized its first local VM evidence chain on `gha-login-test-8-1`
 
 ## In Progress
-- Importing the `login-test` handoff from GitHub Actions run `#8` into the same local evidence chain
-- Updating docs and generated status files so the first real `stable` findings are reflected clearly at the project level
+- Updating docs and generated status files so the `stable` blocker fixes and rerun path are reflected clearly at the project level
+- Preparing the next actual rerun targets: `stable` after fixes, then `login-test` for SDDM/manual-login validation
 
 ## Next Hour
-- Let the `login-test` artifact import finish in the background
-- Fix the three blockers recorded in `gha-stable-8-1`
-- Rerun the `stable` VM cycle after the fixes
+- Rerun the `stable` VM cycle after the new firstboot, smoke-check, and screenshot-fallback fixes
+- Boot the imported `login-test` ISO and validate SDDM/manual login
 - Verify the new diagnostics-bundle finish wrapper again on a clean rerun if needed
 
 ## Blockers
@@ -61,6 +66,7 @@ Update it once per work block or roughly every hour.
 - Prefer run-id-based artifact download when the successful build already exists on GitHub, so operators do not need to hunt for the right zip manually
 - Prefer a matching run-id-based finish wrapper so the same remote build context survives diagnostics import and final evidence sync
 - Treat the first real `stable` cycle as a success for boot/access testing, but blocked for promotion until the three runtime issues are fixed
+- Prefer a guest-side VirtualBox screenshot fallback over trusting blank host-side `screenshotpng` output during headless validation
 
 ## Ready-to-Send Mini Update
-Lumina-OS completed its first real `stable` VM validation cycle: the guest reaches Plasma X11 and diagnostics export works, but the cycle is currently blocked by three runtime findings that now need fixes before rerun.
+Lumina-OS completed its first real `stable` VM validation cycle, confirmed Plasma X11 boots, and has now landed source-side fixes for the three recorded blockers ahead of the next rerun.

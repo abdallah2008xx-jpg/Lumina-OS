@@ -203,6 +203,10 @@ try {
     $importedBuildContent = Get-Content -Raw $importedBuildPath
     Assert-Condition -Condition ($importedBuildContent -match [regex]::Escape("- Run Label: $startCycleRunLabel")) -Message "Imported build manifest does not contain the expected run label."
 
+    $staleDiagnosticsDir = Join-Path $tempRoot "status\diagnostics\2026-04-01\stale-other-run"
+    New-Item -ItemType Directory -Force -Path $staleDiagnosticsDir | Out-Null
+    Set-Content -Path (Join-Path $staleDiagnosticsDir "import-manifest.md") -Value "# Import`r`n`r`n- Run Label: stale-other-run" -Encoding UTF8
+
     $startedSessionPath = & $startCycleScript `
         -Mode stable `
         -VmType VirtualBox `
@@ -219,6 +223,7 @@ try {
     $startedSessionContent = Get-Content -Raw $startedSessionFile.FullName
     Assert-Condition -Condition ($startedSessionContent -match [regex]::Escape("- Run Label: $startCycleRunLabel")) -Message "Started session does not contain the imported-build run label."
     Assert-Condition -Condition ($startedSessionContent -match [regex]::Escape("- Build Manifest: $importedBuildPath")) -Message "Started session did not record the imported build manifest path."
+    Assert-Condition -Condition ($startedSessionContent -match [regex]::Escape("- Diagnostics Import: not-recorded-yet")) -Message "Started session reused a diagnostics import that did not match the current run label."
 
     $handoffRunLabel = "ci-build-handoff-smoke"
     $handoffDir = Join-Path $tempRoot "arch-build-handoff"

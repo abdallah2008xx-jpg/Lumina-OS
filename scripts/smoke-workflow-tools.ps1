@@ -21,18 +21,23 @@ function Assert-Condition {
 
 $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
 $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
+$releaseCandidateScript = Join-Path $PSScriptRoot "prepare-release-candidate.ps1"
 $releaseValidator = Join-Path $PSScriptRoot "validate-release-package.ps1"
 
 if (-not (Test-Path $handoffScript)) {
     throw "Missing smoke-test target: $handoffScript"
 }
 
-if (-not (Test-Path $releaseValidator)) {
-    throw "Missing smoke-test target: $releaseValidator"
-}
-
 if (-not (Test-Path $cycleChainAuditScript)) {
     throw "Missing smoke-test target: $cycleChainAuditScript"
+}
+
+if (-not (Test-Path $releaseCandidateScript)) {
+    throw "Missing smoke-test target: $releaseCandidateScript"
+}
+
+if (-not (Test-Path $releaseValidator)) {
+    throw "Missing smoke-test target: $releaseValidator"
 }
 
 foreach ($handoffCase in @(
@@ -86,7 +91,6 @@ try {
     $blockersPath = Join-Path $tempRoot "blocker-review.md"
     $readinessPath = Join-Path $tempRoot "CURRENT-READINESS.md"
     $validationPath = Join-Path $tempRoot "CURRENT-VALIDATION-MATRIX.md"
-    $manifestPath = Join-Path $tempRoot "release-manifest.md"
 
     Set-Content -Path $isoPath -Value "lumina-smoke-iso" -Encoding ASCII
     $isoHash = (Get-FileHash -Algorithm SHA256 -Path $isoPath).Hash.ToLowerInvariant()
@@ -118,29 +122,32 @@ try {
     Assert-Condition -Condition ($cycleChainContent -match [regex]::Escape("- Overall Status: pass")) -Message "Cycle chain audit did not pass."
     Assert-Condition -Condition ($cycleChainContent -match [regex]::Escape("- Run Label: $smokeRunLabel")) -Message "Cycle chain audit does not contain the expected run label."
 
-    $manifestContent = @"
-# Lumina-OS Release Manifest
+    $candidateSummaryPath = & $releaseCandidateScript `
+        -Version "0.1.0-ci" `
+        -Mode stable `
+        -RunLabel $smokeRunLabel `
+        -IsoPath $isoPath `
+        -BuildManifestPath $buildPath `
+        -VmReportPath $vmPath `
+        -SessionPath $sessionPath `
+        -AuditPath $auditPath `
+        -CycleChainAuditPath $cycleChainAuditPath `
+        -ReadinessPath $readinessPath `
+        -ValidationMatrixPath $validationPath `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
 
-- Version: 0.1.0-ci
-- Mode: stable
-- Run Label: $smokeRunLabel
-- ISO Path: $isoPath
-- Checksum File: $checksumPath
-- Release Notes: $notesPath
+    Assert-Condition -Condition (Test-Path $candidateSummaryPath) -Message "Release candidate summary was not created."
 
-## Evidence Links
-- Build Manifest: $buildPath
-- VM Report: $vmPath
-- Session Summary: $sessionPath
-- Session Audit: $auditPath
-- Cycle Chain Audit: $cycleChainAuditPath
-- Readiness: $readinessPath
-- Validation Matrix: $validationPath
-"@
-    Set-Content -Path $manifestPath -Value $manifestContent -Encoding UTF8
+    $candidateContent = Get-Content -Raw $candidateSummaryPath
+    Assert-Condition -Condition ($candidateContent -match [regex]::Escape("- Candidate State: ready-to-publish")) -Message "Release candidate summary is not ready-to-publish."
+    Assert-Condition -Condition ($candidateContent -match [regex]::Escape("- Run Label: $smokeRunLabel")) -Message "Release candidate summary does not contain the expected run label."
 
-    $validationReportPath = & $releaseValidator -ReleaseManifestPath $manifestPath -RepoRoot $RepoRoot -OutputPathOnly
-    Assert-Condition -Condition (Test-Path $validationReportPath) -Message "Release validation report was not created."
+    $releaseManifestPath = Get-ChildItem -Path $tempRoot -Filter "release-manifest.md" -Recurse | Select-Object -First 1 | ForEach-Object { $_.FullName }
+    $validationReportPath = Get-ChildItem -Path $tempRoot -Filter "release-validation.md" -Recurse | Select-Object -First 1 | ForEach-Object { $_.FullName }
+
+    Assert-Condition -Condition (-not [string]::IsNullOrWhiteSpace($releaseManifestPath) -and (Test-Path $releaseManifestPath)) -Message "Release manifest was not created by release candidate prep."
+    Assert-Condition -Condition (-not [string]::IsNullOrWhiteSpace($validationReportPath) -and (Test-Path $validationReportPath)) -Message "Release validation report was not created by release candidate prep."
 
     $validationContent = Get-Content -Raw $validationReportPath
     Assert-Condition -Condition ($validationContent -match [regex]::Escape("- Result: passed")) -Message "Release validation report did not pass."

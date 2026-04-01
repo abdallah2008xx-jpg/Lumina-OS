@@ -29,6 +29,7 @@ This file gives one fast answer to two questions:
 - generated cycle handoffs now exist for one-file execution of a real run
 - generated cycle handoffs now adapt to `stable` and `login-test` instead of using one generic checklist
 - cycle-chain audits now verify that the recorded build/test evidence still points at the same run before release prep
+- release-candidate summaries now show whether a prepared package is blocked, ready to publish, or already published
 - release packaging and GitHub release publishing now both have dedicated scripts and status records
 - release publishing is now guarded by a dedicated release-package validation pass
 - GitHub Actions now smoke-tests key workflow tools instead of only running structural validation

@@ -22,6 +22,7 @@ This project follows a simple rule for now:
 - Workflow smoke testing via `scripts/smoke-workflow-tools.ps1`
 - Mode-aware cycle handoffs for `stable` and `login-test`
 - Cycle-chain audits for build/VM/session/blocker/readiness consistency before release prep
+- Release-candidate preparation and current publish-readiness summaries
 
 ### Changed
 - Live-system UI wording now presents the distro as `Lumina-OS`

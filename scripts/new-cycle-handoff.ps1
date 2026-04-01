@@ -112,8 +112,8 @@ function Get-ExpectedEvidence {
         '- build manifest under `status/builds/` with `Run Label: __RUN_LABEL__`',
         '- VM report under `status/vm-tests/` with the same label',
         '- session summary and session audit linked to the same label',
-        '- readiness and validation matrix reviewed after finishing the cycle',
-        '- release manifest using the same label if packaging begins'
+        '- readiness, validation matrix, and cycle-chain audit reviewed after finishing the cycle',
+        '- release candidate summary and release manifest using the same label if packaging begins'
     ) -join "`r`n"
 }
 
@@ -191,15 +191,15 @@ Review these files after finish:
 Mode-specific review notes:
 __MODE_REVIEW_NOTES__
 
-## Step 7: Prepare Release Package
+## Step 7: Prepare Release Candidate
 __RELEASE_GUARD__
 
-    .\scripts\prepare-release-package.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel __RUN_LABEL__
+    .\scripts\prepare-release-candidate.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel __RUN_LABEL__
 
-## Step 8: Validate Release Package
-Replace the manifest path with the generated file under `status/releases/`:
-
-    .\scripts\validate-release-package.ps1 -ReleaseManifestPath "C:\Path\To\release-manifest.md"
+## Step 8: Review Candidate Output
+Review these files before publishing:
+- `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md`
+- generated `release-validation.md` under `status/releases/`
 
 ## Step 9: Publish GitHub Release
 Use this only after the validation report passes and the token is available:

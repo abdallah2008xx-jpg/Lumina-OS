@@ -14,6 +14,7 @@ Keep reporting lightweight.
 - `cycle-chain-audits/` -> run-label evidence-link audits across build, VM, session, blockers, and readiness
 - `vm-tests/` -> VM test reports grouped by date
 - `diagnostics/` -> imported diagnostics bundles from live-session exports
+- `release-candidates/` -> current release-candidate summaries and publish readiness
 - `releases/` -> prepared release manifests, draft notes, checksums, release validation reports, and GitHub publish records
 - `test-sessions/` -> linked build/test summaries across one run
 - `test-session-audits/` -> verification reports for the linked evidence chain
@@ -34,6 +35,7 @@ Keep reporting lightweight.
 10. Sync readiness so the current run has a single high-level go/no-go status
 11. Sync the validation matrix so both build modes are tracked side by side
 12. Review the cycle-chain audit before treating a run as the clean release candidate
+13. Prepare a release candidate so publish readiness has one current summary file
 
 ## What to Record
 - What was finished

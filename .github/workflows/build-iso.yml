@@ -182,8 +182,20 @@ jobs:
       - name: Fail job when build step failed
         if: steps.selection.outputs.skip != 'true' && steps.build.outputs.exit_code != '0'
         shell: bash
+        env:
+          MODE: ${{ matrix.mode }}
+          LOG_PATH: ${{ steps.build.outputs.log_path }}
         run: |
           set -euo pipefail
+
+          if [[ -n "${LOG_PATH}" && -f "${LOG_PATH}" ]]; then
+            log_tail="$(tail -n 25 "${LOG_PATH}")"
+            log_tail="${log_tail//'%'/'%25'}"
+            log_tail="${log_tail//$'\n'/'%0A'}"
+            log_tail="${log_tail//$'\r'/'%0D'}"
+            echo "::error title=Lumina-OS ${MODE} build failure tail::${log_tail}"
+          fi
+
           echo "Build container failed with exit code: ${{ steps.build.outputs.exit_code }}" >&2
           exit 1
 

@@ -101,6 +101,7 @@ function Get-SafeFileSegment {
 
 $vmReportScript = Join-Path $PSScriptRoot "new-vm-test-report.ps1"
 $sessionScript = Join-Path $PSScriptRoot "new-test-session.ps1"
+$buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
 
 if (-not (Test-Path $vmReportScript)) {
     throw "Missing helper: $vmReportScript"
@@ -108,6 +109,10 @@ if (-not (Test-Path $vmReportScript)) {
 
 if (-not (Test-Path $sessionScript)) {
     throw "Missing helper: $sessionScript"
+}
+
+if (-not (Test-Path $buildManifestImportScript)) {
+    throw "Missing helper: $buildManifestImportScript"
 }
 
 $timeStamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -121,6 +126,23 @@ if (-not $vmReportPath) {
 }
 
 $resolvedBuildManifestPath = $BuildManifestPath
+if (-not [string]::IsNullOrWhiteSpace($resolvedBuildManifestPath)) {
+    if (-not (Test-Path $resolvedBuildManifestPath)) {
+        throw "Build manifest path not found: $resolvedBuildManifestPath"
+    }
+
+    $resolvedBuildManifestPath = (Resolve-Path $resolvedBuildManifestPath).Path
+    $resolvedRepoBuildRoot = [System.IO.Path]::GetFullPath((Join-Path $RepoRoot "status\builds"))
+
+    if (-not $resolvedBuildManifestPath.StartsWith($resolvedRepoBuildRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $resolvedBuildManifestPath = & $buildManifestImportScript `
+            -ManifestPath $resolvedBuildManifestPath `
+            -Label $resolvedRunLabel `
+            -RepoRoot $RepoRoot `
+            -OutputPathOnly
+    }
+}
+
 if ([string]::IsNullOrWhiteSpace($resolvedBuildManifestPath)) {
     $latestBuildManifest = if ([string]::IsNullOrWhiteSpace($resolvedRunLabel)) {
         Get-LatestModeFile -Path (Join-Path $RepoRoot "status\builds") -Filter "*.md" -Mode $Mode

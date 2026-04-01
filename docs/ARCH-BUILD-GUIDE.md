@@ -37,6 +37,12 @@ If you want one generated runbook for the whole cycle, create it first:
 
 That handoff now changes its verification language based on `stable` or `login-test`, so the build and VM operator sees the right acceptance target for the selected mode.
 
+If the real Arch build happens in a separate clone or VM instead of this Windows workspace, copy the generated build manifest back and import it here before starting the VM cycle:
+
+```powershell
+.\scripts\import-build-manifest.ps1 -ManifestPath "C:\Path\To\build-manifest.md"
+```
+
 If you are already inside an Arch VM, bootstrap the build environment with:
 
 ```bash

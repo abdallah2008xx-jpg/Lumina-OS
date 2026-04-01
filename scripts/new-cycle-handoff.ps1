@@ -168,6 +168,10 @@ After the ISO exists, start the evidence chain with the same label:
 
     .\scripts\start-vm-test-cycle.ps1 -Mode __MODE__ -VmType __VM_TYPE__ -Firmware __FIRMWARE__ -RunLabel __RUN_LABEL__
 
+If the Arch build happened in a separate clone or VM, import its build manifest into this repo first:
+
+    .\scripts\import-build-manifest.ps1 -ManifestPath "C:\Path\To\build-manifest.md"
+
 ## Step 4: Inside The Booted ISO
 Inside the live session, verify:
 __MODE_CHECKS__

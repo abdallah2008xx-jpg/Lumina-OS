@@ -14,3 +14,4 @@ Store build manifests here after real Arch-side ISO builds.
 - `scripts/build-iso-arch.sh` now writes a manifest here after `mkarchiso` finishes
 - the build manifest now carries the same `Run Label` that should be reused during the VM cycle and release flow
 - keep these records even when the ISO itself lives outside the repo
+- if a real Arch build happens in another clone, `scripts/import-build-manifest.ps1` can bring that manifest back here before the VM cycle begins

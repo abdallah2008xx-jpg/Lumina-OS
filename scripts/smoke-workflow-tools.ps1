@@ -20,6 +20,8 @@ function Assert-Condition {
 }
 
 $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
+$startCycleScript = Join-Path $PSScriptRoot "start-vm-test-cycle.ps1"
+$buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
 $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
 $releaseCandidateScript = Join-Path $PSScriptRoot "prepare-release-candidate.ps1"
 $syncReleaseCandidateScript = Join-Path $PSScriptRoot "sync-release-candidate-status.ps1"
@@ -30,6 +32,14 @@ $releaseValidator = Join-Path $PSScriptRoot "validate-release-package.ps1"
 
 if (-not (Test-Path $handoffScript)) {
     throw "Missing smoke-test target: $handoffScript"
+}
+
+if (-not (Test-Path $startCycleScript)) {
+    throw "Missing smoke-test target: $startCycleScript"
+}
+
+if (-not (Test-Path $buildManifestImportScript)) {
+    throw "Missing smoke-test target: $buildManifestImportScript"
 }
 
 if (-not (Test-Path $cycleChainAuditScript)) {
@@ -101,10 +111,12 @@ New-Item -ItemType Directory -Path $tempRoot | Out-Null
 
 try {
     $smokeRunLabel = "ci-release-smoke"
+    $startCycleRunLabel = "ci-imported-build-smoke"
     $isoPath = Join-Path $tempRoot "lumina-smoke.iso"
     $notesPath = Join-Path $tempRoot "release-notes.md"
     $checksumPath = Join-Path $tempRoot "SHA256SUMS.txt"
     $buildPath = Join-Path $tempRoot "build-manifest.md"
+    $externalBuildPath = Join-Path $tempRoot "external-build-manifest.md"
     $vmPath = Join-Path $tempRoot "vm-report.md"
     $sessionPath = Join-Path $tempRoot "session-summary.md"
     $auditPath = Join-Path $tempRoot "session-audit.md"
@@ -117,6 +129,7 @@ try {
     Set-Content -Path $checksumPath -Value "$isoHash *lumina-smoke.iso" -Encoding ASCII
     Set-Content -Path $notesPath -Value "# Lumina Smoke Notes" -Encoding UTF8
     Set-Content -Path $buildPath -Value "# Build`r`n`r`n- Mode: stable`r`n- Run Label: $smokeRunLabel`r`n- Full Path: $isoPath" -Encoding UTF8
+    Set-Content -Path $externalBuildPath -Value "# Build`r`n`r`n- Built At: 2026-04-01T11:20:00`r`n- Mode: stable`r`n- Run Label: $startCycleRunLabel`r`n- Full Path: /var/tmp/lumina-smoke.iso" -Encoding UTF8
     Set-Content -Path $vmPath -Value "# VM`r`n`r`n- Mode: stable`r`n- Run Label: $smokeRunLabel" -Encoding UTF8
     Set-Content -Path $sessionPath -Value "# Session`r`n`r`n- Date: 2026-04-01`r`n- Mode: stable`r`n- Run Label: $smokeRunLabel`r`n- Build Manifest: $buildPath`r`n- VM Report: $vmPath" -Encoding UTF8
     Set-Content -Path $auditPath -Value "# Audit`r`n`r`n- Overall Status: pass`r`n- Run Label: $smokeRunLabel`r`n- Session Path: $sessionPath" -Encoding UTF8
@@ -141,6 +154,31 @@ try {
     $cycleChainContent = Get-Content -Raw $cycleChainAuditPath
     Assert-Condition -Condition ($cycleChainContent -match [regex]::Escape("- Overall Status: pass")) -Message "Cycle chain audit did not pass."
     Assert-Condition -Condition ($cycleChainContent -match [regex]::Escape("- Run Label: $smokeRunLabel")) -Message "Cycle chain audit does not contain the expected run label."
+
+    $importedBuildPath = & $buildManifestImportScript `
+        -ManifestPath $externalBuildPath `
+        -Label $startCycleRunLabel `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $importedBuildPath) -Message "Imported build manifest was not created."
+    $importedBuildContent = Get-Content -Raw $importedBuildPath
+    Assert-Condition -Condition ($importedBuildContent -match [regex]::Escape("- Run Label: $startCycleRunLabel")) -Message "Imported build manifest does not contain the expected run label."
+
+    $startedSessionPath = & $startCycleScript `
+        -Mode stable `
+        -VmType VirtualBox `
+        -Firmware UEFI `
+        -IsoPath $isoPath `
+        -BuildManifestPath $externalBuildPath `
+        -RunLabel $startCycleRunLabel `
+        -RepoRoot $tempRoot
+
+    $startedSessionFile = Get-ChildItem -Path (Join-Path $tempRoot "status\test-sessions") -Filter "*.md" -Recurse | Select-Object -First 1
+    Assert-Condition -Condition ($null -ne $startedSessionFile) -Message "VM cycle start did not create a session summary for the imported build path."
+    $startedSessionContent = Get-Content -Raw $startedSessionFile.FullName
+    Assert-Condition -Condition ($startedSessionContent -match [regex]::Escape("- Run Label: $startCycleRunLabel")) -Message "Started session does not contain the imported-build run label."
+    Assert-Condition -Condition ($startedSessionContent -match [regex]::Escape("- Build Manifest: $importedBuildPath")) -Message "Started session did not record the imported build manifest path."
 
     $candidateSummaryPath = & $releaseCandidateScript `
         -Version "0.1.0-ci" `

@@ -26,6 +26,14 @@ For repeated runs of the same mode, prefer a label:
 
 If the build was created with `scripts/build-iso.ps1` or `build-iso-arch.sh --run-label`, reuse that exact same label here so the build manifest can be matched directly instead of falling back to the latest build of the same mode.
 
+If the build manifest came from a separate Arch clone or VM, import it into this repo first:
+
+```powershell
+.\scripts\import-build-manifest.ps1 -ManifestPath "C:\Path\To\build-manifest.md"
+```
+
+If you pass an external build-manifest path directly to `start-vm-test-cycle.ps1`, the script now imports it automatically into `status/builds/` before creating the session summary.
+
 If you only want the VM report by itself, use:
 
 ```powershell

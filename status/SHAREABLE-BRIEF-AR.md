@@ -1,6 +1,6 @@
 ﻿# Lumina-OS Shareable Brief (AR)
 
-- Generated At: 2026-04-01T10:32:30
+- Generated At: 2026-04-01T10:37:57
 - Readiness State: needs-build
 - Validation Matrix State: needs-first-build
 - Release Candidate State: not-recorded-yet
@@ -11,9 +11,9 @@
 - لومينا-أو-إس الآن: Lumina-OS has strong build/test/release workflow coverage and is waiting on the first real Arch-side execution cycle.
 
 ## أبرز ما تم
-- cycle-chain audits now verify that build, VM, session, blockers, readiness, and release evidence stay attached to the same run label
-- release-candidate preparation now creates one current publish-readiness summary on top of prepare/validate output
 - release-candidate status can now be refreshed automatically after GitHub publish so the current summary flips to `published`
+- GitHub publish now has a local context gate so the selected manifest must match the current release candidate before release creation
+- shareable updates can now be generated from current readiness, validation, and release-candidate state
 
 ## الخطوة التالية
 - run `stable` and `login-test` builds in a real Arch environment

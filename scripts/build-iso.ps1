@@ -40,3 +40,6 @@ Write-Host "./scripts/build-iso-arch.sh --mode '$Mode' --run-label '$resolvedRun
 Write-Host ""
 Write-Host "Use the same run label for the VM cycle after the build finishes:"
 Write-Host ".\scripts\start-vm-test-cycle.ps1 -Mode $Mode -RunLabel $resolvedRunLabel"
+Write-Host ""
+Write-Host "If the build manifest comes back from a separate Arch clone or VM, import it into this repo first:"
+Write-Host ".\scripts\import-build-manifest.ps1 -ManifestPath `"C:\Path\To\build-manifest.md`""

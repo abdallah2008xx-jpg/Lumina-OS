@@ -5,23 +5,23 @@ Update it once per work block or roughly every hour.
 
 ## Current Block
 - **Date:** 2026-04-01
-- **Time:** 11:09 PDT
-- **Focus:** Adding compatibility-preserving `lumina-*` runtime aliases and switching live launchers to the new names
+- **Time:** 11:24 PDT
+- **Focus:** Bridging Arch-side build manifests back into the main repo before Windows-side VM cycles
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
-- Added `lumina-*` wrapper entrypoints for the live-session tools while keeping the older `ahmados-*` commands intact underneath
-- Switched desktop launchers and KDE autostart entries to the new `lumina-*` commands
-- Extended validation coverage so launcher `Exec=` lines must keep pointing at the Lumina aliases
+- Added `import-build-manifest.ps1` so build manifests from a separate Arch clone or VM can be brought back into this repo
+- Wired `start-vm-test-cycle.ps1` to auto-import an external build-manifest path before creating the session summary
+- Extended validation and reporting docs for the new build-manifest import path
 
 ## In Progress
-- Re-validating the repo after the Lumina runtime-alias pass and preparing the next commit
+- Re-validating the repo after the build-manifest import bridge and preparing the next commit
 
 ## Next Hour
-- Run validation and push the runtime-alias pass to GitHub
+- Run validation and push the build-manifest import bridge to GitHub
 - Keep the build/test workflow stable and ready for the first Arch-side `stable` build
 - Move execution to an actual Arch environment for the first real ISO build
-- Verify the new `lumina-*` launchers inside the first real labeled VM cycle
+- Verify the imported-manifest path during the first real labeled VM cycle if Arch build and Windows VM work happen in different clones
 
 ## Blockers
 - Actual ISO building is blocked in the current Windows workspace; `mkarchiso` must run inside an Arch environment
@@ -41,6 +41,7 @@ Update it once per work block or roughly every hour.
 - Treat public progress updates as generated artifacts, not hand-maintained text
 - Treat short social-style updates as derived artifacts from the same canonical project state
 - Prefer compatibility-preserving aliases for now instead of renaming deep runtime IDs before the first real ISO validation
+- Treat external Arch-side build manifests as first-class evidence and import them before the Windows-side VM chain starts
 
 ## Ready-to-Send Mini Update
-Lumina-OS now launches its main live-session tools through `lumina-*` aliases while still keeping the old `ahmados-*` entrypoints behind the scenes for compatibility before the first real ISO validation.
+Lumina-OS can now import an Arch-side build manifest back into the main repo before a Windows-side VM cycle starts, which closes an important gap when build and test happen in different environments.

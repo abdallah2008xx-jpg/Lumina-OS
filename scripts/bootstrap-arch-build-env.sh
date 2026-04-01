@@ -51,6 +51,7 @@ validator_path="${repo_root}/scripts/validate-profile.sh"
 required_packages=(
     archiso
     git
+    grub
 )
 
 missing_packages=()

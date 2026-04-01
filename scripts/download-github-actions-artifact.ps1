@@ -42,6 +42,68 @@ function Get-AvailableArtifactNames {
     return ($names -join ", ")
 }
 
+function Find-ExistingDownloadedArtifact {
+    param(
+        [string]$SearchRoot,
+        [string]$ArtifactName,
+        [long]$ExpectedSizeBytes
+    )
+
+    if (-not (Test-Path $SearchRoot)) {
+        return $null
+    }
+
+    return Get-ChildItem -Path $SearchRoot -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Name -eq (Get-SafeSegment $ArtifactName) + ".zip" -or
+            $_.Name -like ("*" + (Get-SafeSegment $ArtifactName) + ".zip")
+        } |
+        Where-Object {
+            if ($ExpectedSizeBytes -le 0) {
+                return $true
+            }
+
+            return $_.Length -eq $ExpectedSizeBytes
+        } |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+}
+
+function Get-GitCredentialPassword {
+    param(
+        [string]$GitHost,
+        [string]$Username = ""
+    )
+
+    $gitCommand = Get-Command git -ErrorAction SilentlyContinue
+    if ($null -eq $gitCommand) {
+        return ""
+    }
+
+    $requestLines = @(
+        "protocol=https",
+        "host=$GitHost"
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($Username)) {
+        $requestLines += "username=$Username"
+    }
+
+    $request = ($requestLines -join "`n") + "`n`n"
+    $credentialOutput = $request | & $gitCommand.Source credential fill 2>$null
+
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($credentialOutput)) {
+        return ""
+    }
+
+    $passwordLine = $credentialOutput -split "`r?`n" | Where-Object { $_ -like "password=*" } | Select-Object -First 1
+    if ($null -eq $passwordLine) {
+        return ""
+    }
+
+    return ($passwordLine -replace "^password=", "").Trim()
+}
+
 $resolvedToken = if (-not [string]::IsNullOrWhiteSpace($Token)) {
     $Token.Trim()
 }
@@ -52,11 +114,17 @@ elseif (-not [string]::IsNullOrWhiteSpace($env:GITHUB_TOKEN)) {
     $env:GITHUB_TOKEN
 }
 else {
-    ""
+    $fromGitCredential = Get-GitCredentialPassword -GitHost "github.com" -Username $Owner
+    if (-not [string]::IsNullOrWhiteSpace($fromGitCredential)) {
+        $fromGitCredential
+    }
+    else {
+        Get-GitCredentialPassword -GitHost "github.com"
+    }
 }
 
 if ([string]::IsNullOrWhiteSpace($resolvedToken)) {
-    throw "GitHub artifact download requires a token. Set LUMINA_GITHUB_TOKEN or GITHUB_TOKEN, or pass -Token explicitly."
+    throw "GitHub artifact download requires a token. Set LUMINA_GITHUB_TOKEN or GITHUB_TOKEN, pass -Token explicitly, or make sure Git has a usable github.com credential."
 }
 
 $headers = @{
@@ -118,11 +186,19 @@ $downloadDir = Join-Path $RepoRoot ("build\downloaded-artifacts\" + $dateStamp)
 $downloadPath = Join-Path $downloadDir ($timeStamp + "-" + $safeArtifactName + ".zip")
 $summaryDir = Join-Path $RepoRoot ("status\build-handoffs\" + $dateStamp)
 $summaryPath = Join-Path $summaryDir ($timeStamp + "-download-" + $safeArtifactName + ".md")
+$downloadState = "downloaded-new"
 
 New-Item -ItemType Directory -Force -Path $downloadDir | Out-Null
 New-Item -ItemType Directory -Force -Path $summaryDir | Out-Null
 
-Invoke-WebRequest -Headers $headers -Uri $artifact.archive_download_url -OutFile $downloadPath
+$existingArtifact = Find-ExistingDownloadedArtifact -SearchRoot (Join-Path $RepoRoot "build\downloaded-artifacts") -ArtifactName $artifact.name -ExpectedSizeBytes $artifact.size_in_bytes
+if ($existingArtifact) {
+    $downloadPath = $existingArtifact.FullName
+    $downloadState = "reused-existing"
+}
+else {
+    Invoke-WebRequest -Headers $headers -Uri $artifact.archive_download_url -OutFile $downloadPath
+}
 
 $downloadedItem = Get-Item $downloadPath
 $summaryContent = @"
@@ -135,6 +211,7 @@ $summaryContent = @"
 - Requested Mode: $(if ([string]::IsNullOrWhiteSpace($Mode)) { 'not-specified' } else { $Mode })
 - Resolved Artifact Name: $($artifact.name)
 - Artifact Id: $($artifact.id)
+- Download State: $downloadState
 - Download Path: $downloadPath
 - Size Bytes: $($downloadedItem.Length)
 

@@ -76,11 +76,13 @@
 - GitHub Actions based VM cycles can now be finished from the diagnostics bundle plus the same run context, so the evidence chain no longer needs a manual label handoff at the end
 - GitHub Actions now has a real remote ISO build workflow so first build attempts no longer depend only on local Arch access
 - the first real remote GitHub Actions matrix build succeeded on run `#8` for both `stable` and `login-test`
+- the `stable` handoff from GitHub Actions run `#8` has now been imported into this workspace and the first local VM cycle was initialized on run label `gha-stable-8-1`
 
 ## Active Focus
-- import the first successful GitHub Actions build handoff into the repo-side evidence chain
+- import the `login-test` handoff from GitHub Actions run `#8` into the repo-side evidence chain
 - validate the new direct GitHub Actions download helper against the first real VM cycle path
 - validate the new GitHub Actions cycle-finish wrapper against the first real diagnostics-import path
+- find or enable a usable local VM runtime on this workstation so the imported ISO can actually be booted
 - validate the new Welcome and Update Center behavior inside a built ISO
 - validate the firstboot runtime report and cache generation inside a built ISO
 - capture the first real build and VM evidence trail
@@ -120,8 +122,8 @@
 - keep the new GitHub ISO build workflow aligned with the local handoff and evidence chain so successful remote builds feed the same process
 
 ## Next
-- download the first successful GitHub Actions artifact zip and run the new one-command VM-cycle bridge
-- or fetch that artifact directly from GitHub with the new run-id download helper and start the VM cycle without a manual zip step
+- let the `login-test` GitHub Actions artifact finish importing into the same local evidence chain
+- boot the already imported `stable` ISO once a usable local VM runtime is available on this workstation
 - finish the first GitHub Actions-backed VM cycle through the new diagnostics-bundle wrapper so the end of the evidence chain is just as automated as the start
 - test the real Welcome choice application inside a built ISO
 - test the metadata-backed Update Center inside a built ISO

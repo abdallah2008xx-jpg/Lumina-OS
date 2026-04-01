@@ -5,8 +5,8 @@ Update it once per work block or roughly every hour.
 
 ## Current Block
 - **Date:** 2026-04-01
-- **Time:** 11:49 PDT
-- **Focus:** Making the GitHub Actions -> local VM validation path symmetrical from cycle start through diagnostics import
+- **Time:** 13:31 PDT
+- **Focus:** Importing the first successful remote build outputs into the local evidence chain and identifying the last machine-level blocker to real VM boot
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
@@ -20,19 +20,21 @@ Update it once per work block or roughly every hour.
 - Added a one-command GitHub Actions artifact -> VM-cycle bridge for faster first-ISO validation
 - Added direct GitHub Actions artifact download by `RunId + mode` so the bridge no longer depends on a manual zip download first
 - Added a matching GitHub Actions cycle-finish wrapper so diagnostics import can reuse the same run context without retyping labels manually
+- Imported the `stable` handoff from GitHub Actions run `#8` and initialized the first local VM cycle on `gha-stable-8-1`
+- Confirmed this workstation currently has no detected local VM runtime command for VirtualBox, VMware, or QEMU
 
 ## In Progress
-- Updating docs and generated status files so the GitHub Actions start/finish wrappers become the normal first-VM-cycle workflow
+- Importing the `login-test` handoff from GitHub Actions run `#8` into the same local evidence chain
+- Updating docs and generated status files so the imported `stable` cycle and the current machine blocker are recorded clearly
 
 ## Next Hour
-- Fetch the first successful GitHub Actions artifact directly from the run and start the first local VM cycle from it
-- Start the first labeled `stable` VM cycle from the successful remote build
-- Verify the complete handoff path during the first real GitHub Actions -> Windows -> VM transfer
+- Let the `login-test` artifact import finish in the background
+- Move the imported `stable` ISO onto a machine with a real VM runtime or enable one here
+- Boot the imported `stable` ISO and capture the first actual findings
 - Verify the new diagnostics-bundle finish wrapper during the first real VM cycle
-- Review the first real evidence trail after the successful remote build
 
 ## Blockers
-- The build itself is no longer blocked, but the first real GitHub Actions start/finish path and the first VM validation cycle still need to be completed
+- The build and `stable` handoff import are no longer blocked, but this workstation currently exposes no detected VM runtime command (`VBoxManage`, `vmrun`, or `qemu-system-x86_64`) for the actual boot step
 
 ## Decisions / Notes
 - Prefer GitHub as the intended release-metadata source now that the real repo exists
@@ -56,6 +58,7 @@ Update it once per work block or roughly every hour.
 - Treat the first successful remote build as the handoff point into VM validation, not the end of the process
 - Prefer run-id-based artifact download when the successful build already exists on GitHub, so operators do not need to hunt for the right zip manually
 - Prefer a matching run-id-based finish wrapper so the same remote build context survives diagnostics import and final evidence sync
+- Treat missing local VM tooling as a machine-level blocker distinct from ISO/build readiness, because the imported `stable` evidence chain already exists
 
 ## Ready-to-Send Mini Update
-Lumina-OS reached its first successful remote GitHub Actions matrix build for `stable` and `login-test`; the next step is carrying that same run context through both VM-cycle start and finish while recording the first real validation evidence.
+Lumina-OS now has the `stable` build from GitHub Actions run `#8` imported locally and linked to its first VM evidence chain; the remaining blocker on this workstation is simply the absence of a detected VM runtime for actually booting the ISO.

@@ -36,6 +36,7 @@ This file gives one fast answer to two questions:
 - GitHub Actions based VM cycles can now also be finished from the diagnostics bundle plus the same run context instead of manually re-entering the run label
 - GitHub Actions now has a remote ISO build workflow to trigger real build attempts without waiting on local Arch access
 - the first real GitHub Actions matrix build has now completed successfully for `stable` and `login-test`
+- the `stable` handoff from run `#8` has now been imported locally, and the first local VM evidence chain was initialized on `gha-stable-8-1`
 - generated cycle handoffs now exist for one-file execution of a real run
 - generated cycle handoffs now adapt to `stable` and `login-test` instead of using one generic checklist
 - cycle-chain audits now verify that the recorded build/test evidence still points at the same run before release prep
@@ -57,7 +58,7 @@ This file gives one fast answer to two questions:
 ## What Is Still Remaining
 
 ### Real Execution Work
-- import the first successful GitHub Actions build handoff artifacts into the repo-side evidence chain
+- import the remaining `login-test` GitHub Actions handoff artifact into the same local evidence chain
 - validate the new direct GitHub Actions artifact-download path during the first local VM cycle
 - validate the new GitHub Actions cycle-finish wrapper during the first local diagnostics import
 - run the first real VM validation cycle for both modes
@@ -86,11 +87,11 @@ This file gives one fast answer to two questions:
 ## Current State Right Now
 - Readiness: `needs-vm-validation`
 - Validation Matrix: `builds-succeeded-awaiting-vm`
-- Biggest blocker: the first successful remote build exists, but its handoff artifacts and VM evidence have not yet been imported into the local repo-side chain
+- Biggest blocker: the `stable` handoff is now imported locally, but this workstation still has no detected VM runtime (`VBoxManage`, `vmrun`, or `qemu-system-x86_64`) to boot the imported ISO
 
 ## Recommended Next Order
-1. Download or import the successful GitHub Actions handoff artifacts from run `#8`
-2. Run a full labeled VM cycle for `stable`
+1. Finish importing the `login-test` GitHub Actions handoff from run `#8`
+2. Use a workstation with a detected VM runtime to boot the already imported `stable` ISO
 3. Confirm the new Welcome, Update Center, and SDDM polish inside the built ISO
 4. Run a full labeled VM cycle for `login-test`
 5. Review readiness, blockers, and validation matrix

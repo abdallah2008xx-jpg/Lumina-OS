@@ -24,11 +24,15 @@ Document the real Welcome app that now ships inside the live image and writes fi
 - wallpaper selection from the live wallpaper pack
 - Balanced, Classic, and Minimal Plasma layout choices
 - preferred release-channel selection for Update Center
+- user-facing preview labels for color scheme and panel style instead of raw internal IDs
+- recommendation badges for the default appearance, wallpaper, layout, and release channel
+- clearer finish-side summary of what Welcome will apply to the live session
 
 ## Current Limitation
 - language preference is stored for Lumina-OS-owned surfaces, but it is not yet a full system locale switch
 - Welcome still closes into the live session instead of offering deep task automation
 - app-launch actions are still lightweight compared with a full first-run control center
+- internal compatibility identifiers still remain under `ahmados` and `com.ahmados.*` even though the user-facing copy is now cleaner
 
 ## Next Logical Steps
 - connect language preference to a real locale/input path

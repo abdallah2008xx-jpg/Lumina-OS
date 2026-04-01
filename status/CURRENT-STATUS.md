@@ -48,8 +48,11 @@
 - script and report output branding aligned to `Lumina-OS` while keeping internal compatibility identifiers stable
 - GitHub collaboration scaffolding added with `CONTRIBUTING.md`, `CHANGELOG.md`, issue templates, PR template, and a first-release checklist
 - one-file done-vs-remaining summary added in `status/PROJECT-SUMMARY.md`
-- Abdullah/Mohammad team execution split added in `docs/TEAM-EXECUTION-PLAN.md`
 - release-package scaffolding added with `scripts/prepare-release-package.ps1` and `status/releases/`
+- former Mohammad UI/UX scope absorbed into the main Lumina-OS execution track
+- Welcome now uses clearer user-facing labels, recommendation badges, and a stronger apply summary
+- Update Center now exposes structured loading, empty, and error states with clearer channel guidance
+- SDDM now uses validation-oriented guidance and no longer paints information messages as failures
 
 ## Active Focus
 - prepare and execute the first serious Arch-side build attempt
@@ -68,6 +71,7 @@
 - keep status updates consistent during rebuild work
 - continue staged internal rename work without breaking current build/test compatibility
 - keep GitHub collaboration and release-prep files aligned with the real build/test state
+- keep the absorbed UI/UX track aligned with the live-system implementation instead of leaving it as a separate plan
 
 ## Next
 - run `stable` and `login-test` builds in a real Arch environment
@@ -90,4 +94,4 @@
 - test the real SDDM and Plasma theming in a built ISO
 - boot the resulting ISO in a VM
 - confirm login, networking, and guest-service behavior
-- begin visual branding only after boot stability is proven
+- confirm the new Welcome, Update Center, and SDDM polish behaves correctly inside the ISO

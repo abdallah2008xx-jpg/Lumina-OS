@@ -91,12 +91,15 @@ ApplicationWindow {
         {
             "id": "light",
             "label": qsTr("Light"),
-            "body": qsTr("Use the current Lumina-OS palette with soft light surfaces and restrained blue accents.")
+            "body": qsTr("Use the current Lumina-OS palette with soft light surfaces and restrained blue accents."),
+            "recommended": true,
+            "swatches": ["#F7F3ED", "#2D6C8A", "#C9895B"]
         },
         {
             "id": "dark",
             "label": qsTr("Night"),
-            "body": qsTr("Use the new Lumina-OS Night scheme for darker surfaces, brighter text, and calmer nighttime contrast.")
+            "body": qsTr("Use the new Lumina-OS Night scheme for darker surfaces, brighter text, and calmer nighttime contrast."),
+            "swatches": ["#09131A", "#3F8F95", "#C8D3DA"]
         }
     ]
 
@@ -105,19 +108,23 @@ ApplicationWindow {
             "id": "lagoon",
             "label": qsTr("Lagoon"),
             "body": qsTr("Balanced blue-green depth for the default Lumina-OS direction."),
-            "path": "/usr/share/ahmados/wallpapers/ahmados-lagoon.svg"
+            "path": "/usr/share/ahmados/wallpapers/ahmados-lagoon.svg",
+            "recommended": true,
+            "swatches": ["#2D6C8A", "#3F8F95", "#EDF2F4"]
         },
         {
             "id": "horizon",
             "label": qsTr("Horizon"),
             "body": qsTr("Warmer morning tones with a lighter Lumina-OS atmosphere."),
-            "path": "/usr/share/ahmados/wallpapers/ahmados-horizon.svg"
+            "path": "/usr/share/ahmados/wallpapers/ahmados-horizon.svg",
+            "swatches": ["#C9895B", "#E8C8AE", "#F7F3ED"]
         },
         {
             "id": "nocturne",
             "label": qsTr("Nocturne"),
             "body": qsTr("Darker evening composition tuned for the night palette."),
-            "path": "/usr/share/ahmados/wallpapers/ahmados-nocturne.svg"
+            "path": "/usr/share/ahmados/wallpapers/ahmados-nocturne.svg",
+            "swatches": ["#09131A", "#214455", "#C8D3DA"]
         }
     ]
 
@@ -125,17 +132,21 @@ ApplicationWindow {
         {
             "id": "balanced",
             "label": qsTr("Balanced"),
-            "body": qsTr("Centered and calm, with room for launcher, running apps, tray, and clock.")
+            "body": qsTr("Centered and calm, with room for launcher, running apps, tray, and clock."),
+            "recommended": true,
+            "panelWidth": 0.68
         },
         {
             "id": "classic",
             "label": qsTr("Classic"),
-            "body": qsTr("A wider bottom panel for a more traditional desktop stance.")
+            "body": qsTr("A wider bottom panel for a more traditional desktop stance."),
+            "panelWidth": 0.88
         },
         {
             "id": "minimal",
             "label": qsTr("Minimal"),
-            "body": qsTr("A tighter centered panel with less width and a more focused silhouette.")
+            "body": qsTr("A tighter centered panel with less width and a more focused silhouette."),
+            "panelWidth": 0.52
         }
     ]
 
@@ -143,7 +154,8 @@ ApplicationWindow {
         {
             "id": "stable",
             "label": qsTr("Stable"),
-            "body": qsTr("Foreground the most normal-user-ready Lumina-OS release path.")
+            "body": qsTr("Foreground the most normal-user-ready Lumina-OS release path."),
+            "recommended": true
         },
         {
             "id": "beta",
@@ -195,6 +207,10 @@ ApplicationWindow {
         return selectedAppearance === "dark" ? "AhmadOSNight" : "AhmadOS"
     }
 
+    function resolvedColorSchemeLabel() {
+        return selectedAppearance === "dark" ? qsTr("Lumina Night") : qsTr("Lumina Day")
+    }
+
     function resolvedLookAndFeel() {
         if (selectedLayout === "classic") {
             return "com.ahmados.desktop.classic"
@@ -205,6 +221,18 @@ ApplicationWindow {
         }
 
         return "com.ahmados.desktop"
+    }
+
+    function resolvedLookAndFeelLabel() {
+        if (selectedLayout === "classic") {
+            return qsTr("Classic panel")
+        }
+
+        if (selectedLayout === "minimal") {
+            return qsTr("Minimal panel")
+        }
+
+        return qsTr("Balanced panel")
     }
 
     function currentNotice() {
@@ -221,7 +249,7 @@ ApplicationWindow {
         }
 
         if (currentStep === 4) {
-            return qsTr("Update Center will use this channel as the foreground track when showing available release metadata.")
+            return qsTr("Update Center will use this channel as the foreground track when showing available release metadata. Stable remains the recommended path for most people.")
         }
 
         if (currentStep === 5) {
@@ -360,11 +388,34 @@ ApplicationWindow {
                     }
                 }
 
-                Label {
-                    text: pages[currentStep].eyebrow
-                    color: brand
-                    font.pixelSize: 12
-                    font.bold: true
+                RowLayout {
+                    Layout.fillWidth: true
+
+                    Label {
+                        text: pages[currentStep].eyebrow
+                        color: brand
+                        font.pixelSize: 12
+                        font.bold: true
+                    }
+
+                    Item { Layout.fillWidth: true }
+
+                    Rectangle {
+                        radius: 12
+                        color: "#142D6C8A"
+                        border.color: "#222D6C8A"
+                        implicitHeight: 28
+                        implicitWidth: stepLabel.implicitWidth + 18
+
+                        Label {
+                            id: stepLabel
+                            anchors.centerIn: parent
+                            text: qsTr("Step %1 of %2").arg(root.currentStep + 1).arg(root.pages.length)
+                            color: brand
+                            font.pixelSize: 12
+                            font.bold: true
+                        }
+                    }
                 }
 
                 Label {
@@ -425,13 +476,13 @@ ApplicationWindow {
 
                     Button {
                         visible: root.currentStep < pages.length - 1
-                        text: qsTr("Next")
+                        text: qsTr("Continue")
                         onClicked: root.currentStep++
                     }
 
                     Button {
                         visible: root.currentStep === pages.length - 1
-                        text: qsTr("Finish and Apply")
+                        text: qsTr("Save and Apply")
                         onClicked: root.finishWelcome()
                     }
                 }
@@ -496,7 +547,7 @@ ApplicationWindow {
                         }
 
                         Label {
-                            text: qsTr("Color scheme") + ": " + root.resolvedColorScheme()
+                            text: qsTr("Color scheme") + ": " + root.resolvedColorSchemeLabel()
                             color: mist
                             font.pixelSize: 13
                         }
@@ -508,10 +559,9 @@ ApplicationWindow {
                         }
 
                         Label {
-                            text: qsTr("Look-and-feel") + ": " + root.resolvedLookAndFeel()
+                            text: qsTr("Panel style") + ": " + root.resolvedLookAndFeelLabel()
                             color: mist
                             font.pixelSize: 13
-                            wrapMode: Text.WrapAnywhere
                         }
 
                         Label {
@@ -523,6 +573,47 @@ ApplicationWindow {
                         Label {
                             text: qsTr("Release channel") + ": " + root.choiceLabel(root.channelChoices, root.selectedChannel, qsTr("Stable"))
                             color: mist
+                            font.pixelSize: 13
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    radius: 22
+                    color: "#14C9895B"
+                    border.color: "#22C9895B"
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 8
+
+                        Label {
+                            text: qsTr("What will apply")
+                            color: ivory
+                            font.pixelSize: 16
+                            font.bold: true
+                        }
+
+                        Label {
+                            text: root.resolvedColorSchemeLabel() + qsTr(" with ") + root.choiceLabel(root.wallpaperChoices, root.selectedWallpaper, qsTr("Lagoon"))
+                            color: mist
+                            wrapMode: Text.WordWrap
+                            font.pixelSize: 13
+                        }
+
+                        Label {
+                            text: root.resolvedLookAndFeelLabel() + qsTr(" for the Plasma shell")
+                            color: mist
+                            wrapMode: Text.WordWrap
+                            font.pixelSize: 13
+                        }
+
+                        Label {
+                            text: qsTr("Update Center will foreground the %1 track").arg(root.choiceLabel(root.channelChoices, root.selectedChannel, qsTr("Stable")))
+                            color: mist
+                            wrapMode: Text.WordWrap
                             font.pixelSize: 13
                         }
                     }
@@ -696,6 +787,40 @@ ApplicationWindow {
                             font.bold: true
                         }
 
+                        Row {
+                            spacing: 6
+
+                            Repeater {
+                                model: modelData.swatches
+
+                                Rectangle {
+                                    width: 14
+                                    height: 14
+                                    radius: 7
+                                    color: modelData
+                                    border.color: "#30FFFFFF"
+                                }
+                            }
+
+                            Rectangle {
+                                visible: !!modelData.recommended
+                                radius: 10
+                                color: modelData.id === root.selectedAppearance ? "#26F7F3ED" : "#142D6C8A"
+                                border.color: modelData.id === root.selectedAppearance ? "#30F7F3ED" : "#202D6C8A"
+                                implicitHeight: 20
+                                implicitWidth: recommendedAppearanceText.implicitWidth + 14
+
+                                Label {
+                                    id: recommendedAppearanceText
+                                    anchors.centerIn: parent
+                                    text: qsTr("Recommended")
+                                    color: modelData.id === root.selectedAppearance ? ivory : brand
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                }
+                            }
+                        }
+
                         Label {
                             text: modelData.body
                             color: modelData.id === root.selectedAppearance ? mist : "#546A79"
@@ -743,6 +868,40 @@ ApplicationWindow {
                             font.bold: true
                         }
 
+                        Row {
+                            spacing: 6
+
+                            Repeater {
+                                model: modelData.swatches
+
+                                Rectangle {
+                                    width: 14
+                                    height: 14
+                                    radius: 7
+                                    color: modelData
+                                    border.color: "#30FFFFFF"
+                                }
+                            }
+
+                            Rectangle {
+                                visible: !!modelData.recommended
+                                radius: 10
+                                color: modelData.path === root.selectedWallpaper ? "#26F7F3ED" : "#163F8F95"
+                                border.color: modelData.path === root.selectedWallpaper ? "#30F7F3ED" : "#203F8F95"
+                                implicitHeight: 20
+                                implicitWidth: recommendedWallpaperText.implicitWidth + 14
+
+                                Label {
+                                    id: recommendedWallpaperText
+                                    anchors.centerIn: parent
+                                    text: qsTr("Recommended")
+                                    color: ivory
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                }
+                            }
+                        }
+
                         Label {
                             text: modelData.body
                             color: modelData.path === root.selectedWallpaper ? mist : "#546A79"
@@ -783,11 +942,35 @@ ApplicationWindow {
                         anchors.margins: 16
                         spacing: 6
 
-                        Label {
-                            text: modelData.label
-                            color: modelData.id === root.selectedLayout ? ivory : ink
-                            font.pixelSize: 18
-                            font.bold: true
+                        RowLayout {
+                            Layout.fillWidth: true
+
+                            Label {
+                                text: modelData.label
+                                color: modelData.id === root.selectedLayout ? ivory : ink
+                                font.pixelSize: 18
+                                font.bold: true
+                            }
+
+                            Item { Layout.fillWidth: true }
+
+                            Rectangle {
+                                visible: !!modelData.recommended
+                                radius: 10
+                                color: modelData.id === root.selectedLayout ? "#26F7F3ED" : "#142D6C8A"
+                                border.color: modelData.id === root.selectedLayout ? "#30F7F3ED" : "#202D6C8A"
+                                implicitHeight: 20
+                                implicitWidth: recommendedLayoutText.implicitWidth + 14
+
+                                Label {
+                                    id: recommendedLayoutText
+                                    anchors.centerIn: parent
+                                    text: qsTr("Recommended")
+                                    color: modelData.id === root.selectedLayout ? ivory : brand
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                }
+                            }
                         }
 
                         Label {
@@ -795,6 +978,22 @@ ApplicationWindow {
                             color: modelData.id === root.selectedLayout ? mist : "#546A79"
                             wrapMode: Text.WordWrap
                             font.pixelSize: 13
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: 26
+                            radius: 13
+                            color: modelData.id === root.selectedLayout ? "#1DF7F3ED" : "#1409131A"
+
+                            Rectangle {
+                                width: parent.width * modelData.panelWidth
+                                height: 10
+                                radius: 5
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.verticalCenter: parent.verticalCenter
+                                color: modelData.id === root.selectedLayout ? ivory : brand
+                            }
                         }
                     }
                 }
@@ -830,11 +1029,35 @@ ApplicationWindow {
                         anchors.margins: 16
                         spacing: 6
 
-                        Label {
-                            text: modelData.label
-                            color: modelData.id === root.selectedChannel ? ivory : ink
-                            font.pixelSize: 17
-                            font.bold: true
+                        RowLayout {
+                            Layout.fillWidth: true
+
+                            Label {
+                                text: modelData.label
+                                color: modelData.id === root.selectedChannel ? ivory : ink
+                                font.pixelSize: 17
+                                font.bold: true
+                            }
+
+                            Item { Layout.fillWidth: true }
+
+                            Rectangle {
+                                visible: !!modelData.recommended
+                                radius: 10
+                                color: modelData.id === root.selectedChannel ? "#26F7F3ED" : "#163F8F95"
+                                border.color: modelData.id === root.selectedChannel ? "#30F7F3ED" : "#203F8F95"
+                                implicitHeight: 20
+                                implicitWidth: recommendedChannelText.implicitWidth + 14
+
+                                Label {
+                                    id: recommendedChannelText
+                                    anchors.centerIn: parent
+                                    text: qsTr("Recommended")
+                                    color: ivory
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                }
+                            }
                         }
 
                         Label {

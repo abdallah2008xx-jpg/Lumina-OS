@@ -3,8 +3,8 @@
 ## Goal
 Keep Lumina-OS moving in a clean, testable, reviewable way.
 
-## Team Split
-- See `docs/TEAM-EXECUTION-PLAN.md` for the current Abdullah/Mohammad ownership split.
+## Execution Plan
+- See `docs/TEAM-EXECUTION-PLAN.md` for the current Lumina-OS execution order and ownership notes.
 
 ## Working Model
 - Use GitHub Issues to define the task before starting larger work.

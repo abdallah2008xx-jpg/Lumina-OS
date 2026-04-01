@@ -60,3 +60,7 @@
 - Updated build/test/report scripts so generated manifests, audits, readiness snapshots, blocker reviews, and VM reports now use `Lumina-OS` branding
 - Added `CONTRIBUTING.md`, `CHANGELOG.md`, GitHub issue templates, a PR template, and `docs/FIRST-RELEASE-CHECKLIST.md` to prepare the repo for teamwork and the first public release
 - Added `scripts/prepare-release-package.ps1` plus `status/releases/` to generate checksums, release notes drafts, and release manifests from a validated ISO
+- Absorbed the former Mohammad UI/UX track into the main Lumina-OS execution plan so one owner now carries build and interface work together
+- Polished the Welcome UI with clearer apply summaries, recommendation badges, and friendlier non-technical preview labels
+- Polished Update Center with structured loading, empty, and error states plus clearer foreground-channel messaging
+- Polished the SDDM theme with validation-oriented guidance and safer info-message coloring

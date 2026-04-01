@@ -1,55 +1,27 @@
-# Lumina-OS Team Execution Plan
+# Lumina-OS Execution Plan
 
-## الهدف
-هذه الخطة تقسم الشغل بين `عبدالله` و`محمد` حتى:
-- لا يشتغل الاثنان على نفس الملفات بدون قصد
-- لا يحدث تكرار أو تضارب أو merge conflicts غير ضرورية
-- يبقى كل PR واضح ومرتبط بمالك واحد
+## Purpose
+This plan now reflects the current project reality:
+- Mohammad is no longer active on the project
+- Abdullah owns the full execution path
+- the former UI/UX track has been absorbed into the main implementation track
 
-## قواعد العمل المشتركة
-- كل مهمة كبيرة لازم تبدأ من GitHub Issue أو اتفاق واضح داخل المحادثة.
-- كل مهمة لها `Owner` واحد فقط.
-- كل Owner يعمل على branch خاص به.
-- لا يوجد push مباشر إلى `main`.
-- كل تغيير مهم يمر عبر Pull Request.
-- الشخص الثاني يراجع PR قبل الدمج.
-- إذا احتاجت المهمة لمسارات تخص الشخص الثاني، يتوقف صاحب المهمة ويطلب تنسيقًا أولًا.
+The goal is to keep work ordered, avoid duplicated effort, and protect the build/test path while Lumina-OS moves toward its first real ISO.
 
-## قاعدة الفروع
-- عبدالله يستخدم فروعًا مثل:
-  - `abdallah/build-stable-01`
-  - `abdallah/vm-cycle-stable-01`
-  - `abdallah/release-prep-01`
-- محمد يستخدم فروعًا مثل:
-  - `mohammad/welcome-polish-01`
-  - `mohammad/update-center-ui-01`
-  - `mohammad/sddm-polish-01`
+## Working Rules
+- keep `main` stable and readable
+- prefer one focused branch per task when work is done from multiple machines
+- do not mix build/test workflow changes with deep compatibility renames unless there is a clear reason
+- update status files when a meaningful stage is completed
+- treat internal compatibility identifiers such as `ahmados-*` and `com.ahmados.*` as stable until after the first real ISO validation
 
-## الملفات المشتركة الحساسة
-هذه الملفات لا يعدلها أي شخص بشكل عشوائي:
-- `README.md`
-- `CHANGELOG.md`
-- `status/CURRENT-STATUS.md`
-- `status/PROJECT-SUMMARY.md`
-- `.github/`
-- `archiso-profile/airootfs/etc/ahmados-release.conf`
-- أي rename عميق للمعرفات الداخلية مثل `ahmados-*` أو `com.ahmados.*`
+## Current Ownership
+Abdullah now owns both tracks:
+- build, boot, validation, evidence, and release preparation
+- Welcome, Update Center, SDDM, visual polish, and UI copy
 
-إذا احتاج أحد هذه الملفات:
-- يذكر ذلك داخل الـ PR
-- ويحاول أن يكون التعديل في آخر خطوة بعد الاتفاق
-
-## خطة عبدالله
-
-### الملكية الأساسية
-عبدالله يملك حاليًا مسار:
-- البناء
-- الإقلاع
-- الاختبار
-- الأدلة والتقارير
-- الجاهزية والإصدار
-
-### الملفات التي يملكها
+## Build And Validation Ownership
+Primary ownership remains with these paths:
 - `archiso-profile/profiledef.sh`
 - `archiso-profile/packages.x86_64`
 - `archiso-profile/build-variants/`
@@ -71,6 +43,7 @@
 - `scripts/sync-readiness-status.ps1`
 - `scripts/sync-validation-matrix.ps1`
 - `scripts/import-diagnostics-bundle.ps1`
+- `scripts/prepare-release-package.ps1`
 - `status/builds/`
 - `status/vm-tests/`
 - `status/test-sessions/`
@@ -79,38 +52,16 @@
 - `status/blockers/`
 - `status/readiness/`
 - `status/validation-matrix/`
+- `status/releases/`
 
-### المطلوب من عبدالله الآن
-1. تنفيذ أول build حقيقي داخل Arch لوضع `stable`.
-2. تنفيذ أول VM cycle حقيقي لوضع `stable`.
-3. تنفيذ أول build حقيقي داخل Arch لوضع `login-test`.
-4. تنفيذ أول VM cycle حقيقي لوضع `login-test`.
-5. تحديث حالة الجاهزية بعد الأدلة الحقيقية.
-6. تجهيز أول release package بعد نجاح البناء والاختبار.
-
-### يعتبر شغله منجزًا عندما
-- يوجد build manifest حقيقي
-- يوجد VM report حقيقي
-- توجد diagnostics import حقيقية
-- readiness وvalidation matrix مبنيتان على تشغيل فعلي
-
-## خطة محمد
-
-### الملكية الأساسية
-محمد يملك حاليًا مسار:
-- واجهات النظام
-- التنعيم البصري
-- تجربة الاستخدام
-- تحسين النصوص والواجهات
-
-### الملفات التي يملكها
+## Former Mohammad Track Now Absorbed
+These paths are now part of the same main execution stream:
 - `archiso-profile/airootfs/usr/share/ahmados/welcome/`
 - `archiso-profile/airootfs/usr/share/ahmados/update-center/`
 - `archiso-profile/airootfs/usr/share/sddm/themes/ahmados/`
 - `archiso-profile/airootfs/usr/share/color-schemes/`
 - `archiso-profile/airootfs/usr/share/ahmados/wallpapers/`
 - `branding/`
-- `docs/DESIGN-BRIEF.md`
 - `docs/DESKTOP-LAYOUT-SPEC.md`
 - `docs/SDDM-THEME-SPEC.md`
 - `docs/WELCOME-APP-SPEC.md`
@@ -121,50 +72,43 @@
 - `docs/SYSTEM-THEME-IMPLEMENTATION.md`
 - `docs/UX-AGENT-REPORT.md`
 
-### المطلوب من محمد الآن
-1. تحسين Welcome بصريًا ونصيًا بدون كسر المنطق الحالي.
-2. تحسين Update Center من ناحية النصوص والحالات مثل:
-   - loading
-   - empty
-   - error
-   - channel wording
-3. تحسين SDDM theme بصريًا وتوحيد الاسم `Lumina-OS`.
-4. تنظيف أسماء الخلفيات والألوان وعرضها للمستخدم بشكل أوضح.
-5. إبقاء ملفات UX/specs متوافقة مع التنفيذ الحالي.
+## Current Execution Order
+1. Finish UI polish that used to belong to the Mohammad track:
+   - Welcome clarity and user-facing labels
+   - Update Center loading, empty, and error states
+   - SDDM wording and test-oriented guidance
+   - visual consistency for wallpapers, color names, and channel wording
+2. Run the first real `stable` build inside Arch
+3. Run the first full labeled VM cycle for `stable`
+4. Run the first real `login-test` build inside Arch
+5. Run the first full labeled VM cycle for `login-test`
+6. Review blockers, readiness, and validation matrix from real evidence
+7. Prepare the first release package and publish the first GitHub Release
 
-### ما لا يفعله محمد حاليًا
-- لا يعدل bootloader files
-- لا يعدل build scripts
-- لا يعدل validators
-- لا يغير flow الخاص بالأدلة والتقارير
-- لا يعمل rename عميق للمعرفات الداخلية
+## Done Criteria For The Absorbed UI Track
+This part is considered complete when:
+- Welcome shows clearer non-technical labels for saved choices
+- Update Center handles `loading`, `empty`, and `error` states clearly
+- SDDM copy is aligned with real validation use
+- visible product wording stays consistent with `Lumina-OS`
+- no UI polish work breaks the existing build/test workflow
 
-### يعتبر شغله منجزًا عندما
-- Welcome وUpdate Center وSDDM صارت أوضح وأجمل
-- النصوص كلها متسقة مع `Lumina-OS`
-- لا يوجد تعارض مع build/test workflow
+## Done Criteria For The Build Track
+This part is considered complete when:
+- a real build manifest exists
+- a real VM report exists
+- a real diagnostics import exists
+- readiness and validation matrix are driven by actual ISO evidence
+- the first release package can be generated from a real build
 
-## ترتيب العمل الحالي
-1. عبدالله يركز على build/test path الحقيقي.
-2. محمد يركز على polish داخل الواجهات والهوية البصرية.
-3. لا أحد يدخل في منطقة الثاني إلا بعد تنسيق واضح.
-4. بعد أول ISO حقيقي ناجح نراجع إذا كان وقت rename الداخلي قد حان.
+## Files That Still Need Extra Care
+These files can be edited, but changes should stay intentional and well-scoped:
+- `README.md`
+- `CHANGELOG.md`
+- `status/CURRENT-STATUS.md`
+- `status/PROJECT-SUMMARY.md`
+- `.github/`
+- `archiso-profile/airootfs/etc/ahmados-release.conf`
 
-## قاعدة الدمج
-- كل PR يجب أن يذكر الملفات التي لمسها.
-- إذا كانت المهمة لمست ملفات خارج ملكية صاحبها، يجب ذكر السبب.
-- إذا ظهر conflict، الأولوية لصاحب الملكية الأساسية لذلك المسار.
-
-## أول تقسيم عملي جاهز الآن
-
-### عبدالله يبدأ بـ
-- `stable` build
-- `stable` VM cycle
-- `login-test` build
-- `login-test` VM cycle
-
-### محمد يبدأ بـ
-- Welcome polish
-- Update Center polish
-- SDDM polish
-- مراجعة نصوص `Lumina-OS` في الواجهات
+## Practical Note
+If a new collaborator joins later, this plan can be split again. For now, Lumina-OS should be treated as a single-owner execution flow so progress stays clean and predictable.

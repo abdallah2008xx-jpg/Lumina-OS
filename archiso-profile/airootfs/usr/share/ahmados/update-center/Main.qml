@@ -14,7 +14,9 @@ ApplicationWindow {
     color: "#09131A"
 
     property var releases: []
+    property string metadataStateKind: "loading"
     property string metadataState: qsTr("Loading release metadata...")
+    property string metadataBody: qsTr("Lumina-OS is reading the local cache so release browsing still works even before deeper package actions exist.")
     property string metadataSource: qsTr("Bundled")
     property string checkedAt: qsTr("Unknown")
     property string installedVersion: "0.1.0-dev"
@@ -31,10 +33,10 @@ ApplicationWindow {
     readonly property color danger: "#BC6454"
 
     readonly property var channels: [
-        { "id": "dev", "name": qsTr("Dev"), "text": qsTr("Earliest internal work and the highest expected instability.") },
-        { "id": "alpha", "name": qsTr("Alpha"), "text": qsTr("Feature previews for early testing with visible rough edges.") },
+        { "id": "stable", "name": qsTr("Stable"), "text": qsTr("Recommended for normal users and the default Lumina-OS channel."), "recommended": true },
         { "id": "beta", "name": qsTr("Beta"), "text": qsTr("Near-release builds with lower risk and broader validation.") },
-        { "id": "stable", "name": qsTr("Stable"), "text": qsTr("Recommended for normal users and the default Lumina-OS channel.") }
+        { "id": "alpha", "name": qsTr("Alpha"), "text": qsTr("Feature previews for early testing with visible rough edges.") },
+        { "id": "dev", "name": qsTr("Dev"), "text": qsTr("Earliest internal work and the highest expected instability.") }
     ]
 
     Settings {
@@ -51,6 +53,74 @@ ApplicationWindow {
         }
 
         return qsTr("Stable")
+    }
+
+    function setMetadataState(kind, headline, body) {
+        metadataStateKind = kind
+        metadataState = headline
+        metadataBody = body
+    }
+
+    function metadataBadgeText() {
+        if (metadataStateKind === "ready") {
+            return qsTr("Ready")
+        }
+
+        if (metadataStateKind === "empty") {
+            return qsTr("Empty")
+        }
+
+        if (metadataStateKind === "error") {
+            return qsTr("Attention")
+        }
+
+        return qsTr("Loading")
+    }
+
+    function metadataFill() {
+        if (metadataStateKind === "ready") {
+            return "#142D6C8A"
+        }
+
+        if (metadataStateKind === "empty") {
+            return "#143F8F95"
+        }
+
+        if (metadataStateKind === "error") {
+            return "#14BC6454"
+        }
+
+        return "#19F7F3ED"
+    }
+
+    function metadataBorder() {
+        if (metadataStateKind === "ready") {
+            return "#222D6C8A"
+        }
+
+        if (metadataStateKind === "empty") {
+            return "#203F8F95"
+        }
+
+        if (metadataStateKind === "error") {
+            return "#22BC6454"
+        }
+
+        return "#16F7F3ED"
+    }
+
+    function releaseChannelHint(release) {
+        var detectedChannel = detectChannel(release)
+
+        if (detectedChannel === welcomeSettings.channel) {
+            return qsTr("Matches the channel saved in Welcome.")
+        }
+
+        if (detectedChannel === "stable") {
+            return qsTr("Best starting point for most users.")
+        }
+
+        return qsTr("Available for preview and validation.")
     }
 
     function detectChannel(release) {
@@ -176,7 +246,11 @@ ApplicationWindow {
     }
 
     function reloadMetadata() {
-        metadataState = qsTr("Loading release metadata...")
+        setMetadataState(
+            "loading",
+            qsTr("Loading release metadata..."),
+            qsTr("Lumina-OS is refreshing the local release cache and the last-known status snapshot.")
+        )
 
         loadJson(statusCacheUrl, function(payload) {
             checkedAt = payload.checkedAt ? payload.checkedAt.slice(0, 19).replace("T", " ") : qsTr("Unknown")
@@ -189,12 +263,26 @@ ApplicationWindow {
 
         loadJson(releaseCacheUrl, function(payload) {
             releases = normalizePayload(payload)
-            metadataState = releases.length > 0
-                ? qsTr("Release metadata loaded successfully.")
-                : qsTr("No releases were found in the current metadata cache.")
+            if (releases.length > 0) {
+                setMetadataState(
+                    "ready",
+                    qsTr("Release metadata loaded successfully."),
+                    qsTr("The local cache is ready to describe available Lumina-OS builds without reopening the app.")
+                )
+            } else {
+                setMetadataState(
+                    "empty",
+                    qsTr("No releases were found in the current metadata cache."),
+                    qsTr("The app opened successfully, but there are no release cards to show yet from the current source.")
+                )
+            }
         }, function(errorText) {
             releases = []
-            metadataState = qsTr("Unable to load the local release cache.") + " " + errorText
+            setMetadataState(
+                "error",
+                qsTr("Unable to load the local release cache."),
+                qsTr("Update Center could not parse the cached release data.") + " " + errorText
+            )
         })
     }
 
@@ -261,10 +349,63 @@ ApplicationWindow {
                         wrapMode: Text.WordWrap
                     }
 
-                    Label {
-                        text: metadataState
-                        color: brand
-                        font.pixelSize: 13
+                    Rectangle {
+                        Layout.fillWidth: true
+                        radius: 20
+                        color: root.metadataFill()
+                        border.color: root.metadataBorder()
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 16
+                            spacing: 6
+
+                            RowLayout {
+                                Layout.fillWidth: true
+
+                                Rectangle {
+                                    radius: 10
+                                    color: "#26F7F3ED"
+                                    border.color: "#30F7F3ED"
+                                    implicitHeight: 20
+                                    implicitWidth: metadataBadgeTextLabel.implicitWidth + 14
+
+                                    Label {
+                                        id: metadataBadgeTextLabel
+                                        anchors.centerIn: parent
+                                        text: root.metadataBadgeText()
+                                        color: ivory
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                    }
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                Label {
+                                    text: checkedAt === qsTr("Unknown") ? qsTr("Waiting for cache timestamp") : checkedAt
+                                    color: mist
+                                    font.pixelSize: 12
+                                }
+                            }
+
+                            Label {
+                                Layout.fillWidth: true
+                                text: metadataState
+                                color: ivory
+                                font.pixelSize: 15
+                                font.bold: true
+                                wrapMode: Text.WordWrap
+                            }
+
+                            Label {
+                                Layout.fillWidth: true
+                                text: metadataBody
+                                color: mist
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
+                            }
+                        }
                     }
                 }
 
@@ -303,7 +444,7 @@ ApplicationWindow {
                 }
 
                 Button {
-                    text: qsTr("Reload release cache")
+                    text: qsTr("Reload metadata")
                     onClicked: root.reloadMetadata()
                 }
             }
@@ -387,6 +528,15 @@ ApplicationWindow {
                                     font.pixelSize: 14
                                 }
 
+                                Label {
+                                    Layout.fillWidth: true
+                                    text: root.releaseChannelHint(modelData)
+                                    color: index === 0 ? cloud : brand
+                                    wrapMode: Text.WordWrap
+                                    font.pixelSize: 12
+                                    font.bold: true
+                                }
+
                                 RowLayout {
                                     Layout.fillWidth: true
 
@@ -411,6 +561,44 @@ ApplicationWindow {
                                     color: index === 0 ? mist : "#546A79"
                                     font.pixelSize: 12
                                 }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        visible: root.releases.length === 0
+                        Layout.fillWidth: true
+                        implicitHeight: 164
+                        radius: 24
+                        color: "#CCFFFFFF"
+                        border.color: "#1209131A"
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 18
+                            spacing: 8
+
+                            Label {
+                                text: qsTr("No release cards are ready yet")
+                                color: ink
+                                font.pixelSize: 20
+                                font.bold: true
+                            }
+
+                            Label {
+                                Layout.fillWidth: true
+                                text: metadataBody
+                                color: "#546A79"
+                                wrapMode: Text.WordWrap
+                                font.pixelSize: 14
+                            }
+
+                            Label {
+                                Layout.fillWidth: true
+                                text: qsTr("Check the cached JSON source, then reload metadata or regenerate the release cache from the launcher script.")
+                                color: brand
+                                wrapMode: Text.WordWrap
+                                font.pixelSize: 13
                             }
                         }
                     }
@@ -442,6 +630,12 @@ ApplicationWindow {
 
                             Label {
                                 text: qsTr("Installed baseline") + ": " + installedVersion
+                                color: "#546A79"
+                                font.pixelSize: 14
+                            }
+
+                            Label {
+                                text: qsTr("Source") + ": " + metadataSource
                                 color: "#546A79"
                                 font.pixelSize: 14
                             }
@@ -497,6 +691,24 @@ ApplicationWindow {
                                     color: ivory
                                     font.pixelSize: 16
                                     font.bold: true
+                                }
+
+                                Rectangle {
+                                    visible: modelData.id === welcomeSettings.channel || !!modelData.recommended
+                                    radius: 10
+                                    color: modelData.id === welcomeSettings.channel ? "#26F7F3ED" : "#142D6C8A"
+                                    border.color: modelData.id === welcomeSettings.channel ? "#30F7F3ED" : "#202D6C8A"
+                                    implicitHeight: 20
+                                    implicitWidth: channelBadgeLabel.implicitWidth + 14
+
+                                    Label {
+                                        id: channelBadgeLabel
+                                        anchors.centerIn: parent
+                                        text: modelData.id === welcomeSettings.channel ? qsTr("Foreground") : qsTr("Recommended")
+                                        color: ivory
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                    }
                                 }
 
                                 Label {

@@ -14,10 +14,15 @@ This project follows a simple rule for now:
 - Build/test evidence workflow with manifests, VM reports, diagnostics imports, audits, blockers, readiness, and validation matrix
 - GitHub-hosted project baseline under the `Lumina-OS` repository
 - Visible project and workflow branding aligned to `Lumina-OS`
+- Release-package scaffolding for checksums, release notes drafts, and release manifests
+- A single-owner execution plan after the former Mohammad UI/UX track was absorbed into the main flow
 
 ### Changed
 - Live-system UI wording now presents the distro as `Lumina-OS`
 - Build/test/report scripts now emit `Lumina-OS` branding in generated output
+- Welcome now uses friendlier saved-choice labels, stronger apply summaries, and recommendation badges
+- Update Center now exposes structured `loading`, `empty`, and `error` states with clearer channel wording
+- SDDM now uses validation-oriented guidance and safer information-message coloring
 
 ### Pending Before First Tagged Release
 - First real `stable` build in Arch

@@ -17,6 +17,7 @@ Rectangle {
     property color accentSecondary: config.accentSecondary ? config.accentSecondary : "#3F8F95"
     property color accentWarm: config.accentWarm ? config.accentWarm : "#C9895B"
     property color dangerColor: config.dangerColor ? config.dangerColor : "#BC6454"
+    property color infoColor: config.infoColor ? config.infoColor : "#3F8F95"
     property int sessionIndex: session.index
 
     LayoutMirroring.enabled: Qt.locale().textDirection == Qt.RightToLeft
@@ -69,7 +70,7 @@ Rectangle {
 
         function onInformationMessage(message) {
             prompt.text = message
-            prompt.color = root.dangerColor
+            prompt.color = root.infoColor
         }
     }
 
@@ -122,7 +123,7 @@ Rectangle {
     Rectangle {
         id: card
         width: Math.min(parent.width * 0.32, 520)
-        height: 470
+        height: 560
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         radius: 28
@@ -144,9 +145,39 @@ Rectangle {
             }
 
             Text {
-                text: "Premium, calm, and ready."
+                text: qsTr("Focused, calm, and ready for validation.")
                 color: root.secondaryText
                 font.pixelSize: 14
+            }
+
+            Rectangle {
+                width: parent.width
+                radius: 18
+                color: "#142D6C8A"
+                border.color: "#202D6C8A"
+
+                Column {
+                    width: parent.width
+                    anchors.margins: 16
+                    anchors.fill: parent
+                    spacing: 6
+
+                    Text {
+                        width: parent.width
+                        text: qsTr("Use this screen to validate the real login path for Lumina-OS, especially in login-test builds.")
+                        color: root.primaryText
+                        font.pixelSize: 13
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Text {
+                        width: parent.width
+                        text: qsTr("Choose a different session entry only when you are intentionally testing another login path.")
+                        color: root.secondaryText
+                        font.pixelSize: 12
+                        wrapMode: Text.WordWrap
+                    }
+                }
             }
 
             Text {
@@ -303,6 +334,14 @@ Rectangle {
                     KeyNavigation.backtab: shutdownButton
                     KeyNavigation.tab: name
                 }
+            }
+
+            Text {
+                width: parent.width
+                text: qsTr("Shutdown and reboot controls are intended for the current device or VM test pass.")
+                color: root.secondaryText
+                font.pixelSize: 11
+                wrapMode: Text.WordWrap
             }
         }
     }

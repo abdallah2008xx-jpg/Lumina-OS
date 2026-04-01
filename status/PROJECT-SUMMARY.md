@@ -11,6 +11,8 @@ This file gives one fast answer to two questions:
 - Lumina-OS naming and visible branding are in place across the repo and the live-system UI
 - product, desktop, Welcome, Update Center, SDDM, and settings direction are documented
 - wallpapers, color schemes, Plasma defaults, and SDDM theme assets exist inside the live image
+- the former Abdullah/Mohammad split has been collapsed into one execution plan so UI and build work stay aligned
+- Welcome, Update Center, and SDDM have received a clearer user-facing polish pass for real ISO validation
 
 ### Live-System Implementation
 - the archiso profile is structured and prepared for a real Arch-side build
@@ -28,7 +30,7 @@ This file gives one fast answer to two questions:
 - the repo is connected to GitHub under `Lumina-OS`
 - validation workflow exists in GitHub Actions
 - contributor guidance, changelog tracking, issue templates, PR template, and first-release checklist are present
-- a dedicated Abdullah/Mohammad execution plan exists under `docs/TEAM-EXECUTION-PLAN.md`
+- a current single-owner execution plan exists under `docs/TEAM-EXECUTION-PLAN.md`
 
 ## What Is Still Remaining
 
@@ -64,7 +66,8 @@ This file gives one fast answer to two questions:
 ## Recommended Next Order
 1. Run the first real `stable` build in Arch
 2. Run a full labeled VM cycle for `stable`
-3. Run the first real `login-test` build in Arch
-4. Run a full labeled VM cycle for `login-test`
-5. Review readiness, blockers, and validation matrix
-6. Prepare and publish the first GitHub Release
+3. Confirm the new Welcome, Update Center, and SDDM polish inside the built ISO
+4. Run the first real `login-test` build in Arch
+5. Run a full labeled VM cycle for `login-test`
+6. Review readiness, blockers, and validation matrix
+7. Prepare and publish the first GitHub Release

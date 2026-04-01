@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+app_qml="/usr/share/ahmados/update-center/Main.qml"
+
+if command -v ahmados-refresh-release-metadata >/dev/null 2>&1; then
+    ahmados-refresh-release-metadata || true
+fi
+
+if ! command -v qmlscene6 >/dev/null 2>&1; then
+    echo "qmlscene6 is not available." >&2
+    exit 1
+fi
+
+QML_XHR_ALLOW_FILE_READ=1 qmlscene6 "${app_qml}"

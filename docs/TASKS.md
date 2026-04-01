@@ -1,0 +1,57 @@
+# Current Tasks
+
+## Active
+- [ ] Audit current AhmadOS project assets that are worth reusing
+- [x] Define clean package baseline
+- [x] Create new archiso profile skeleton
+- [x] Separate stability layer from branding layer
+- [x] Create branding brief and brand system baseline
+- [x] Design desktop layout spec
+- [x] Define welcome app and update center scope
+- [x] Build first local interface prototypes
+- [x] Create first wallpaper pack
+- [x] Prototype AhmadOS SDDM theme direction
+- [x] Turn the SDDM direction into a real theme package
+- [x] Add real Plasma look-and-feel defaults for the live session
+- [x] Prepare a staged Arch build workflow with `stable` and `login-test` modes
+- [x] Add a repeatable VM test checklist
+- [x] Turn the Plasma welcome flow into a real Qt/QML application shell
+- [x] Turn the Update Center shell into a real Qt/QML application shell
+- [x] Connect Welcome choices to real session settings and theming paths
+- [x] Connect Update Center to metadata-backed release data
+- [x] Add local profile validation before the first serious Arch build
+- [x] Add firstboot reporting for live-session diagnostics
+- [x] Add Arch-side validation and a firstboot report launcher for VM testing
+- [x] Add build manifests and VM test report scaffolding
+- [x] Add Arch environment bootstrap and diagnostics export helpers
+- [x] Add test-session summaries to connect build and VM evidence
+- [x] Add live smoke checks for quick post-boot validation
+- [x] Add diagnostics import flow back into the repo evidence trail
+- [x] Add one-command VM test cycle initialization
+- [x] Add one-command VM test cycle finalization after diagnostics export
+- [x] Add test-session audit reporting after VM cycle finalization
+- [x] Add centralized blocker syncing from session, VM, and audit results
+- [x] Add centralized readiness syncing from build, session, audit, and blocker results
+- [x] Add centralized validation-matrix syncing for `stable` and `login-test`
+- [x] Add run-label traceability across repeated VM cycles
+- [ ] Prepare first serious build attempt in an Arch environment
+- [ ] Test the first ISO boot path in a VM
+- [ ] Plan GitHub release/update workflow
+
+## Next
+- [ ] Build first minimal ISO
+- [ ] Validate login, networking, and guest tools after first boot
+- [ ] Validate the new Welcome settings flow inside a built ISO
+- [ ] Validate the metadata-backed Update Center inside a built ISO
+- [ ] Review the generated firstboot report inside a built ISO
+- [ ] Review the generated build manifest after the first real Arch build
+- [ ] Export and inspect the first diagnostics bundle inside a built ISO
+- [ ] Run and review the first smoke-check report inside a built ISO
+- [ ] Record the first VM test in `status/vm-tests/`
+- [ ] Import the first diagnostics bundle into `status/diagnostics/`
+- [ ] Record the first build/test session in `status/test-sessions/`
+- [ ] Record the first audited test session in `status/test-session-audits/`
+- [ ] Record the first blocker review in `status/blockers/`
+- [ ] Record the first readiness snapshot in `status/readiness/`
+- [ ] Record the first validation matrix in `status/validation-matrix/`
+- [ ] Record first `stable` and `login-test` VM test results

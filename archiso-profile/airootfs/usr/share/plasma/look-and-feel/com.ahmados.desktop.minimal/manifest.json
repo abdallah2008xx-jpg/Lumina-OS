@@ -1,0 +1,19 @@
+{
+  "KPackageStructure": "Plasma/LookAndFeel",
+  "KPlugin": {
+    "Authors": [
+      {
+        "Name": "AhmadOS Project"
+      }
+    ],
+    "Category": "",
+    "Description": "AhmadOS minimal desktop defaults for the live session",
+    "Id": "com.ahmados.desktop.minimal",
+    "License": "GPL-3.0-or-later",
+    "Name": "AhmadOS Minimal",
+    "Version": "0.1.0",
+    "Website": "https://github.com/"
+  },
+  "Keywords": "Desktop;Workspace;Appearance;Look and Feel;",
+  "X-Plasma-APIVersion": "2"
+}

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AhmadOS Update Center</title>
+  <link rel="stylesheet" href="../shared/theme.css">
+</head>
+<body>
+  <main class="page">
+    <header class="masthead">
+      <div class="brand-mark">
+        <span class="brand-orb"></span>
+        <div class="brand-copy">
+          <strong>AhmadOS</strong>
+          <span>Update Center prototype</span>
+        </div>
+      </div>
+      <div class="channel-row">
+        <span class="pill">Stable channel</span>
+        <span class="pill">Verified release</span>
+      </div>
+    </header>
+
+    <nav class="subnav">
+      <a class="nav-link active" href="#">Overview</a>
+      <a class="nav-link" href="#">Release Notes</a>
+      <a class="nav-link" href="#">History</a>
+    </nav>
+
+    <section class="split-shell" style="margin-top: 24px;">
+      <aside class="side-card">
+        <p class="eyebrow">Status</p>
+        <h2 class="section-title">Your system is ready for a calm update.</h2>
+        <p class="card-text">
+          AhmadOS 0.1.0-dev is installed. A new preview build is available with boot pipeline fixes,
+          clearer welcome flow structure, and refreshed system messaging.
+        </p>
+
+        <div class="metric-row" style="margin-top: 18px;">
+          <div class="metric-card">
+            <h3>Current</h3>
+            <p class="mono">0.1.0-dev</p>
+          </div>
+          <div class="metric-card">
+            <h3>Channel</h3>
+            <p>Stable</p>
+          </div>
+          <div class="metric-card">
+            <h3>Restart</h3>
+            <p>Required</p>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <a class="btn" href="#">Check for updates</a>
+          <a class="btn-secondary" href="#">View release notes</a>
+        </div>
+
+        <div class="content-card tight" style="margin-top: 22px;">
+          <p class="small-title">Download progress</p>
+          <div class="progress"><span></span></div>
+          <p class="card-text" style="margin-bottom: 0;">68% downloaded. Restart will be requested after verification.</p>
+        </div>
+      </aside>
+
+      <section class="panel-grid">
+        <article class="content-card">
+          <p class="eyebrow">Available Updates</p>
+          <div class="release-list">
+            <div class="release-card active">
+              <h3>AhmadOS Platform 0.1.1-preview</h3>
+              <p class="card-text">Boot reliability improvements, welcome flow visual shell, and status cleanup.</p>
+            </div>
+            <div class="release-card">
+              <h3>Apps and Integrations</h3>
+              <p class="card-text">Firefox and core KDE applications are grouped separately from platform updates.</p>
+            </div>
+            <div class="release-card">
+              <h3>Recovery Notice</h3>
+              <p class="card-text">Rollback is not automated yet. Reinstall guidance will remain visible until that exists.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="content-card">
+          <p class="eyebrow">Channel Guidance</p>
+          <div class="card-grid">
+            <div class="option-card">
+              <h3>Dev</h3>
+              <p class="card-text">Earliest work. Useful for internal testing only.</p>
+            </div>
+            <div class="option-card">
+              <h3>Alpha</h3>
+              <p class="card-text">Feature preview builds with expected rough edges.</p>
+            </div>
+            <div class="option-card">
+              <h3>Beta</h3>
+              <p class="card-text">Near-release builds with lower risk.</p>
+            </div>
+            <div class="option-card active">
+              <h3>Stable</h3>
+              <p class="card-text">Recommended for normal users and the default for AhmadOS.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="content-card" style="grid-column: 1 / -1;">
+          <p class="eyebrow">Release Notes Summary</p>
+          <h2 class="section-title">What changes in this release</h2>
+          <div class="timeline" style="margin-top: 18px;">
+            <div class="setting-card">
+              <h3>Boot path stabilization</h3>
+              <p class="card-text">The live ISO profile now uses clearer boot scaffolding for GRUB, Syslinux, and systemd-boot.</p>
+            </div>
+            <div class="setting-card">
+              <h3>Live session consistency</h3>
+              <p class="card-text">User creation and service enablement are handled during image customization instead of fragile overlays.</p>
+            </div>
+            <div class="setting-card">
+              <h3>Interface groundwork</h3>
+              <p class="card-text">Welcome, Update Center, and Settings shells now have a defined visual direction.</p>
+            </div>
+          </div>
+        </article>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

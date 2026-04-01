@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+config_file="/etc/ahmados-release.conf"
+fallback_file="/usr/share/ahmados/update-center/releases.json"
+cache_dir="${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados/update-center"
+releases_file="${cache_dir}/releases.json"
+status_file="${cache_dir}/status.json"
+
+source_mode="bundled"
+github_owner=""
+github_repo=""
+installed_version="0.1.0-dev"
+release_url=""
+active_source="bundled"
+checked_at="$(date -Iseconds)"
+
+if [[ -f "${config_file}" ]]; then
+    # shellcheck disable=SC1091
+    source "${config_file}"
+fi
+
+source_mode="${AHMADOS_RELEASES_SOURCE:-${source_mode}}"
+github_owner="${AHMADOS_GITHUB_OWNER:-${github_owner}}"
+github_repo="${AHMADOS_GITHUB_REPO:-${github_repo}}"
+installed_version="${AHMADOS_INSTALLED_VERSION:-${installed_version}}"
+
+mkdir -p "${cache_dir}"
+
+if [[ "${source_mode}" == "github" && -n "${github_owner}" && -n "${github_repo}" ]] && command -v curl >/dev/null 2>&1; then
+    release_url="https://api.github.com/repos/${github_owner}/${github_repo}/releases"
+    temp_file="$(mktemp)"
+
+    if curl \
+        --fail \
+        --location \
+        --silent \
+        --show-error \
+        -H "Accept: application/vnd.github+json" \
+        -H "X-GitHub-Api-Version: 2026-03-10" \
+        "${release_url}" \
+        --output "${temp_file}"; then
+        mv "${temp_file}" "${releases_file}"
+        active_source="github"
+    else
+        rm -f "${temp_file}"
+        cp "${fallback_file}" "${releases_file}"
+    fi
+else
+    cp "${fallback_file}" "${releases_file}"
+fi
+
+cat > "${status_file}" <<EOF
+{
+  "checkedAt": "${checked_at}",
+  "source": "${active_source}",
+  "installedVersion": "${installed_version}"
+}
+EOF

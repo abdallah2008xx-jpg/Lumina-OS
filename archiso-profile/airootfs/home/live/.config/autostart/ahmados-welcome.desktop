@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=AhmadOS Welcome
+Exec=/usr/local/bin/ahmados-welcome --once
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=3

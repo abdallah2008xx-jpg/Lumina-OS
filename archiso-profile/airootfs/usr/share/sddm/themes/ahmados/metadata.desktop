@@ -1,0 +1,13 @@
+[SddmGreeterTheme]
+Name=AhmadOS
+Description=Calm AhmadOS login theme
+Author=AhmadOS Project
+Copyright=(c) AhmadOS
+License=CC-BY-SA-4.0
+Type=sddm-theme
+Version=0.1.0
+Website=https://github.com/
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=ahmados
+Theme-API=2.0

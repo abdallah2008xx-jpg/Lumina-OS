@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+state_root="${XDG_STATE_HOME:-${HOME}/.local/state}/ahmados"
+cache_root="${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados"
+config_root="${HOME}/.config/ahmados"
+export_root="${HOME}/Documents/AhmadOS Diagnostics"
+timestamp="$(date +%Y%m%d-%H%M%S)"
+bundle_name="ahmados-diagnostics-${timestamp}"
+bundle_dir="${export_root}/${bundle_name}"
+archive_path="${export_root}/${bundle_name}.tar.gz"
+
+mkdir -p "${state_root}" "${cache_root}" "${config_root}" "${export_root}" "${bundle_dir}"
+
+if command -v ahmados-firstboot >/dev/null 2>&1; then
+    ahmados-firstboot || true
+fi
+
+if command -v ahmados-refresh-release-metadata >/dev/null 2>&1; then
+    ahmados-refresh-release-metadata || true
+fi
+
+if command -v ahmados-run-smoke-checks >/dev/null 2>&1; then
+    ahmados-run-smoke-checks || true
+fi
+
+summary_file="${bundle_dir}/summary.md"
+
+cat > "${summary_file}" <<EOF
+# AhmadOS Diagnostics Export
+
+- Generated: $(date -Iseconds)
+- Hostname: $(hostname 2>/dev/null || printf '%s' 'unknown')
+- Kernel: $(uname -r 2>/dev/null || printf '%s' 'unknown')
+- Session Type: ${XDG_SESSION_TYPE:-unknown}
+- Desktop Session: ${XDG_CURRENT_DESKTOP:-unknown}
+
+## Included Sources
+- firstboot report
+- Welcome config if present
+- Update Center cache if present
+- KDE globals snapshot
+- network and graphics command output when available
+- boot journal excerpt when available
+EOF
+
+copy_if_present() {
+    local source_path="$1"
+    local target_name="$2"
+
+    if [[ -f "${source_path}" ]]; then
+        cp "${source_path}" "${bundle_dir}/${target_name}"
+    fi
+}
+
+copy_if_present "${state_root}/firstboot-report.md" "firstboot-report.md"
+copy_if_present "${state_root}/smoke-check-report.md" "smoke-check-report.md"
+copy_if_present "${config_root}/welcome.conf" "welcome.conf"
+copy_if_present "${cache_root}/update-center/releases.json" "releases.json"
+copy_if_present "${cache_root}/update-center/status.json" "release-status.json"
+copy_if_present "${HOME}/.config/kdeglobals" "kdeglobals"
+copy_if_present "/etc/ahmados-release.conf" "ahmados-release.conf"
+
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl --no-pager --plain status NetworkManager.service > "${bundle_dir}/networkmanager-status.txt" 2>&1 || true
+    systemctl --no-pager --plain status sddm.service > "${bundle_dir}/sddm-status.txt" 2>&1 || true
+fi
+
+if command -v journalctl >/dev/null 2>&1; then
+    journalctl -b --no-pager > "${bundle_dir}/boot-journal.txt" 2>&1 || true
+fi
+
+if command -v ip >/dev/null 2>&1; then
+    ip address > "${bundle_dir}/ip-address.txt" 2>&1 || true
+    ip route > "${bundle_dir}/ip-route.txt" 2>&1 || true
+fi
+
+if command -v nmcli >/dev/null 2>&1; then
+    nmcli general status > "${bundle_dir}/nmcli-general-status.txt" 2>&1 || true
+    nmcli device status > "${bundle_dir}/nmcli-device-status.txt" 2>&1 || true
+fi
+
+if command -v loginctl >/dev/null 2>&1; then
+    loginctl --no-pager user-status "$(id -u)" > "${bundle_dir}/session-status.txt" 2>&1 || true
+fi
+
+if command -v qdbus6 >/dev/null 2>&1; then
+    qdbus6 org.kde.KWin /KWin supportInformation > "${bundle_dir}/kwin-support-information.txt" 2>&1 || true
+fi
+
+if command -v tar >/dev/null 2>&1; then
+    tar -C "${export_root}" -czf "${archive_path}" "${bundle_name}"
+fi
+
+if command -v dolphin >/dev/null 2>&1; then
+    dolphin "${export_root}" >/dev/null 2>&1 &
+elif command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${export_root}" >/dev/null 2>&1 &
+fi
+
+echo "AhmadOS diagnostics exported to: ${bundle_dir}"
+echo "Archive path: ${archive_path}"

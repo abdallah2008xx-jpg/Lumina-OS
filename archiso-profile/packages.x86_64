@@ -1,0 +1,63 @@
+# Core system
+arch-install-scripts
+base
+linux
+linux-firmware
+mkinitcpio
+mkinitcpio-archiso
+archlinux-keyring
+sudo
+nano
+vim
+networkmanager
+curl
+
+# Boot / ISO tooling expectations
+grub
+syslinux
+efibootmgr
+memtest86+
+
+# Graphics / session baseline
+mesa
+qt6-declarative
+qt6-svg
+xorg-server
+xorg-xinit
+xorg-xrandr
+xorg-xsetroot
+xorg-xwayland
+wayland
+qt6-wayland
+qt5-wayland
+egl-wayland
+
+# KDE Plasma baseline
+plasma-desktop
+plasma-workspace
+plasma-x11-session
+sddm
+systemsettings
+konsole
+dolphin
+plasma-nm
+plasma-pa
+spectacle
+ark
+firefox
+
+# Fonts / polish baseline
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
+inter-font
+ttf-dejavu
+ttf-liberation
+breeze
+breeze-gtk
+breeze-icons
+qqc2-breeze-style
+
+# VM friendliness
+virtualbox-guest-utils
+open-vm-tools

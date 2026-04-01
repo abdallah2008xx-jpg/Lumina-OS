@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mode="normal"
+stamp_dir="${HOME}/.config/ahmados"
+stamp_file="${stamp_dir}/welcome-seen"
+app_qml="/usr/share/ahmados/welcome/Main.qml"
+
+if [[ "${1:-}" == "--once" ]]; then
+    mode="once"
+fi
+
+mkdir -p "${stamp_dir}"
+
+if [[ "${mode}" == "once" && -f "${stamp_file}" ]]; then
+    exit 0
+fi
+
+if ! command -v qmlscene6 >/dev/null 2>&1; then
+    echo "qmlscene6 is not available." >&2
+    exit 1
+fi
+
+qmlscene6 "${app_qml}" || true
+
+if command -v ahmados-apply-session-defaults >/dev/null 2>&1; then
+    ahmados-apply-session-defaults --force || true
+fi
+
+if command -v ahmados-firstboot >/dev/null 2>&1; then
+    ahmados-firstboot || true
+fi
+
+if [[ "${mode}" == "once" ]]; then
+    touch "${stamp_file}"
+fi

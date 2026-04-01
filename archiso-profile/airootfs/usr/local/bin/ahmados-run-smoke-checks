@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+state_root="${XDG_STATE_HOME:-${HOME}/.local/state}/ahmados"
+config_root="${HOME}/.config/ahmados"
+config_file="${config_root}/welcome.conf"
+kdeglobals_file="${HOME}/.config/kdeglobals"
+report_file="${state_root}/smoke-check-report.md"
+desktop_report="${HOME}/Desktop/AhmadOS Smoke Check Report.md"
+open_after=0
+
+if [[ "${1:-}" == "--open" ]]; then
+    open_after=1
+fi
+
+mkdir -p "${state_root}" "${config_root}"
+
+read_ini_value() {
+    local file_path="$1"
+    local section_name="$2"
+    local key_name="$3"
+    local default_value="$4"
+    local value=""
+
+    if [[ -f "${file_path}" ]]; then
+        value="$(awk -F= -v section="[${section_name}]" -v target="${key_name}" '
+            BEGIN {
+                in_target = 0
+            }
+            /^\[/ {
+                in_target = ($0 == section)
+                next
+            }
+            in_target && $1 == target {
+                print substr($0, index($0, "=") + 1)
+                exit
+            }
+        ' "${file_path}")"
+    fi
+
+    if [[ -n "${value}" ]]; then
+        printf '%s\n' "${value}"
+    else
+        printf '%s\n' "${default_value}"
+    fi
+}
+
+pass_count=0
+warn_count=0
+checks_file="$(mktemp)"
+trap 'rm -f "${checks_file}"' EXIT
+
+add_check() {
+    local status="$1"
+    local title="$2"
+    local detail="$3"
+
+    if [[ "${status}" == "PASS" ]]; then
+        pass_count=$((pass_count + 1))
+    else
+        warn_count=$((warn_count + 1))
+    fi
+
+    printf -- "- [%s] %s: %s\n" "${status}" "${title}" "${detail}" >> "${checks_file}"
+}
+
+command_check() {
+    local command_name="$1"
+    local label="$2"
+
+    if command -v "${command_name}" >/dev/null 2>&1; then
+        add_check "PASS" "${label}" "command is available"
+    else
+        add_check "WARN" "${label}" "command is missing"
+    fi
+}
+
+service_check() {
+    local service_name="$1"
+    local label="$2"
+
+    if ! command -v systemctl >/dev/null 2>&1; then
+        add_check "WARN" "${label}" "systemctl is unavailable in this session"
+        return
+    fi
+
+    local enabled_state="disabled-or-absent"
+    local active_state="inactive-or-absent"
+
+    if systemctl is-enabled "${service_name}" >/dev/null 2>&1; then
+        enabled_state="enabled"
+    fi
+
+    if systemctl is-active "${service_name}" >/dev/null 2>&1; then
+        active_state="active"
+    fi
+
+    if [[ "${enabled_state}" == "enabled" && "${active_state}" == "active" ]]; then
+        add_check "PASS" "${label}" "enabled and active"
+    else
+        add_check "WARN" "${label}" "enabled=${enabled_state}, active=${active_state}"
+    fi
+}
+
+file_check() {
+    local file_path="$1"
+    local label="$2"
+
+    if [[ -f "${file_path}" ]]; then
+        add_check "PASS" "${label}" "file is present"
+    else
+        add_check "WARN" "${label}" "file is missing"
+    fi
+}
+
+expected_layout="$(read_ini_value "${config_file}" "General" "layout" "balanced")"
+expected_appearance="$(read_ini_value "${config_file}" "General" "appearance" "light")"
+expected_wallpaper="$(read_ini_value "${config_file}" "General" "wallpaper" "/usr/share/ahmados/wallpapers/ahmados-lagoon.svg")"
+expected_language="$(read_ini_value "${config_file}" "General" "preferredLanguage" "ar")"
+expected_channel="$(read_ini_value "${config_file}" "General" "channel" "stable")"
+
+expected_colorscheme="AhmadOS"
+if [[ "${expected_appearance}" == "dark" ]]; then
+    expected_colorscheme="AhmadOSNight"
+fi
+
+expected_lookandfeel="com.ahmados.desktop"
+case "${expected_layout}" in
+    classic)
+        expected_lookandfeel="com.ahmados.desktop.classic"
+        ;;
+    minimal)
+        expected_lookandfeel="com.ahmados.desktop.minimal"
+        ;;
+esac
+
+actual_colorscheme="$(read_ini_value "${kdeglobals_file}" "General" "ColorScheme" "unknown")"
+actual_lookandfeel="$(read_ini_value "${kdeglobals_file}" "KDE" "LookAndFeelPackage" "unknown")"
+
+if [[ "${XDG_CURRENT_DESKTOP:-}" == *KDE* || "${XDG_CURRENT_DESKTOP:-}" == *Plasma* ]]; then
+    add_check "PASS" "Plasma Session" "current desktop is ${XDG_CURRENT_DESKTOP:-unknown}"
+else
+    add_check "WARN" "Plasma Session" "current desktop is ${XDG_CURRENT_DESKTOP:-unknown}"
+fi
+
+command_check qmlscene6 "Qt Runtime"
+command_check systemsettings "System Settings"
+command_check dolphin "File Manager"
+command_check konsole "Terminal"
+command_check firefox "Browser"
+command_check nmcli "Network CLI"
+
+service_check NetworkManager.service "NetworkManager"
+
+file_check "${config_file}" "Welcome Config"
+file_check "${state_root}/firstboot-report.md" "Firstboot Report"
+file_check "${state_root}/smoke-check-report.md" "Smoke Report"
+file_check "${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados/update-center/releases.json" "Update Metadata Cache"
+file_check "${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados/update-center/status.json" "Update Status Cache"
+
+if [[ "${actual_colorscheme}" == "${expected_colorscheme}" ]]; then
+    add_check "PASS" "Color Scheme" "expected and current values match: ${actual_colorscheme}"
+else
+    add_check "WARN" "Color Scheme" "expected ${expected_colorscheme}, current ${actual_colorscheme}"
+fi
+
+if [[ "${actual_lookandfeel}" == "${expected_lookandfeel}" ]]; then
+    add_check "PASS" "Look-and-Feel" "expected and current values match: ${actual_lookandfeel}"
+else
+    add_check "WARN" "Look-and-Feel" "expected ${expected_lookandfeel}, current ${actual_lookandfeel}"
+fi
+
+if [[ -f "${expected_wallpaper}" ]]; then
+    add_check "PASS" "Wallpaper Asset" "selected wallpaper exists: ${expected_wallpaper}"
+else
+    add_check "WARN" "Wallpaper Asset" "selected wallpaper is missing: ${expected_wallpaper}"
+fi
+
+cat > "${report_file}" <<EOF
+# AhmadOS Smoke Check Report
+
+- Generated: $(date -Iseconds)
+- Hostname: $(hostname 2>/dev/null || printf '%s' 'unknown')
+- Session Type: ${XDG_SESSION_TYPE:-unknown}
+- Desktop Session: ${XDG_CURRENT_DESKTOP:-unknown}
+
+## Saved AhmadOS Expectations
+- Language: ${expected_language}
+- Appearance: ${expected_appearance}
+- Layout: ${expected_layout}
+- Wallpaper: ${expected_wallpaper}
+- Release Channel: ${expected_channel}
+
+## Summary
+- Passes: ${pass_count}
+- Warnings: ${warn_count}
+
+## Checks
+$(cat "${checks_file}")
+EOF
+
+if [[ -d "${HOME}/Desktop" ]]; then
+    cp "${report_file}" "${desktop_report}"
+fi
+
+if [[ "${open_after}" -eq 1 ]]; then
+    if command -v dolphin >/dev/null 2>&1; then
+        dolphin "${report_file}" >/dev/null 2>&1 &
+    elif command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "${report_file}" >/dev/null 2>&1 &
+    fi
+fi
+
+echo "AhmadOS smoke checks written to: ${report_file}"

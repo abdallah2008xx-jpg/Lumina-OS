@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=AhmadOS First Boot Report
+Name[ar]=تقرير الإقلاع الأول لـ AhmadOS
+Comment=Open the AhmadOS runtime readiness report
+Comment[ar]=افتح تقرير جاهزية AhmadOS بعد أول تشغيل
+Exec=/usr/local/bin/ahmados-open-firstboot-report
+Icon=documentinfo
+Terminal=false
+Categories=Qt;KDE;System;Utility;
+StartupNotify=true

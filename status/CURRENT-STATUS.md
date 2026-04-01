@@ -1,0 +1,84 @@
+# Current Status
+
+## Completed
+- project folder created in Downloads
+- core docs created
+- first clean archiso skeleton started
+- baseline package list created
+- initial profiledef and pacman.conf created
+- basic build helper script created
+- reporting structure added for hourly progress tracking
+- bootloader scaffolding added for BIOS and UEFI paths
+- mkinitcpio archiso preset and bootstrap package list added
+- live user and service setup moved into build-time customization
+- AhmadOS brand system baseline documented
+- desktop, welcome, update center, and settings specs added
+- first local HTML interface prototypes added under `prototypes/`
+- first AhmadOS wallpaper pack added under `branding/wallpapers/`
+- SDDM login direction documented and prototyped
+- real AhmadOS wallpapers added into the live image under `/usr/share/ahmados/wallpapers/`
+- real AhmadOS SDDM theme added and set as the active SDDM theme
+- real AhmadOS Plasma look-and-feel and color-scheme defaults added for the live session
+- staged Arch build workflow added with `stable` and `login-test` modes
+- VM test checklist and Arch build guide added
+- real AhmadOS Welcome app shell added to the live image and autostarted once for the `live` user
+- real AhmadOS Update Center app shell added to the live image
+- real Welcome persistence added for appearance, wallpaper, layout, and release-channel choices
+- additional Plasma layout variants added: Classic and Minimal
+- AhmadOSNight color scheme added for a real dark-session option
+- metadata refresh/cache path added for Update Center with bundled fallback and GitHub-ready config
+- local PowerShell profile validation added before the first serious Arch build
+- real AhmadOS firstboot reporting added for session/runtime diagnostics
+- Arch-side shell validation added before `mkarchiso`
+- firstboot report launcher and backup autostart path added for easier VM verification
+- Arch-side build manifest generation added after successful ISO builds
+- reusable VM test report scaffolding added under `status/vm-tests/`
+- Arch build-environment bootstrap helper added
+- live-session diagnostics export helper added for VM evidence collection
+- test-session summary scaffolding added under `status/test-sessions/`
+- live smoke-check helper added for quick post-boot validation
+- diagnostics import helper added under `status/diagnostics/` for repo-side evidence capture
+- one-command VM test-cycle initialization added
+- one-command VM test-cycle finalization added after diagnostics export
+- test-session audit reporting added after cycle finalization
+- centralized blocker syncing added after test-cycle finalization
+- centralized readiness syncing added after test-cycle finalization
+- validation matrix syncing added to compare `stable` and `login-test`
+- run-label traceability added across VM reports, session summaries, diagnostics imports, audits, blockers, and readiness
+
+## Active Focus
+- prepare and execute the first serious Arch-side build attempt
+- validate the new Welcome and Update Center behavior inside a built ISO
+- validate the firstboot runtime report and cache generation inside a built ISO
+- capture the first real build and VM evidence trail
+- capture the first exported diagnostics bundle from a built ISO
+- capture the first linked build/test session summary
+- capture the first audited build/test session report
+- capture the first blocker review from a real VM cycle
+- capture the first readiness snapshot from a real VM cycle
+- capture the first validation-matrix snapshot from real `stable` and `login-test` coverage
+- validate the first smoke-check report from inside the ISO
+- capture the first imported diagnostics bundle inside the repo
+- validate the path to SDDM and Plasma X11 in a VM
+- keep status updates consistent during rebuild work
+
+## Next
+- run `stable` and `login-test` builds in a real Arch environment
+- test the real Welcome choice application inside a built ISO
+- test the metadata-backed Update Center inside a built ISO
+- inspect the generated firstboot report inside a built ISO
+- confirm the firstboot report launcher behaves correctly inside a built ISO
+- review the generated build manifest after the first Arch build
+- file the first VM test report under `status/vm-tests/`
+- export and review the first diagnostics bundle from inside the ISO
+- file the first session summary under `status/test-sessions/`
+- review the first session audit under `status/test-session-audits/`
+- review the first blocker sync result under `status/blockers/`
+- review the first readiness snapshot under `status/readiness/`
+- review the first validation matrix under `status/validation-matrix/`
+- run and review the smoke-check report from inside the ISO
+- import the diagnostics bundle into `status/diagnostics/`
+- test the real SDDM and Plasma theming in a built ISO
+- boot the resulting ISO in a VM
+- confirm login, networking, and guest-service behavior
+- begin visual branding only after boot stability is proven

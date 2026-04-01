@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Welcome to AhmadOS
+Name[ar]=مرحبًا بك في AhmadOS
+Comment=First-run orientation and quick setup
+Comment[ar]=جولة أولى وتعريف سريع بالنظام
+Exec=/usr/local/bin/ahmados-welcome
+Icon=preferences-desktop-theme-global
+Terminal=false
+Categories=Qt;KDE;System;Settings;
+StartupNotify=true

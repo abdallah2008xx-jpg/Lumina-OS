@@ -1,0 +1,58 @@
+# Progress Log
+
+## 2026-03-31
+- Created clean rebuild project in Downloads
+- Added planning and architecture docs
+- Started first archiso profile skeleton
+- Added baseline KDE/SDDM package list
+- Added early airootfs files
+- Added live user baseline and first network/session defaults
+- Added practical status reporting structure: live hourly status, reusable template, and reporting guide
+- Added GRUB, Syslinux, and systemd-boot scaffolding for the first ISO baseline
+- Added `mkinitcpio` archiso preset and bootstrap package list
+- Replaced fragile passwd/group and systemd unit overlays with `customize_airootfs.sh`
+- Added `plasma-x11-session` and passwordless wheel sudo for the live user baseline
+- Added a documented AhmadOS brand system and desktop layout specification
+- Added scoped specs for Welcome app, Update Center, and Settings shell
+- Added a local `prototypes/` gallery with Welcome, Update Center, and Settings HTML mockups
+- Added the first AhmadOS wallpaper pack as editable SVG assets
+- Added an SDDM theme spec and local login prototype
+- Added real AhmadOS wallpaper assets into the archiso live image
+- Added a real SDDM theme package and switched SDDM to it
+- Added a real Plasma look-and-feel package, color scheme, and one-time live-session defaults script
+- Added a staged Arch build helper with separate `stable` and `login-test` modes
+- Added an Arch build guide and repeatable VM validation checklist
+- Added a real QML-based AhmadOS Welcome app shell, launcher, and first-run autostart path
+- Added a real QML-based AhmadOS Update Center shell and launcher path
+
+## 2026-04-01
+- Turned Welcome into a real first-run settings writer backed by `~/.config/ahmados/welcome.conf`
+- Added real Welcome choices for appearance, wallpaper, desktop layout, and release channel
+- Added two more Plasma look-and-feel variants: Classic and Minimal
+- Added the `AhmadOSNight` color scheme for a real dark appearance path
+- Updated the session-defaults script to reapply saved Welcome choices to Plasma
+- Added a metadata refresh/cache pipeline for Update Center
+- Added bundled release JSON and a GitHub-ready release-source config path
+- Updated the Update Center QML surface to read release data from cached JSON
+- Added a local `validate-profile.ps1` pass for pre-build structural checks on Windows
+- Updated the Windows build helper to run local validation before printing the Arch build command
+- Replaced the `ahmados-firstboot` placeholder with a real once-per-user runtime report generator
+- Wired firstboot reporting into the Welcome completion path so diagnostics are captured after session choices are applied
+- Added `validate-profile.sh` so Arch-side builds run their own structural checks before `mkarchiso`
+- Cleaned the Windows-to-Arch handoff so the helper prints portable Arch commands instead of Windows-only paths
+- Added an AhmadOS firstboot report launcher and hidden autostart fallback for easier VM verification
+- Added `write-build-manifest.sh` so successful Arch builds leave behind a reproducible build record
+- Added `new-vm-test-report.ps1` plus `status/builds/` and `status/vm-tests/` to formalize build/test evidence capture
+- Added `bootstrap-arch-build-env.sh` to prepare the first real Arch build environment
+- Added `ahmados-export-diagnostics` plus a desktop launcher to export live-session evidence from a built ISO
+- Added `new-test-session.ps1` plus `status/test-sessions/` to connect build manifests, VM reports, and diagnostics in one summary
+- Added `ahmados-run-smoke-checks` plus a desktop launcher for quick live-session health validation
+- Updated diagnostics export so smoke-check results are included in the exported bundle
+- Added `import-diagnostics-bundle.ps1` plus `status/diagnostics/` so exported evidence can be brought back into the repo and linked from session summaries
+- Added `start-vm-test-cycle.ps1` so VM reports and session summaries can be initialized together from one command
+- Added `finish-vm-test-cycle.ps1` so diagnostics import and session-summary refresh can be completed in one command
+- Fixed directory-based diagnostics imports, added `audit-test-session.ps1`, and made VM-cycle finalization emit a linked session audit
+- Added `sync-test-blockers.ps1`, a central blocker register, and automatic blocker syncing at the end of each VM cycle
+- Added `sync-readiness-status.ps1`, a central readiness snapshot, and automatic readiness syncing at the end of each VM cycle
+- Added `sync-validation-matrix.ps1` and a side-by-side validation matrix for `stable` and `login-test`
+- Added explicit `Run Label` traceability so repeated VM cycles can stay linked without falling back to generic latest-file matching

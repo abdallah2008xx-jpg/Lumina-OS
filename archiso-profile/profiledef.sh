@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC2034
+
+iso_name="ahmados"
+iso_label="AHMADOS_$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y%m)"
+iso_publisher="AhmadOS <https://github.com/>"
+iso_application="AhmadOS Live ISO"
+iso_version="0.1.0-dev"
+install_dir="arch"
+buildmodes=('iso')
+bootmodes=('bios.syslinux'
+           'uefi.grub')
+pacman_conf="pacman.conf"
+airootfs_image_type="erofs"
+airootfs_image_tool_options=('-zlzma,109' -E 'ztailpacking')
+bootstrap_tarball_compression=(xz -9e)
+file_permissions=(
+  ["/etc/shadow"]="0:0:400"
+  ["/root/.automated_script.sh"]="0:0:755"
+  ["/root/customize_airootfs.sh"]="0:0:755"
+  ["/home/live/.local/bin/ahmados-apply-session-defaults"]="0:0:755"
+  ["/usr/local/bin/ahmados-export-diagnostics"]="0:0:755"
+  ["/usr/local/bin/ahmados-run-smoke-checks"]="0:0:755"
+  ["/usr/local/bin/ahmados-open-firstboot-report"]="0:0:755"
+  ["/usr/local/bin/ahmados-refresh-release-metadata"]="0:0:755"
+  ["/usr/local/bin/ahmados-update-center"]="0:0:755"
+  ["/usr/local/bin/ahmados-welcome"]="0:0:755"
+  ["/usr/local/bin/ahmados-firstboot"]="0:0:755"
+)

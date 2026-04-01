@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=AhmadOS First Boot
+Exec=/usr/local/bin/ahmados-firstboot
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=4

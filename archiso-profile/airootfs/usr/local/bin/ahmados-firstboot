@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+state_dir="${XDG_STATE_HOME:-${HOME}/.local/state}/ahmados"
+config_dir="${HOME}/.config/ahmados"
+config_file="${config_dir}/welcome.conf"
+stamp_file="${state_dir}/firstboot-complete"
+report_file="${state_dir}/firstboot-report.md"
+release_cache="${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados/update-center/releases.json"
+release_status="${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados/update-center/status.json"
+
+mkdir -p "${state_dir}" "${config_dir}"
+
+if [[ -f "${stamp_file}" ]]; then
+    exit 0
+fi
+
+read_config_value() {
+    local key="$1"
+    local default_value="$2"
+    local value=""
+
+    if [[ -f "${config_file}" ]]; then
+        value="$(awk -F= -v target="${key}" '
+            BEGIN {
+                in_general = 0
+            }
+            /^\[/ {
+                in_general = ($0 == "[General]")
+                next
+            }
+            in_general && $1 == target {
+                print substr($0, index($0, "=") + 1)
+                exit
+            }
+        ' "${config_file}")"
+    fi
+
+    if [[ -n "${value}" ]]; then
+        printf '%s\n' "${value}"
+    else
+        printf '%s\n' "${default_value}"
+    fi
+}
+
+command_state() {
+    if command -v "$1" >/dev/null 2>&1; then
+        printf '%s\n' "present"
+    else
+        printf '%s\n' "missing"
+    fi
+}
+
+service_enabled_state() {
+    if ! command -v systemctl >/dev/null 2>&1; then
+        printf '%s\n' "unknown"
+        return
+    fi
+
+    if systemctl is-enabled "$1" >/dev/null 2>&1; then
+        printf '%s\n' "enabled"
+    else
+        printf '%s\n' "disabled-or-absent"
+    fi
+}
+
+service_active_state() {
+    if ! command -v systemctl >/dev/null 2>&1; then
+        printf '%s\n' "unknown"
+        return
+    fi
+
+    if systemctl is-active "$1" >/dev/null 2>&1; then
+        printf '%s\n' "active"
+    else
+        printf '%s\n' "inactive-or-absent"
+    fi
+}
+
+file_state() {
+    if [[ -f "$1" ]]; then
+        printf '%s\n' "present"
+    else
+        printf '%s\n' "missing"
+    fi
+}
+
+if command -v ahmados-refresh-release-metadata >/dev/null 2>&1; then
+    ahmados-refresh-release-metadata || true
+fi
+
+layout_choice="$(read_config_value "layout" "balanced")"
+appearance_choice="$(read_config_value "appearance" "light")"
+wallpaper_choice="$(read_config_value "wallpaper" "/usr/share/ahmados/wallpapers/ahmados-lagoon.svg")"
+channel_choice="$(read_config_value "channel" "stable")"
+language_choice="$(read_config_value "preferredLanguage" "ar")"
+
+generated_at="$(date -Iseconds)"
+hostname_value="$(hostname 2>/dev/null || printf '%s' 'unknown')"
+kernel_value="$(uname -r 2>/dev/null || printf '%s' 'unknown')"
+session_type="${XDG_SESSION_TYPE:-unknown}"
+desktop_session="${XDG_CURRENT_DESKTOP:-unknown}"
+
+cat > "${report_file}" <<EOF
+# AhmadOS First Boot Report
+
+- Generated: ${generated_at}
+- Hostname: ${hostname_value}
+- Kernel: ${kernel_value}
+- Session Type: ${session_type}
+- Desktop Session: ${desktop_session}
+
+## Saved AhmadOS Choices
+- Language: ${language_choice}
+- Appearance: ${appearance_choice}
+- Layout: ${layout_choice}
+- Wallpaper: ${wallpaper_choice}
+- Release Channel: ${channel_choice}
+
+## Runtime Commands
+- qmlscene6: $(command_state qmlscene6)
+- plasma-apply-lookandfeel: $(command_state plasma-apply-lookandfeel)
+- plasma-apply-colorscheme: $(command_state plasma-apply-colorscheme)
+- plasma-apply-wallpaperimage: $(command_state plasma-apply-wallpaperimage)
+- systemsettings: $(command_state systemsettings)
+- dolphin: $(command_state dolphin)
+- konsole: $(command_state konsole)
+- curl: $(command_state curl)
+
+## Service State
+- NetworkManager enabled: $(service_enabled_state NetworkManager.service)
+- NetworkManager active: $(service_active_state NetworkManager.service)
+- sddm enabled: $(service_enabled_state sddm.service)
+- sddm active: $(service_active_state sddm.service)
+
+## AhmadOS Artifacts
+- Welcome config: $(file_state "${config_file}")
+- Release cache: $(file_state "${release_cache}")
+- Release status: $(file_state "${release_status}")
+- Session defaults stamp: $(file_state "${HOME}/.config/ahmados/session-defaults-applied")
+- Welcome stamp: $(file_state "${HOME}/.config/ahmados/welcome-seen")
+EOF
+
+desktop_dir="${HOME}/Desktop"
+desktop_report="${desktop_dir}/AhmadOS First Boot Report.md"
+
+if [[ -d "${desktop_dir}" ]]; then
+    cp "${report_file}" "${desktop_report}"
+fi
+
+touch "${stamp_file}"

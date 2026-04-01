@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=AhmadOS Update Center
+Name[ar]=مركز تحديث AhmadOS
+Comment=Release awareness and update guidance
+Comment[ar]=معلومات الإصدارات والتحديثات
+Exec=/usr/local/bin/ahmados-update-center
+Icon=system-software-update
+Terminal=false
+Categories=Qt;KDE;System;Settings;
+StartupNotify=true

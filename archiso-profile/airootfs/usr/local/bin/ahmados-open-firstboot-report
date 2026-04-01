@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+report_file="${XDG_STATE_HOME:-${HOME}/.local/state}/ahmados/firstboot-report.md"
+report_dir="$(dirname "${report_file}")"
+
+if [[ ! -f "${report_file}" ]] && command -v ahmados-firstboot >/dev/null 2>&1; then
+    ahmados-firstboot || true
+fi
+
+if [[ -f "${report_file}" ]]; then
+    if command -v dolphin >/dev/null 2>&1; then
+        dolphin "${report_file}" >/dev/null 2>&1 &
+        exit 0
+    fi
+
+    if command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "${report_file}" >/dev/null 2>&1 &
+        exit 0
+    fi
+fi
+
+if command -v dolphin >/dev/null 2>&1; then
+    dolphin "${report_dir}" >/dev/null 2>&1 &
+    exit 0
+fi
+
+if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${report_dir}" >/dev/null 2>&1 &
+    exit 0
+fi
+
+echo "Unable to open the AhmadOS firstboot report automatically." >&2
+exit 1

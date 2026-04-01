@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Run AhmadOS Smoke Checks
+Name[ar]=تشغيل فحوصات AhmadOS السريعة
+Comment=Create a quick live-session health report
+Comment[ar]=أنشئ تقريرًا سريعًا عن حالة الجلسة الحالية
+Exec=/usr/local/bin/ahmados-run-smoke-checks --open
+Icon=tools-report-bug
+Terminal=false
+Categories=Qt;KDE;System;Utility;
+StartupNotify=true

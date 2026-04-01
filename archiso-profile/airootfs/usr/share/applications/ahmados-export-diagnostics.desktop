@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Export AhmadOS Diagnostics
+Name[ar]=تصدير تشخيصات AhmadOS
+Comment=Collect live-session diagnostics for VM testing
+Comment[ar]=اجمع بيانات التشخيص من الجلسة الحالية لاختبارات النظام
+Exec=/usr/local/bin/ahmados-export-diagnostics
+Icon=document-save
+Terminal=false
+Categories=Qt;KDE;System;Utility;
+StartupNotify=true

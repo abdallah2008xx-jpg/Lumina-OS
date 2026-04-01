@@ -1,0 +1,11 @@
+[General]
+ColorScheme=AhmadOS
+Name=AhmadOS
+singleClick=false
+
+[KDE]
+LookAndFeelPackage=com.ahmados.desktop
+SingleClick=false
+
+[Icons]
+Theme=breeze

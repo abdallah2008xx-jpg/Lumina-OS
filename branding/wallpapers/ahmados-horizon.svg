@@ -1,0 +1,35 @@
+<svg width="2560" height="1600" viewBox="0 0 2560 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="280" y1="140" x2="2140" y2="1520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#10212d"/>
+      <stop offset="0.42" stop-color="#23465a"/>
+      <stop offset="1" stop-color="#edf2f4"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1880 390) rotate(90) scale(460 460)">
+      <stop stop-color="#F7F3ED" stop-opacity="0.92"/>
+      <stop offset="0.48" stop-color="#E2D7C8" stop-opacity="0.62"/>
+      <stop offset="1" stop-color="#E2D7C8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ridge1" x1="0" y1="920" x2="2560" y2="1260" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#26475B"/>
+      <stop offset="1" stop-color="#3F8F95"/>
+    </linearGradient>
+    <linearGradient id="ridge2" x1="0" y1="1140" x2="2560" y2="1460" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C8D3DA"/>
+      <stop offset="1" stop-color="#F7F3ED"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="540" y1="980" x2="1780" y2="1380" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C9895B" stop-opacity="0.72"/>
+      <stop offset="1" stop-color="#C9895B" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="2560" height="1600" fill="url(#bg)"/>
+  <rect width="2560" height="1600" fill="url(#sun)"/>
+
+  <path d="M0 1012C190 940 358 914 504 934C756 966 942 1122 1232 1122C1452 1122 1600 996 1776 930C1934 870 2156 874 2560 980V1600H0V1012Z" fill="url(#ridge1)"/>
+  <path d="M0 1188C198 1140 396 1118 592 1148C786 1178 964 1266 1186 1298C1400 1330 1600 1268 1804 1202C2052 1122 2280 1090 2560 1144V1600H0V1188Z" fill="url(#ridge2)"/>
+  <path d="M0 1218C344 1162 664 1180 972 1290C1212 1374 1456 1428 1770 1388C1962 1364 2146 1308 2560 1196V1600H0V1218Z" fill="url(#accent)"/>
+
+  <path d="M0 1462C246 1426 530 1406 862 1430C1236 1456 1500 1526 1830 1530C2116 1534 2358 1498 2560 1458V1600H0V1462Z" fill="#F7F3ED" fill-opacity="0.74"/>
+</svg>

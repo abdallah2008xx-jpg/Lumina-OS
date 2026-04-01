@@ -1,0 +1,19 @@
+# Build artifacts
+build/
+*.iso
+*.img
+*.qcow2
+*.vdi
+*.vmdk
+*.tar.gz
+*.log
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Python cache
+__pycache__/
+*.pyc

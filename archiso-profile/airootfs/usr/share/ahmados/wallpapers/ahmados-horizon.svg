@@ -1,0 +1,30 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="180" y1="88" x2="1650" y2="1050" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10212D"/>
+      <stop offset="0.42" stop-color="#24475A"/>
+      <stop offset="1" stop-color="#EDF2F4"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1420 270) rotate(90) scale(320 320)">
+      <stop stop-color="#F7F3ED" stop-opacity="0.9"/>
+      <stop offset="0.45" stop-color="#E6DCCF" stop-opacity="0.54"/>
+      <stop offset="1" stop-color="#E6DCCF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ridge1" x1="0" y1="620" x2="1920" y2="890" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#24475A"/>
+      <stop offset="1" stop-color="#3F8F95"/>
+    </linearGradient>
+    <linearGradient id="ridge2" x1="0" y1="760" x2="1920" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C8D3DA"/>
+      <stop offset="1" stop-color="#F7F3ED"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#sun)"/>
+
+  <path d="M0 680C162 620 312 604 452 624C640 652 804 768 1012 770C1190 772 1326 688 1482 640C1618 598 1766 600 1920 650V1080H0V680Z" fill="url(#ridge1)"/>
+  <path d="M0 782C170 742 324 742 486 770C666 802 816 890 1022 910C1214 928 1380 890 1546 830C1668 786 1792 760 1920 768V1080H0V782Z" fill="url(#ridge2)"/>
+  <path d="M0 872C250 832 492 846 732 914C948 976 1178 1012 1446 994C1620 982 1768 942 1920 876V1080H0V872Z" fill="#C9895B" fill-opacity="0.18"/>
+  <path d="M0 988C208 964 438 958 692 976C954 994 1170 1038 1430 1040C1626 1042 1790 1024 1920 1000V1080H0V988Z" fill="#F7F3ED" fill-opacity="0.72"/>
+</svg>

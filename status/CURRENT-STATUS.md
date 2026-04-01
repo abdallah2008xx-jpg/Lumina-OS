@@ -47,6 +47,7 @@
 - run-label traceability added across VM reports, session summaries, diagnostics imports, audits, blockers, and readiness
 - script and report output branding aligned to `Lumina-OS` while keeping internal compatibility identifiers stable
 - GitHub collaboration scaffolding added with `CONTRIBUTING.md`, `CHANGELOG.md`, issue templates, PR template, and a first-release checklist
+- one-file done-vs-remaining summary added in `status/PROJECT-SUMMARY.md`
 
 ## Active Focus
 - prepare and execute the first serious Arch-side build attempt

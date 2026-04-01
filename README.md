@@ -47,3 +47,7 @@ Current project outputs include:
 - Changelog tracking: `CHANGELOG.md`
 - First release gate: `docs/FIRST-RELEASE-CHECKLIST.md`
 - GitHub issue and PR templates live under `.github/`
+
+## Project Snapshot
+
+- Fast summary of what is done and what remains: `status/PROJECT-SUMMARY.md`

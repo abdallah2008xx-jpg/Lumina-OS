@@ -3,6 +3,7 @@
 Keep reporting lightweight.
 
 ## Files
+- `PROJECT-SUMMARY.md` -> fast done-vs-remaining project snapshot
 - `CURRENT-STATUS.md` -> very short overall project snapshot
 - `HOURLY-STATUS.md` -> latest work-block update
 - `PROGRESS-LOG.md` -> chronological milestone log

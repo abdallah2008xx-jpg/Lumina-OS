@@ -81,7 +81,7 @@ else
 
         echo ""
         echo "Installing missing packages..."
-        "${pacman_runner[@]}" pacman -Sy --needed "${missing_packages[@]}"
+        "${pacman_runner[@]}" pacman -Sy --needed --noconfirm "${missing_packages[@]}"
     else
         echo ""
         echo "To install them automatically, rerun:"

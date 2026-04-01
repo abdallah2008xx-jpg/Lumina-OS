@@ -30,25 +30,40 @@ if (-not (Test-Path $releaseValidator)) {
     throw "Missing smoke-test target: $releaseValidator"
 }
 
-$smokeRunLabel = "ci-smoke-stable"
-$handoffPath = & $handoffScript `
-    -Mode stable `
-    -VmType VirtualBox `
-    -Firmware UEFI `
-    -RunLabel $smokeRunLabel `
-    -ReleaseVersion "0.1.0-ci" `
-    -RepoRoot $RepoRoot `
-    -OutputPathOnly
+foreach ($handoffCase in @(
+    @{
+        Mode = "stable"
+        RunLabel = "ci-smoke-stable"
+        ExpectedCommand = ".\scripts\build-iso.ps1 -Mode stable -RunLabel ci-smoke-stable"
+        ExpectedModeText = "autologin reaches Plasma without stalling"
+    },
+    @{
+        Mode = "login-test"
+        RunLabel = "ci-smoke-login-test"
+        ExpectedCommand = ".\scripts\build-iso.ps1 -Mode login-test -RunLabel ci-smoke-login-test"
+        ExpectedModeText = "SDDM appears with the Lumina-OS theme applied"
+    }
+)) {
+    $handoffPath = & $handoffScript `
+        -Mode $handoffCase.Mode `
+        -VmType VirtualBox `
+        -Firmware UEFI `
+        -RunLabel $handoffCase.RunLabel `
+        -ReleaseVersion "0.1.0-ci" `
+        -RepoRoot $RepoRoot `
+        -OutputPathOnly
 
-Assert-Condition -Condition (Test-Path $handoffPath) -Message "Cycle handoff was not created."
-$handoffContent = Get-Content -Raw $handoffPath
-Assert-Condition -Condition ($handoffContent -match [regex]::Escape("- Run Label: $smokeRunLabel")) -Message "Cycle handoff does not contain the expected run label."
-Assert-Condition -Condition ($handoffContent -match [regex]::Escape(".\scripts\build-iso.ps1 -Mode stable -RunLabel $smokeRunLabel")) -Message "Cycle handoff does not contain the expected build command."
-Remove-Item -LiteralPath $handoffPath -Force
+    Assert-Condition -Condition (Test-Path $handoffPath) -Message "Cycle handoff was not created for mode $($handoffCase.Mode)."
+    $handoffContent = Get-Content -Raw $handoffPath
+    Assert-Condition -Condition ($handoffContent -match [regex]::Escape("- Run Label: " + $handoffCase.RunLabel)) -Message "Cycle handoff does not contain the expected run label for mode $($handoffCase.Mode)."
+    Assert-Condition -Condition ($handoffContent -match [regex]::Escape($handoffCase.ExpectedCommand)) -Message "Cycle handoff does not contain the expected build command for mode $($handoffCase.Mode)."
+    Assert-Condition -Condition ($handoffContent -match [regex]::Escape($handoffCase.ExpectedModeText)) -Message "Cycle handoff does not contain the expected mode-specific checklist for mode $($handoffCase.Mode)."
+    Remove-Item -LiteralPath $handoffPath -Force
 
-$handoffDir = Split-Path -Parent $handoffPath
-if ((Test-Path $handoffDir) -and -not (Get-ChildItem -Path $handoffDir -Force | Select-Object -First 1)) {
-    Remove-Item -LiteralPath $handoffDir -Force
+    $handoffDir = Split-Path -Parent $handoffPath
+    if ((Test-Path $handoffDir) -and -not (Get-ChildItem -Path $handoffDir -Force | Select-Object -First 1)) {
+        Remove-Item -LiteralPath $handoffDir -Force
+    }
 }
 
 $tempRoot = Join-Path $env:TEMP ("lumina-workflow-smoke-" + [guid]::NewGuid().ToString("N"))

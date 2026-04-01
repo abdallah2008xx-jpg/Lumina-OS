@@ -59,6 +59,7 @@
 - build manifests now carry `Run Label` values so build, VM, and release evidence can be linked more reliably
 - generated cycle handoffs now exist so a full `build -> VM -> release` run can be executed from one stored runbook
 - GitHub Actions now smoke-tests the handoff and release-validation tools instead of validating file presence only
+- generated cycle handoffs now adapt their checklist content to `stable` or `login-test`
 
 ## Active Focus
 - prepare and execute the first serious Arch-side build attempt
@@ -83,6 +84,7 @@
 - keep the same run label from build through VM and release instead of relying on latest-file matching
 - keep generated cycle handoffs aligned with the real script flow so operators can trust them during the first build
 - keep CI aligned with the workflow scripts so regressions are caught before the first real ISO cycle
+- keep the mode-specific handoff language aligned with the real acceptance target for each build mode
 
 ## Next
 - run `stable` and `login-test` builds in a real Arch environment
@@ -111,3 +113,4 @@
 - validate the new build-manifest run-label linkage during the first real `stable` cycle
 - validate the first generated cycle handoff during the first real `stable` cycle
 - observe the first GitHub Actions run that includes the workflow smoke tests
+- validate the first `login-test` handoff against a real SDDM-focused run

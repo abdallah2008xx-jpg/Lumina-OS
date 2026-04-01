@@ -35,6 +35,88 @@ function Get-SafeFileSegment {
     return $safe
 }
 
+function Get-ModeFocus {
+    param([string]$SelectedMode)
+
+    if ($SelectedMode -eq "login-test") {
+        return @(
+            "- this run is centered on the real SDDM path and manual session entry",
+            "- treat the login surface and manual Plasma entry as the primary acceptance gate"
+        ) -join "`r`n"
+    }
+
+    return @(
+        "- this run is centered on the autologin desktop path and first-session experience",
+        "- treat Welcome, Update Center, runtime reports, and desktop polish as the primary acceptance gate"
+    ) -join "`r`n"
+}
+
+function Get-ModeChecks {
+    param([string]$SelectedMode)
+
+    if ($SelectedMode -eq "login-test") {
+        return @(
+            "- SDDM appears with the Lumina-OS theme applied",
+            "- username and password fields are readable and usable",
+            "- session selector works and manual login reaches Plasma",
+            "- login prompt feedback uses the correct info and error styling",
+            "- post-login Welcome, Update Center, and diagnostics paths still work"
+        ) -join "`r`n"
+    }
+
+    return @(
+        "- autologin reaches Plasma without stalling",
+        "- wallpaper, panel layout, and color scheme look applied",
+        "- Welcome opens once and applies saved choices after closing",
+        "- Update Center loads cached metadata and shows the selected channel clearly",
+        "- firstboot report, smoke checks, and diagnostics export all work"
+    ) -join "`r`n"
+}
+
+function Get-ModeReviewNotes {
+    param([string]$SelectedMode)
+
+    if ($SelectedMode -eq "login-test") {
+        return @(
+            "- confirm SDDM quality before treating the login path as acceptable",
+            "- compare this run against the latest `stable` evidence before any public release decision",
+            "- keep this mode release-focused only if the stable path is already healthy"
+        ) -join "`r`n"
+    }
+
+    return @(
+        "- use this run as the main desktop-first evidence chain for release readiness",
+        "- only move to release preparation if blockers, readiness, and validation matrix all support it",
+        "- record any user-visible polish issue here before packaging the ISO"
+    ) -join "`r`n"
+}
+
+function Get-ReleaseGuard {
+    param([string]$SelectedMode)
+
+    if ($SelectedMode -eq "login-test") {
+        return @(
+            "Use this only if the manual-login evidence is part of the release decision.",
+            'For most public releases, `login-test` is supporting evidence and `stable` remains the main packaging path.'
+        ) -join "`r`n"
+    }
+
+    return @(
+        "Use this after the stable cycle is acceptable and the evidence chain is complete.",
+        "This is the normal path for the first public Lumina-OS ISO package."
+    ) -join "`r`n"
+}
+
+function Get-ExpectedEvidence {
+    return @(
+        '- build manifest under `status/builds/` with `Run Label: __RUN_LABEL__`',
+        '- VM report under `status/vm-tests/` with the same label',
+        '- session summary and session audit linked to the same label',
+        '- readiness and validation matrix reviewed after finishing the cycle',
+        '- release manifest using the same label if packaging begins'
+    ) -join "`r`n"
+}
+
 $dateStamp = Get-Date -Format "yyyy-MM-dd"
 $timeStamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $safeVmType = $VmType.ToLowerInvariant().Replace(" ", "-")
@@ -66,6 +148,9 @@ $template = @'
 - carry one exact `Run Label` from build to VM validation to release preparation
 - avoid latest-file guessing during the first real Lumina-OS cycle
 
+## Mode Focus
+__MODE_FOCUS__
+
 ## Step 1: Windows Preparation
 Run this from the repo root in Windows:
 
@@ -85,9 +170,7 @@ After the ISO exists, start the evidence chain with the same label:
 
 ## Step 4: Inside The Booted ISO
 Inside the live session, verify:
-- boot path is stable
-- Plasma or SDDM behavior matches the selected mode
-- Welcome, Update Center, firstboot report, and smoke checks behave correctly
+__MODE_CHECKS__
 
 Then export diagnostics from inside Lumina-OS:
 - App launcher entry: `Export Lumina-OS Diagnostics`
@@ -105,8 +188,11 @@ Review these files after finish:
 - `status/blockers/CURRENT-BLOCKERS.md`
 - matching files under `status/builds/`, `status/vm-tests/`, `status/test-sessions/`, and `status/test-session-audits/`
 
+Mode-specific review notes:
+__MODE_REVIEW_NOTES__
+
 ## Step 7: Prepare Release Package
-Use this only after the cycle is acceptable.
+__RELEASE_GUARD__
 
     .\scripts\prepare-release-package.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel __RUN_LABEL__
 
@@ -121,10 +207,7 @@ Use this only after the validation report passes and the token is available:
     .\scripts\publish-github-release.ps1 -ReleaseManifestPath "C:\Path\To\release-manifest.md"
 
 ## Evidence Targets
-- Build manifest should include `Run Label: __RUN_LABEL__`
-- VM report should include `Run Label: __RUN_LABEL__`
-- Session summary should include `Run Label: __RUN_LABEL__`
-- Release manifest should include `Run Label: __RUN_LABEL__`
+__EXPECTED_EVIDENCE__
 
 ## Notes
 - If you repeat the same mode again, prefer generating a fresh handoff with a new label.
@@ -137,7 +220,12 @@ $content = $template.Replace("__CREATED_AT__", (Get-Date -Format s)).
     Replace("__VM_TYPE__", $VmType).
     Replace("__FIRMWARE__", $Firmware).
     Replace("__RUN_LABEL__", $resolvedRunLabel).
-    Replace("__RELEASE_VERSION__", $releaseVersionLine)
+    Replace("__RELEASE_VERSION__", $releaseVersionLine).
+    Replace("__MODE_FOCUS__", (Get-ModeFocus -SelectedMode $Mode)).
+    Replace("__MODE_CHECKS__", (Get-ModeChecks -SelectedMode $Mode)).
+    Replace("__MODE_REVIEW_NOTES__", (Get-ModeReviewNotes -SelectedMode $Mode)).
+    Replace("__RELEASE_GUARD__", (Get-ReleaseGuard -SelectedMode $Mode)).
+    Replace("__EXPECTED_EVIDENCE__", (Get-ExpectedEvidence))
 
 Set-Content -Path $handoffPath -Value $content -Encoding UTF8
 

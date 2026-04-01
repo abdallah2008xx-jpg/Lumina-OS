@@ -27,6 +27,7 @@ This file gives one fast answer to two questions:
 - repeated VM runs can be tracked with a shared `Run Label`
 - build manifests now participate in the same `Run Label` chain instead of living outside it
 - generated cycle handoffs now exist for one-file execution of a real run
+- generated cycle handoffs now adapt to `stable` and `login-test` instead of using one generic checklist
 - release packaging and GitHub release publishing now both have dedicated scripts and status records
 - release publishing is now guarded by a dedicated release-package validation pass
 - GitHub Actions now smoke-tests key workflow tools instead of only running structural validation

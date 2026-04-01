@@ -35,6 +35,8 @@ If you want one generated runbook for the whole cycle, create it first:
 .\scripts\new-cycle-handoff.ps1 -Mode stable -VmType VirtualBox -Firmware UEFI -ReleaseVersion 0.1.0
 ```
 
+That handoff now changes its verification language based on `stable` or `login-test`, so the build and VM operator sees the right acceptance target for the selected mode.
+
 If you are already inside an Arch VM, bootstrap the build environment with:
 
 ```bash

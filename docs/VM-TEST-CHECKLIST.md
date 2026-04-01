@@ -9,6 +9,8 @@ If you want one generated runbook that already includes the build, VM, and relea
 .\scripts\new-cycle-handoff.ps1 -Mode stable -VmType VirtualBox -Firmware UEFI -ReleaseVersion 0.1.0
 ```
 
+The generated handoff now adapts its runtime checklist to the selected mode, so `stable` emphasizes the desktop-first path while `login-test` emphasizes SDDM and manual login quality.
+
 ## Report Creation
 Before starting a VM run, you can initialize both the VM report and session summary together with:
 

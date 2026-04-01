@@ -73,3 +73,4 @@
 - Smoke-tested the generated cycle handoff output and fixed command formatting so the stored runbook is readable as-is
 - Added `scripts/smoke-workflow-tools.ps1` and wired it into GitHub Actions so the handoff and release-validation path is exercised on CI
 - Fixed a cleanup bug in the workflow smoke test and confirmed the smoke suite now passes locally
+- Upgraded generated cycle handoffs so `stable` and `login-test` now carry different verification focus instead of one shared generic checklist

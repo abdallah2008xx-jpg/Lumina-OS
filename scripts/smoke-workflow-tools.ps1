@@ -25,6 +25,7 @@ $buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
 $buildHandoffImportScript = Join-Path $PSScriptRoot "import-build-handoff.ps1"
 $githubArtifactImportScript = Join-Path $PSScriptRoot "import-github-actions-artifact.ps1"
 $isoImportScript = Join-Path $PSScriptRoot "import-iso-artifact.ps1"
+$githubArtifactCycleScript = Join-Path $PSScriptRoot "start-github-actions-vm-cycle.ps1"
 $prepareReleasePackageScript = Join-Path $PSScriptRoot "prepare-release-package.ps1"
 $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
 $releaseCandidateScript = Join-Path $PSScriptRoot "prepare-release-candidate.ps1"
@@ -56,6 +57,10 @@ if (-not (Test-Path $githubArtifactImportScript)) {
 
 if (-not (Test-Path $isoImportScript)) {
     throw "Missing smoke-test target: $isoImportScript"
+}
+
+if (-not (Test-Path $githubArtifactCycleScript)) {
+    throw "Missing smoke-test target: $githubArtifactCycleScript"
 }
 
 if (-not (Test-Path $prepareReleasePackageScript)) {
@@ -239,6 +244,20 @@ try {
     $artifactImportContent = Get-Content -Raw $artifactImportSummary
     Assert-Condition -Condition ($artifactImportContent -match [regex]::Escape("- GitHub Run Id: 23863815968")) -Message "GitHub Actions artifact import did not record the expected run id."
     Assert-Condition -Condition ($artifactImportContent -match [regex]::Escape("- Imported Handoff Count: 1")) -Message "GitHub Actions artifact import did not record the expected handoff count."
+
+    & $githubArtifactCycleScript `
+        -ArtifactPath $artifactZipPath `
+        -Mode stable `
+        -VmType VirtualBox `
+        -Firmware UEFI `
+        -RunId "23863815968" `
+        -ArtifactName "lumina-os-stable-gha-stable-8-1" `
+        -RepoRoot $tempRoot | Out-Null
+
+    $ghaStartedSessionFile = Get-ChildItem -Path (Join-Path $tempRoot "status\test-sessions") -Filter "*.md" -Recurse | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    Assert-Condition -Condition ($null -ne $ghaStartedSessionFile) -Message "GitHub Actions artifact cycle did not create a session summary."
+    $ghaStartedSessionContent = Get-Content -Raw $ghaStartedSessionFile.FullName
+    Assert-Condition -Condition ($ghaStartedSessionContent -match [regex]::Escape("- Run Label: $handoffRunLabel")) -Message "GitHub Actions artifact cycle did not reuse the reported run label."
 
     $linuxOnlyBuildRunLabel = "ci-imported-iso-smoke"
     $linuxOnlyBuildPath = Join-Path $tempRoot "linux-only-build-manifest.md"

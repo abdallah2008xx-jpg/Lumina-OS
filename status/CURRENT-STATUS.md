@@ -71,6 +71,7 @@
 - ISO artifacts can now be imported back into this workspace from a separate Arch clone or VM so release preparation can use a local Windows-accessible path
 - complete build handoff folders can now be imported in one step when the Arch side sends the manifest and ISO together
 - GitHub Actions artifact zips can now be imported directly into the same handoff path used by Arch-side transfers
+- GitHub Actions artifact zips can now be imported and turned into a local VM cycle in one command
 - GitHub Actions now has a real remote ISO build workflow so first build attempts no longer depend only on local Arch access
 - the first real remote GitHub Actions matrix build succeeded on run `#8` for both `stable` and `login-test`
 
@@ -109,11 +110,11 @@
 - keep imported ISO artifacts linked to the same run label when release preparation happens after a build in a separate Arch environment
 - keep complete build handoffs usable as one-step imports instead of forcing separate manifest and ISO handling when both files already travel together
 - keep downloaded GitHub Actions artifacts flowing into the same import path as manual Arch-side handoffs
+- keep the one-command GitHub Actions -> VM-cycle bridge aligned with the shared run-label evidence chain
 - keep the new GitHub ISO build workflow aligned with the local handoff and evidence chain so successful remote builds feed the same process
 
 ## Next
-- download and import the first successful GitHub Actions build handoff artifacts
-- start the first labeled `stable` VM cycle from the successful remote build
+- download the first successful GitHub Actions artifact zip and run the new one-command VM-cycle bridge
 - test the real Welcome choice application inside a built ISO
 - test the metadata-backed Update Center inside a built ISO
 - inspect the generated firstboot report inside a built ISO

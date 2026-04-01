@@ -31,6 +31,7 @@ This file gives one fast answer to two questions:
 - external Arch-side ISO artifacts can now be imported back into this workspace so release preparation can resolve a local file path
 - complete Arch-side build handoff folders can now be imported in one step when both files are transferred together
 - downloaded GitHub Actions artifact zips can now be imported directly into the same handoff path
+- downloaded GitHub Actions artifact zips can now initialize the local VM evidence chain in one command
 - GitHub Actions now has a remote ISO build workflow to trigger real build attempts without waiting on local Arch access
 - the first real GitHub Actions matrix build has now completed successfully for `stable` and `login-test`
 - generated cycle handoffs now exist for one-file execution of a real run

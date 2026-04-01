@@ -92,3 +92,4 @@
 - Added `grub` to the Arch bootstrap requirements so `mkarchiso` can validate the UEFI GRUB path on the host
 - Reached the first successful real GitHub Actions matrix build for `stable` and `login-test`
 - Added direct GitHub Actions artifact import so downloaded workflow zips can feed the same local handoff/evidence path as manual Arch exports
+- Added a one-command GitHub Actions artifact -> VM-cycle bridge so remote build output can enter local validation without separate import/start steps

@@ -17,12 +17,13 @@ Update it once per work block or roughly every hour.
 - Fixed a bash-conditional bug in `scripts/validate-profile.sh`
 - Reached the first successful real GitHub Actions matrix build for `stable` and `login-test`
 - Added a direct GitHub Actions artifact-import path so downloaded workflow zips can go straight into local VM validation
+- Added a one-command GitHub Actions artifact -> VM-cycle bridge for faster first-ISO validation
 
 ## In Progress
-- Updating local status files and import tooling so the first successful remote build can flow directly into VM validation
+- Updating local status files and tooling so the first successful remote build can flow directly into VM validation with minimal operator steps
 
 ## Next Hour
-- Import the first successful GitHub Actions build handoff artifacts
+- Download the first successful GitHub Actions artifact zip and start the first local VM cycle from it
 - Start the first labeled `stable` VM cycle from the successful remote build
 - Verify the complete handoff path during the first real GitHub Actions -> Windows -> VM transfer
 - Review the first real evidence trail after the successful remote build

@@ -46,6 +46,12 @@ If both files came back together in one exported handoff folder, import that fol
 .\scripts\import-build-handoff.ps1 -HandoffPath "C:\Path\To\build-handoff-folder"
 ```
 
+If the build came from GitHub Actions, you can go from the downloaded artifact zip straight into the VM cycle in one command:
+
+```powershell
+.\scripts\start-github-actions-vm-cycle.ps1 -ArtifactPath "C:\Path\To\artifact.zip" -Mode stable -VmType VirtualBox -Firmware UEFI -RunId 23863815968
+```
+
 If you only want the VM report by itself, use:
 
 ```powershell

@@ -48,6 +48,7 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] No blocking issue remains for the chosen release candidate
 - [ ] ISO checksum is generated
 - [ ] Release notes are written
+- [ ] `.\scripts\prepare-release-package.ps1 -Version "<version>" -IsoPath "<path-to-iso>" -Mode stable -RunLabel "<run-label>"` has been run
 
 ## GitHub Release Package
 - [ ] ISO asset
@@ -57,3 +58,4 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Build mode tested
 - [ ] VM platform tested
 - [ ] Link to relevant build/test evidence inside the repo
+- [ ] Generated release package is stored under `status/releases/`

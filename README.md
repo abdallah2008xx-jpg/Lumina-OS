@@ -52,3 +52,4 @@ Current project outputs include:
 ## Project Snapshot
 
 - Fast summary of what is done and what remains: `status/PROJECT-SUMMARY.md`
+- Release package records: `status/releases/README.md`

@@ -49,6 +49,7 @@ This file gives one fast answer to two questions:
 - generate the first real build manifest from a successful Arch build
 - generate the first real VM evidence chain inside the repo
 - update readiness and validation matrix from real build/test evidence
+- generate the first release package with checksum and release notes draft
 - publish the first GitHub Release with ISO, checksum, and release notes
 
 ### Optional Follow-Up After First Real ISO

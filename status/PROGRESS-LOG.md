@@ -59,3 +59,4 @@
 - Renamed visible project branding to `Lumina-OS` across GitHub-facing files and live-system UI surfaces
 - Updated build/test/report scripts so generated manifests, audits, readiness snapshots, blocker reviews, and VM reports now use `Lumina-OS` branding
 - Added `CONTRIBUTING.md`, `CHANGELOG.md`, GitHub issue templates, a PR template, and `docs/FIRST-RELEASE-CHECKLIST.md` to prepare the repo for teamwork and the first public release
+- Added `scripts/prepare-release-package.ps1` plus `status/releases/` to generate checksums, release notes drafts, and release manifests from a validated ISO

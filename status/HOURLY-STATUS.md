@@ -14,6 +14,7 @@ Update it once per work block or roughly every hour.
 - Updated ISO metadata and live-system branding so the generated image now presents itself as `Lumina-OS`
 - Updated build/test/report scripts so generated audits, manifests, VM reports, readiness snapshots, and blocker records also use `Lumina-OS`
 - Added GitHub collaboration and release-prep scaffolding with contributor guidance, changelog tracking, issue templates, PR template, and a first-release checklist
+- Added release-package scaffolding so the first real ISO can be turned into a GitHub-ready package with checksum and release notes draft
 - Re-ran profile validation after the script/report branding pass and confirmed it still passes
 
 ## In Progress

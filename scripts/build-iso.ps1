@@ -43,3 +43,6 @@ Write-Host ".\scripts\start-vm-test-cycle.ps1 -Mode $Mode -RunLabel $resolvedRun
 Write-Host ""
 Write-Host "If the build manifest comes back from a separate Arch clone or VM, import it into this repo first:"
 Write-Host ".\scripts\import-build-manifest.ps1 -ManifestPath `"C:\Path\To\build-manifest.md`""
+Write-Host ""
+Write-Host "If the ISO file itself comes back from that Arch environment, import it too before release prep:"
+Write-Host ".\scripts\import-iso-artifact.ps1 -IsoPath `"C:\Path\To\lumina-os.iso`" -Mode $Mode -RunLabel $resolvedRunLabel"

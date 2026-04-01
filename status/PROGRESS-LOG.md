@@ -82,3 +82,4 @@
 - Added short English and Arabic shareable briefs for copy-paste-ready progress updates
 - Added compatibility-preserving `lumina-*` runtime aliases and switched launchers/autostart entries to use them while retaining `ahmados-*` entrypoints underneath
 - Added build-manifest import support so Arch-side build records can be pulled back into the main repo and linked before a Windows-side VM cycle starts
+- Added ISO import support so Arch-side artifacts can be copied into this workspace and resolved automatically during release preparation

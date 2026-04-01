@@ -28,6 +28,7 @@ This file gives one fast answer to two questions:
 - repeated VM runs can be tracked with a shared `Run Label`
 - build manifests now participate in the same `Run Label` chain instead of living outside it
 - external Arch-side build manifests can now be imported back into this repo before the VM cycle starts
+- external Arch-side ISO artifacts can now be imported back into this workspace so release preparation can resolve a local file path
 - generated cycle handoffs now exist for one-file execution of a real run
 - generated cycle handoffs now adapt to `stable` and `login-test` instead of using one generic checklist
 - cycle-chain audits now verify that the recorded build/test evidence still points at the same run before release prep

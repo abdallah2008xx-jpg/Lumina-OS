@@ -22,6 +22,8 @@ function Assert-Condition {
 $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
 $startCycleScript = Join-Path $PSScriptRoot "start-vm-test-cycle.ps1"
 $buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
+$isoImportScript = Join-Path $PSScriptRoot "import-iso-artifact.ps1"
+$prepareReleasePackageScript = Join-Path $PSScriptRoot "prepare-release-package.ps1"
 $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
 $releaseCandidateScript = Join-Path $PSScriptRoot "prepare-release-candidate.ps1"
 $syncReleaseCandidateScript = Join-Path $PSScriptRoot "sync-release-candidate-status.ps1"
@@ -40,6 +42,14 @@ if (-not (Test-Path $startCycleScript)) {
 
 if (-not (Test-Path $buildManifestImportScript)) {
     throw "Missing smoke-test target: $buildManifestImportScript"
+}
+
+if (-not (Test-Path $isoImportScript)) {
+    throw "Missing smoke-test target: $isoImportScript"
+}
+
+if (-not (Test-Path $prepareReleasePackageScript)) {
+    throw "Missing smoke-test target: $prepareReleasePackageScript"
 }
 
 if (-not (Test-Path $cycleChainAuditScript)) {
@@ -179,6 +189,31 @@ try {
     $startedSessionContent = Get-Content -Raw $startedSessionFile.FullName
     Assert-Condition -Condition ($startedSessionContent -match [regex]::Escape("- Run Label: $startCycleRunLabel")) -Message "Started session does not contain the imported-build run label."
     Assert-Condition -Condition ($startedSessionContent -match [regex]::Escape("- Build Manifest: $importedBuildPath")) -Message "Started session did not record the imported build manifest path."
+
+    $linuxOnlyBuildRunLabel = "ci-imported-iso-smoke"
+    $linuxOnlyBuildPath = Join-Path $tempRoot "linux-only-build-manifest.md"
+    Set-Content -Path $linuxOnlyBuildPath -Value "# Build`r`n`r`n- Built At: 2026-04-01T11:40:00`r`n- Mode: stable`r`n- Run Label: $linuxOnlyBuildRunLabel`r`n- Full Path: /var/tmp/lumina-from-arch.iso" -Encoding UTF8
+
+    $importedIsoPath = & $isoImportScript `
+        -IsoPath $isoPath `
+        -Mode stable `
+        -RunLabel $linuxOnlyBuildRunLabel `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $importedIsoPath) -Message "Imported ISO artifact was not created."
+
+    $releasePackageManifestPath = & $prepareReleasePackageScript `
+        -Version "0.1.0-ci-imported-iso" `
+        -Mode stable `
+        -RunLabel $linuxOnlyBuildRunLabel `
+        -BuildManifestPath $linuxOnlyBuildPath `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $releasePackageManifestPath) -Message "Release manifest was not created from an imported ISO artifact."
+    $importedIsoReleaseContent = Get-Content -Raw $releasePackageManifestPath
+    Assert-Condition -Condition ($importedIsoReleaseContent -match [regex]::Escape("- ISO Path: $importedIsoPath")) -Message "Release manifest did not resolve the imported ISO path."
 
     $candidateSummaryPath = & $releaseCandidateScript `
         -Version "0.1.0-ci" `

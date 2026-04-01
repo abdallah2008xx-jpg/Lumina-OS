@@ -139,6 +139,47 @@ function Get-ResolvedPathOrDefault {
     return $Value
 }
 
+function Get-ImportedIsoPath {
+    param(
+        [string]$RepoRoot,
+        [string]$RunLabel,
+        [string]$Mode
+    )
+
+    $importsRoot = Join-Path $RepoRoot "status\iso-imports"
+    if (-not (Test-Path $importsRoot)) {
+        return ""
+    }
+
+    $importFiles = Get-ChildItem -Path $importsRoot -Filter "import-manifest.md" -Recurse -File -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending
+
+    foreach ($importFile in $importFiles) {
+        $content = Get-Content -Raw $importFile.FullName -ErrorAction SilentlyContinue
+        if ([string]::IsNullOrWhiteSpace($content)) {
+            continue
+        }
+
+        $recordedRunLabel = Get-MetadataValue -Content $content -Label "Run Label"
+        $recordedMode = Get-MetadataValue -Content $content -Label "Mode"
+        $importedIsoPath = Get-MetadataValue -Content $content -Label "Imported ISO Path"
+
+        if ([string]::IsNullOrWhiteSpace($importedIsoPath) -or -not (Test-Path $importedIsoPath)) {
+            continue
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($RunLabel) -and $recordedRunLabel -eq $RunLabel) {
+            return (Resolve-Path $importedIsoPath).Path
+        }
+
+        if ([string]::IsNullOrWhiteSpace($RunLabel) -and -not [string]::IsNullOrWhiteSpace($Mode) -and $recordedMode -eq $Mode) {
+            return (Resolve-Path $importedIsoPath).Path
+        }
+    }
+
+    return ""
+}
+
 function Get-ChangelogUnreleasedSection {
     param([string]$Path)
 
@@ -253,7 +294,18 @@ if ([string]::IsNullOrWhiteSpace($resolvedIsoPath) -and -not [string]::IsNullOrW
 }
 
 if ([string]::IsNullOrWhiteSpace($resolvedIsoPath) -or $resolvedIsoPath -in @("not-found", "not-recorded-yet")) {
-    throw "ISO path is required. Pass -IsoPath or provide a build manifest with a real Full Path."
+    $resolvedIsoPath = Get-ImportedIsoPath -RepoRoot $RepoRoot -RunLabel $RunLabel -Mode $Mode
+}
+
+if ([string]::IsNullOrWhiteSpace($resolvedIsoPath) -or $resolvedIsoPath -in @("not-found", "not-recorded-yet")) {
+    throw "ISO path is required. Pass -IsoPath, import a local ISO artifact, or provide a build manifest with a real Full Path."
+}
+
+if (-not (Test-Path $resolvedIsoPath)) {
+    $importedIsoFallback = Get-ImportedIsoPath -RepoRoot $RepoRoot -RunLabel $RunLabel -Mode $Mode
+    if (-not [string]::IsNullOrWhiteSpace($importedIsoFallback)) {
+        $resolvedIsoPath = $importedIsoFallback
+    }
 }
 
 if (-not (Test-Path $resolvedIsoPath)) {

@@ -172,6 +172,10 @@ If the Arch build happened in a separate clone or VM, import its build manifest 
 
     .\scripts\import-build-manifest.ps1 -ManifestPath "C:\Path\To\build-manifest.md"
 
+If the ISO file is also copied back to Windows for later release prep, import that local ISO copy too:
+
+    .\scripts\import-iso-artifact.ps1 -IsoPath "C:\Path\To\lumina-os.iso" -Mode __MODE__ -RunLabel __RUN_LABEL__
+
 ## Step 4: Inside The Booted ISO
 Inside the live session, verify:
 __MODE_CHECKS__

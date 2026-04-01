@@ -29,6 +29,7 @@ This project follows a simple rule for now:
 - Short English and Arabic shareable briefs
 - Compatibility-preserving `lumina-*` runtime aliases for the main live-session commands
 - Build-manifest import support for Arch builds that happen in a separate clone or VM
+- ISO import support for release preparation after Arch builds that happen in a separate clone or VM
 
 ### Changed
 - Live-system UI wording now presents the distro as `Lumina-OS`
@@ -41,6 +42,7 @@ This project follows a simple rule for now:
 - Build manifests now carry the shared `Run Label` so build, VM, and release evidence can be linked directly
 - Live-session launchers and autostart entries now call `lumina-*` entrypoints while legacy `ahmados-*` commands remain as compatibility shims
 - `start-vm-test-cycle.ps1` now auto-imports an external build manifest path into `status/builds/` before creating the session summary
+- `prepare-release-package.ps1` can now fall back to a run-label-matched imported ISO when the build manifest still points at an Arch-only path
 
 ### Pending Before First Tagged Release
 - First real `stable` build in Arch

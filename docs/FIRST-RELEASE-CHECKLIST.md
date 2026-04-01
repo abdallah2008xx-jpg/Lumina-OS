@@ -47,6 +47,7 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] `status/validation-matrix/CURRENT-VALIDATION-MATRIX.md` shows acceptable mode coverage
 - [ ] No blocking issue remains for the chosen release candidate
 - [ ] The selected run has a passing or acceptable cycle-chain audit
+- [ ] If the ISO was built in a separate Arch clone or VM, a local Windows-accessible copy has been imported with `.\scripts\import-iso-artifact.ps1`
 - [ ] ISO checksum is generated
 - [ ] Release notes are written
 - [ ] `.\scripts\prepare-release-candidate.ps1 -Version "<version>" -IsoPath "<path-to-iso>" -Mode stable -RunLabel "<run-label>"` has been run

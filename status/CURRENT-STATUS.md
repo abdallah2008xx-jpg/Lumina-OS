@@ -68,6 +68,7 @@
 - short English and Arabic shareable briefs can now be generated from the same current project state
 - compatibility-preserving `lumina-*` runtime aliases now exist for live-session commands while the older `ahmados-*` entrypoints remain available
 - build manifests can now be imported back into this repo from a separate Arch clone or VM before starting the Windows-side VM cycle
+- ISO artifacts can now be imported back into this workspace from a separate Arch clone or VM so release preparation can use a local Windows-accessible path
 
 ## Active Focus
 - prepare and execute the first serious Arch-side build attempt
@@ -101,6 +102,7 @@
 - keep short shareable briefs aligned with the long shareable update so external messages stay concise and accurate
 - keep the new `lumina-*` runtime aliases aligned with launchers and autostart entries while legacy `ahmados-*` entrypoints remain as compatibility shims
 - keep imported Arch-side build manifests linked into the same evidence chain when the real build happens outside this Windows workspace
+- keep imported ISO artifacts linked to the same run label when release preparation happens after a build in a separate Arch environment
 
 ## Next
 - run `stable` and `login-test` builds in a real Arch environment
@@ -134,6 +136,7 @@
 - review the first generated English and Arabic shareable briefs after a real build/test cycle
 - confirm the live session launches through the new `lumina-*` aliases inside the first built ISO
 - import the first real Arch-side build manifest if the first build happens in a separate clone or VM
+- import the first real ISO artifact if the first release-prep pass happens outside the original Arch build clone
 - validate the new build-manifest run-label linkage during the first real `stable` cycle
 - validate the first generated cycle handoff during the first real `stable` cycle
 - observe the first GitHub Actions run that includes the workflow smoke tests

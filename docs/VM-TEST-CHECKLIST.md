@@ -34,6 +34,12 @@ If the build manifest came from a separate Arch clone or VM, import it into this
 
 If you pass an external build-manifest path directly to `start-vm-test-cycle.ps1`, the script now imports it automatically into `status/builds/` before creating the session summary.
 
+If you also copied the ISO file back from that Arch environment for later release work, import it too:
+
+```powershell
+.\scripts\import-iso-artifact.ps1 -IsoPath "C:\Path\To\lumina-os.iso" -Mode stable -RunLabel stable-vbox-pass-01
+```
+
 If you only want the VM report by itself, use:
 
 ```powershell

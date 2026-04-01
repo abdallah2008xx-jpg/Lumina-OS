@@ -43,6 +43,12 @@ If the real Arch build happens in a separate clone or VM instead of this Windows
 .\scripts\import-build-manifest.ps1 -ManifestPath "C:\Path\To\build-manifest.md"
 ```
 
+If the ISO file itself is also copied back from that Arch environment, import it here as well so release preparation can resolve a local Windows-accessible ISO path:
+
+```powershell
+.\scripts\import-iso-artifact.ps1 -IsoPath "C:\Path\To\lumina-os.iso" -Mode stable -RunLabel stable-vbox-pass-01
+```
+
 If you are already inside an Arch VM, bootstrap the build environment with:
 
 ```bash

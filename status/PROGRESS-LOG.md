@@ -64,3 +64,5 @@
 - Polished the Welcome UI with clearer apply summaries, recommendation badges, and friendlier non-technical preview labels
 - Polished Update Center with structured loading, empty, and error states plus clearer foreground-channel messaging
 - Polished the SDDM theme with validation-oriented guidance and safer info-message coloring
+- Switched Update Center to prefer GitHub release metadata with a recorded fallback path to bundled metadata until the first real releases exist
+- Added `scripts/publish-github-release.ps1` so the first validated ISO can be turned into a real GitHub Release with a publish record

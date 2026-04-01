@@ -53,6 +53,8 @@
 - Welcome now uses clearer user-facing labels, recommendation badges, and a stronger apply summary
 - Update Center now exposes structured loading, empty, and error states with clearer channel guidance
 - SDDM now uses validation-oriented guidance and no longer paints information messages as failures
+- Update Center release-source handling now prefers GitHub and records fallback state when bundled metadata is used
+- GitHub release publishing now has a dedicated script and publish-record path
 
 ## Active Focus
 - prepare and execute the first serious Arch-side build attempt
@@ -72,6 +74,7 @@
 - continue staged internal rename work without breaking current build/test compatibility
 - keep GitHub collaboration and release-prep files aligned with the real build/test state
 - keep the absorbed UI/UX track aligned with the live-system implementation instead of leaving it as a separate plan
+- keep the release metadata and publishing path ready for the first real GitHub Release
 
 ## Next
 - run `stable` and `login-test` builds in a real Arch environment
@@ -95,3 +98,4 @@
 - boot the resulting ISO in a VM
 - confirm login, networking, and guest-service behavior
 - confirm the new Welcome, Update Center, and SDDM polish behaves correctly inside the ISO
+- run the first end-to-end release package and GitHub publish flow after the first successful build

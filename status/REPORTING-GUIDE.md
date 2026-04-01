@@ -12,7 +12,7 @@ Keep reporting lightweight.
 - `builds/` -> Arch-side build manifests
 - `vm-tests/` -> VM test reports grouped by date
 - `diagnostics/` -> imported diagnostics bundles from live-session exports
-- `releases/` -> prepared release manifests, draft notes, and checksums
+- `releases/` -> prepared release manifests, draft notes, checksums, and GitHub publish records
 - `test-sessions/` -> linked build/test summaries across one run
 - `test-session-audits/` -> verification reports for the linked evidence chain
 - `blockers/` -> current blocker state plus dated blocker reviews

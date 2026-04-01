@@ -6,32 +6,31 @@ Update it once per work block or roughly every hour.
 ## Current Block
 - **Date:** 2026-04-01
 - **Time:** 08:13 PDT
-- **Focus:** Absorbing the former Mohammad track and polishing live-system UI surfaces without destabilizing build/test compatibility
+- **Focus:** Hardening the release path so Lumina-OS can move from first real ISO evidence into a real GitHub Release with less manual work
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
-- Replaced the old two-person execution split with a single-owner Lumina-OS execution plan
-- Polished Welcome with clearer step framing, recommendation badges, friendlier saved-choice labels, and a stronger apply summary
-- Polished Update Center with explicit `loading`, `empty`, and `error` states plus clearer channel guidance
-- Polished the SDDM theme with validation-oriented copy and non-error information messaging
-- Updated implementation docs and status tracking so the UI polish pass is documented as real project progress
+- Switched Update Center configuration to prefer GitHub release metadata while keeping a safe bundled fallback path
+- Expanded the metadata refresh/status path so the UI can report requested source, active source, release count, and fallback reason
+- Added `scripts/publish-github-release.ps1` to publish a prepared Lumina-OS release package to GitHub and record the publish result
+- Updated the release checklist, release records guide, validators, and status files to cover the new publish flow
 
 ## In Progress
-- Re-validating the repo after the absorbed UI/UX pass and preparing the next commit
+- Re-validating the repo after the release-path hardening pass and preparing the next commit
 
 ## Next Hour
-- Run validation and push the new UI/UX polish pass to GitHub
+- Run validation and push the release-path hardening pass to GitHub
 - Keep the build/test workflow stable and ready for the first Arch-side `stable` build
 - Move execution to an actual Arch environment for the first real ISO build
-- Verify the new UI polish inside the first successful built ISO
+- Verify the GitHub-backed Update Center path and the first publish script after the first successful built ISO
 
 ## Blockers
 - Actual ISO building is blocked in the current Windows workspace; `mkarchiso` must run inside an Arch environment
 
 ## Decisions / Notes
-- Keep visible branding and UI wording on `Lumina-OS`
+- Prefer GitHub as the intended release-metadata source now that the real repo exists
+- Keep a bundled metadata fallback until the first public release is actually published
 - Keep internal `ahmados-*` paths and IDs stable for now unless we do a deliberate compatibility-preserving second pass
-- Treat the former Mohammad scope as part of the main implementation track instead of as a separate pending lane
 
 ## Ready-to-Send Mini Update
-Lumina-OS now has a single-owner execution plan and a polished pass across Welcome, Update Center, and SDDM, while compatibility-sensitive internal identifiers remain stable until the first real ISO validation.
+Lumina-OS now prefers GitHub as its release-metadata source, falls back cleanly to bundled metadata before the first release exists, and includes a dedicated GitHub release-publish script for the first validated ISO.

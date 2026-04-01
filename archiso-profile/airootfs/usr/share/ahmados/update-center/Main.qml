@@ -18,8 +18,12 @@ ApplicationWindow {
     property string metadataState: qsTr("Loading release metadata...")
     property string metadataBody: qsTr("Lumina-OS is reading the local cache so release browsing still works even before deeper package actions exist.")
     property string metadataSource: qsTr("Bundled")
+    property string requestedMetadataSource: qsTr("GitHub Releases")
     property string checkedAt: qsTr("Unknown")
     property string installedVersion: "0.1.0-dev"
+    property string fallbackReason: ""
+    property string releaseApiUrl: ""
+    property int releaseCount: 0
     property string releaseCacheUrl: StandardPaths.writableLocation(StandardPaths.HomeLocation) + "/.cache/ahmados/update-center/releases.json"
     property string statusCacheUrl: StandardPaths.writableLocation(StandardPaths.HomeLocation) + "/.cache/ahmados/update-center/status.json"
 
@@ -202,7 +206,31 @@ ApplicationWindow {
             return qsTr("GitHub Releases")
         }
 
+        if (sourceId === "bundled") {
+            return qsTr("Bundled metadata")
+        }
+
         return qsTr("Bundled metadata")
+    }
+
+    function fallbackReasonLabel(reasonId) {
+        if (reasonId === "github-returned-no-releases") {
+            return qsTr("GitHub is configured, but no releases have been published yet. Bundled metadata is being shown for now.")
+        }
+
+        if (reasonId === "github-request-failed") {
+            return qsTr("GitHub release metadata could not be reached, so the local bundled fallback is being used.")
+        }
+
+        if (reasonId === "github-config-incomplete") {
+            return qsTr("GitHub mode is selected, but the owner or repository value is incomplete.")
+        }
+
+        if (reasonId === "curl-unavailable") {
+            return qsTr("GitHub mode is selected, but curl is unavailable in this session.")
+        }
+
+        return ""
     }
 
     function loadJson(url, onSuccess, onFailure) {
@@ -255,10 +283,18 @@ ApplicationWindow {
         loadJson(statusCacheUrl, function(payload) {
             checkedAt = payload.checkedAt ? payload.checkedAt.slice(0, 19).replace("T", " ") : qsTr("Unknown")
             metadataSource = sourceLabel(payload.source || "bundled")
+            requestedMetadataSource = sourceLabel(payload.requestedSource || "github")
             installedVersion = payload.installedVersion || installedVersion
+            fallbackReason = payload.fallbackReason || ""
+            releaseApiUrl = payload.releaseUrl || ""
+            releaseCount = payload.releaseCount || 0
         }, function() {
             checkedAt = qsTr("Unknown")
             metadataSource = qsTr("Bundled metadata")
+            requestedMetadataSource = qsTr("GitHub Releases")
+            fallbackReason = ""
+            releaseApiUrl = ""
+            releaseCount = 0
         })
 
         loadJson(releaseCacheUrl, function(payload) {
@@ -638,6 +674,34 @@ ApplicationWindow {
                                 text: qsTr("Source") + ": " + metadataSource
                                 color: "#546A79"
                                 font.pixelSize: 14
+                            }
+
+                            Label {
+                                text: qsTr("Requested source") + ": " + requestedMetadataSource
+                                color: "#546A79"
+                                font.pixelSize: 14
+                            }
+
+                            Label {
+                                text: qsTr("Visible release count") + ": " + releaseCount
+                                color: "#546A79"
+                                font.pixelSize: 14
+                            }
+
+                            Label {
+                                visible: fallbackReason.length > 0
+                                text: root.fallbackReasonLabel(fallbackReason)
+                                color: copper
+                                wrapMode: Text.WordWrap
+                                font.pixelSize: 13
+                            }
+
+                            Label {
+                                visible: releaseApiUrl.length > 0
+                                text: qsTr("Release API") + ": " + releaseApiUrl
+                                color: "#546A79"
+                                wrapMode: Text.WrapAnywhere
+                                font.pixelSize: 12
                             }
 
                             Label {

@@ -55,6 +55,32 @@ function Get-LatestModeFile {
         Select-Object -First 1
 }
 
+function Get-FileByRunLabel {
+    param(
+        [string]$Path,
+        [string]$Filter,
+        [string]$RunLabel
+    )
+
+    if ([string]::IsNullOrWhiteSpace($RunLabel) -or -not (Test-Path $Path)) {
+        return $null
+    }
+
+    $escapedRunLabel = [regex]::Escape($RunLabel)
+
+    return Get-ChildItem -Path $Path -Filter $Filter -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object {
+            if ($_.Name -match $escapedRunLabel) {
+                return $true
+            }
+
+            $content = Get-Content -Raw $_.FullName -ErrorAction SilentlyContinue
+            return ($content -match ("(?m)^- Run Label: " + $escapedRunLabel + "$"))
+        } |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+}
+
 function Get-SafeFileSegment {
     param([string]$Value)
 
@@ -96,7 +122,13 @@ if (-not $vmReportPath) {
 
 $resolvedBuildManifestPath = $BuildManifestPath
 if ([string]::IsNullOrWhiteSpace($resolvedBuildManifestPath)) {
-    $latestBuildManifest = Get-LatestModeFile -Path (Join-Path $RepoRoot "status\builds") -Filter "*.md" -Mode $Mode
+    $latestBuildManifest = if ([string]::IsNullOrWhiteSpace($resolvedRunLabel)) {
+        Get-LatestModeFile -Path (Join-Path $RepoRoot "status\builds") -Filter "*.md" -Mode $Mode
+    }
+    else {
+        $byRunLabel = Get-FileByRunLabel -Path (Join-Path $RepoRoot "status\builds") -Filter "*.md" -RunLabel $resolvedRunLabel
+        if ($byRunLabel) { $byRunLabel } else { Get-LatestModeFile -Path (Join-Path $RepoRoot "status\builds") -Filter "*.md" -Mode $Mode }
+    }
     $resolvedBuildManifestPath = if ($latestBuildManifest) { $latestBuildManifest.FullName } else { "" }
 }
 

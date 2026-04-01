@@ -16,6 +16,8 @@ For repeated runs of the same mode, prefer a label:
 .\scripts\start-vm-test-cycle.ps1 -Mode stable -VmType VirtualBox -Firmware UEFI -RunLabel stable-vbox-pass-01
 ```
 
+If the build was created with `scripts/build-iso.ps1` or `build-iso-arch.sh --run-label`, reuse that exact same label here so the build manifest can be matched directly instead of falling back to the latest build of the same mode.
+
 If you only want the VM report by itself, use:
 
 ```powershell

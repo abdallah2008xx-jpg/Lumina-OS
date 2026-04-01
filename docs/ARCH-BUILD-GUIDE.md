@@ -27,6 +27,8 @@ The Windows helper below now runs the same validation automatically before print
 .\scripts\build-iso.ps1 -Mode stable
 ```
 
+It now also prints a suggested `Run Label`. Reuse that same label during the VM cycle so the build manifest, VM report, session summary, readiness snapshot, and release package stay linked.
+
 If you are already inside an Arch VM, bootstrap the build environment with:
 
 ```bash
@@ -73,7 +75,8 @@ To test the real login screen:
 2. Applies the requested SDDM login mode only in the staged copy
 3. Runs the Arch-side profile validator
 4. Runs `mkarchiso`
-5. Leaves the source profile unchanged
+5. Writes a build manifest that now includes the `Run Label`
+6. Leaves the source profile unchanged
 
 ## After Build
 - use the ISO in a VM first

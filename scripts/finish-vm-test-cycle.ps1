@@ -168,6 +168,10 @@ if ([string]::IsNullOrWhiteSpace($resolvedBuildManifestPath)) {
     if (-not [string]::IsNullOrWhiteSpace($sessionBuildManifestPath) -and $sessionBuildManifestPath -ne "not-recorded-yet") {
         $resolvedBuildManifestPath = $sessionBuildManifestPath
     }
+    elseif (-not [string]::IsNullOrWhiteSpace($resolvedRunLabel)) {
+        $runLabelBuildManifest = Get-FileByRunLabel -Path (Join-Path $RepoRoot "status\builds") -Filter "*.md" -RunLabel $resolvedRunLabel
+        $resolvedBuildManifestPath = if ($runLabelBuildManifest) { $runLabelBuildManifest.FullName } else { "" }
+    }
     else {
         $latestBuildManifest = Get-LatestModeFile -Path (Join-Path $RepoRoot "status\builds") -Filter "*.md" -Mode $Mode
         $resolvedBuildManifestPath = if ($latestBuildManifest) { $latestBuildManifest.FullName } else { "" }

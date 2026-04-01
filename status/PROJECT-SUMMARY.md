@@ -25,6 +25,7 @@ This file gives one fast answer to two questions:
 - build helpers exist for `stable` and `login-test`
 - VM reporting, diagnostics import, session summaries, audits, blocker syncing, readiness syncing, and validation matrix syncing all exist
 - repeated VM runs can be tracked with a shared `Run Label`
+- build manifests now participate in the same `Run Label` chain instead of living outside it
 - release packaging and GitHub release publishing now both have dedicated scripts and status records
 - release publishing is now guarded by a dedicated release-package validation pass
 

@@ -56,6 +56,7 @@
 - Update Center release-source handling now prefers GitHub and records fallback state when bundled metadata is used
 - GitHub release publishing now has a dedicated script and publish-record path
 - release publishing now has an explicit validation gate so unverified manifests cannot be published by accident
+- build manifests now carry `Run Label` values so build, VM, and release evidence can be linked more reliably
 
 ## Active Focus
 - prepare and execute the first serious Arch-side build attempt
@@ -77,6 +78,7 @@
 - keep the absorbed UI/UX track aligned with the live-system implementation instead of leaving it as a separate plan
 - keep the release metadata and publishing path ready for the first real GitHub Release
 - keep release validation reports aligned with the real evidence chain before any publish step
+- keep the same run label from build through VM and release instead of relying on latest-file matching
 
 ## Next
 - run `stable` and `login-test` builds in a real Arch environment
@@ -102,3 +104,4 @@
 - confirm the new Welcome, Update Center, and SDDM polish behaves correctly inside the ISO
 - run the first end-to-end release package and GitHub publish flow after the first successful build
 - run the first release validation report from a real evidence-backed manifest
+- validate the new build-manifest run-label linkage during the first real `stable` cycle

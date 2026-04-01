@@ -8,6 +8,7 @@ Lumina-OS build manifest writer
 Usage:
   ./scripts/write-build-manifest.sh \
     --mode stable|login-test \
+    --run-label LABEL \
     --profile PATH \
     --stage PATH \
     --work PATH \
@@ -17,6 +18,7 @@ EOF
 }
 
 mode=""
+run_label=""
 profile_path=""
 stage_path=""
 work_path=""
@@ -27,6 +29,10 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --mode)
             mode="${2:-}"
+            shift 2
+            ;;
+        --run-label)
+            run_label="${2:-}"
             shift 2
             ;;
         --profile)
@@ -61,7 +67,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ -z "${mode}" || -z "${profile_path}" || -z "${stage_path}" || -z "${work_path}" || -z "${out_path}" ]]; then
+if [[ -z "${mode}" || -z "${run_label}" || -z "${profile_path}" || -z "${stage_path}" || -z "${work_path}" || -z "${out_path}" ]]; then
     echo "Missing required arguments." >&2
     usage >&2
     exit 1
@@ -86,7 +92,11 @@ fi
 
 built_at="$(date -Iseconds)"
 manifest_stamp="$(date +%Y%m%d-%H%M%S)"
-manifest_file="${manifest_root}/build-${manifest_stamp}-${mode}.md"
+safe_run_label="$(printf '%s' "${run_label}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9.-]+/-/g; s/^-+//; s/-+$//')"
+if [[ -z "${safe_run_label}" ]]; then
+    safe_run_label="unnamed"
+fi
+manifest_file="${manifest_root}/build-${manifest_stamp}-${mode}-${safe_run_label}.md"
 
 iso_name="not-found"
 iso_size_bytes="unknown"
@@ -107,6 +117,7 @@ cat > "${manifest_file}" <<EOF
 
 - Built At: ${built_at}
 - Mode: ${mode}
+- Run Label: ${run_label}
 - Profile Path: ${profile_path}
 - Stage Path: ${stage_path}
 - Work Path: ${work_path}

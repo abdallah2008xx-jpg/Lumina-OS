@@ -6,7 +6,7 @@ usage() {
 Lumina-OS Arch build helper
 
 Usage:
-  ./scripts/build-iso-arch.sh [--mode stable|login-test] [--profile PATH] [--work PATH] [--out PATH] [--stage-root PATH] [--keep-stage]
+  ./scripts/build-iso-arch.sh [--mode stable|login-test] [--run-label LABEL] [--profile PATH] [--work PATH] [--out PATH] [--stage-root PATH] [--keep-stage]
 
 Modes:
   stable      Build the live ISO with autologin enabled for the live session
@@ -15,6 +15,7 @@ EOF
 }
 
 mode="stable"
+run_label=""
 profile_path=""
 work_path=""
 out_path=""
@@ -25,6 +26,10 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --mode)
             mode="${2:-}"
+            shift 2
+            ;;
+        --run-label)
+            run_label="${2:-}"
             shift 2
             ;;
         --profile)
@@ -73,6 +78,7 @@ out_path="${out_path:-${repo_root}/build/out/${mode}}"
 stage_root="${stage_root:-${repo_root}/build/stage}"
 validator_path="${repo_root}/scripts/validate-profile.sh"
 manifest_writer="${repo_root}/scripts/write-build-manifest.sh"
+run_label="${run_label:-$(date +%Y%m%d-%H%M%S)-${mode}-build}"
 
 if ! command -v mkarchiso >/dev/null 2>&1; then
     echo "mkarchiso is required but was not found in PATH." >&2
@@ -92,6 +98,7 @@ trap 'if [[ ${keep_stage} -eq 0 ]]; then rm -rf "${stage_dir}"; else echo "Stage
 
 echo "Lumina-OS Arch build helper"
 echo "Mode:    ${mode}"
+echo "RunLabel:${run_label}"
 echo "Profile: ${profile_path}"
 echo "Stage:   ${stage_dir}"
 echo "Work:    ${work_path}"
@@ -119,6 +126,7 @@ if [[ -f "${manifest_writer}" ]]; then
     echo "Writing build manifest..."
     bash "${manifest_writer}" \
         --mode "${mode}" \
+        --run-label "${run_label}" \
         --profile "${profile_path}" \
         --stage "${stage_dir}" \
         --work "${work_path}" \
@@ -128,4 +136,5 @@ fi
 echo ""
 echo "Build finished."
 echo "Mode used: ${mode}"
+echo "Run Label: ${run_label}"
 echo "Output directory: ${out_path}"

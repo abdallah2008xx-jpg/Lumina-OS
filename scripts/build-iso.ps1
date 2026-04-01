@@ -3,11 +3,18 @@ param(
     [string]$WorkPath = "C:\Users\abdal\Downloads\AhmadOS-Rebuild\build\work",
     [string]$OutPath = "C:\Users\abdal\Downloads\AhmadOS-Rebuild\build\out",
     [ValidateSet("stable", "login-test")]
-    [string]$Mode = "stable"
+    [string]$Mode = "stable",
+    [string]$RunLabel = ""
 )
 
 $validatorPath = Join-Path $PSScriptRoot "validate-profile.ps1"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$resolvedRunLabel = if ([string]::IsNullOrWhiteSpace($RunLabel)) {
+    (Get-Date -Format "yyyyMMdd-HHmmss") + "-" + $Mode + "-build"
+}
+else {
+    $RunLabel.Trim()
+}
 
 if (Test-Path $validatorPath) {
     Write-Host "Running local Lumina-OS profile validation..."
@@ -23,9 +30,13 @@ Write-Host "Profile: $ProfilePath"
 Write-Host "Work:    $WorkPath"
 Write-Host "Out:     $OutPath"
 Write-Host "Mode:    $Mode"
+Write-Host "RunLabel:$resolvedRunLabel"
 Write-Host ""
 Write-Host "Run this inside the Lumina-OS repo root in an Arch build environment with archiso installed:"
-Write-Host "./scripts/build-iso-arch.sh --mode '$Mode'"
+Write-Host "./scripts/build-iso-arch.sh --mode '$Mode' --run-label '$resolvedRunLabel'"
 Write-Host ""
 Write-Host "Optional Arch-side custom paths:"
-Write-Host "./scripts/build-iso-arch.sh --mode '$Mode' --work './build/work/$Mode' --out './build/out/$Mode'"
+Write-Host "./scripts/build-iso-arch.sh --mode '$Mode' --run-label '$resolvedRunLabel' --work './build/work/$Mode' --out './build/out/$Mode'"
+Write-Host ""
+Write-Host "Use the same run label for the VM cycle after the build finishes:"
+Write-Host ".\scripts\start-vm-test-cycle.ps1 -Mode $Mode -RunLabel $resolvedRunLabel"

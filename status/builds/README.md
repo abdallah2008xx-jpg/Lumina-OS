@@ -4,6 +4,7 @@ Store build manifests here after real Arch-side ISO builds.
 
 ## Intended Contents
 - build mode
+- run label
 - timestamp
 - output ISO path
 - checksum
@@ -11,4 +12,5 @@ Store build manifests here after real Arch-side ISO builds.
 
 ## Current Workflow
 - `scripts/build-iso-arch.sh` now writes a manifest here after `mkarchiso` finishes
+- the build manifest now carries the same `Run Label` that should be reused during the VM cycle and release flow
 - keep these records even when the ISO itself lives outside the repo

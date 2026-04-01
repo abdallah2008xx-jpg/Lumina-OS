@@ -27,6 +27,7 @@ This project follows a simple rule for now:
 - SDDM now uses validation-oriented guidance and safer information-message coloring
 - Update Center now prefers GitHub release metadata and records why bundled fallback metadata is used when needed
 - GitHub publishing now validates evidence/readiness state before creating a release unless the gate is intentionally skipped
+- Build manifests now carry the shared `Run Label` so build, VM, and release evidence can be linked directly
 
 ### Pending Before First Tagged Release
 - First real `stable` build in Arch

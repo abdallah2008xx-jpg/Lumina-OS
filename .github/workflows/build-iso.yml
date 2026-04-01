@@ -31,6 +31,8 @@ jobs:
   build-iso:
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     strategy:
       fail-fast: false
       matrix:
@@ -81,7 +83,9 @@ jobs:
         run: sudo docker pull archlinux:base-devel
 
       - name: Build ISO inside Arch container
+        id: build
         if: steps.selection.outputs.skip != 'true'
+        continue-on-error: true
         shell: bash
         env:
           MODE: ${{ matrix.mode }}
@@ -89,6 +93,10 @@ jobs:
         run: |
           set -euo pipefail
 
+          mkdir -p "build/github-logs/${MODE}"
+          log_path="build/github-logs/${MODE}/${RUN_LABEL}.log"
+
+          set +e
           sudo docker run --rm --privileged \
             -e MODE="${MODE}" \
             -e RUN_LABEL="${RUN_LABEL}" \
@@ -108,21 +116,32 @@ jobs:
                 --mode "${MODE}" \
                 --run-label "${RUN_LABEL}" \
                 --out-dir "/repo/build/github-handoff/${MODE}"
-            '
+            ' 2>&1 | tee "${log_path}"
+          exit_code="${PIPESTATUS[0]}"
+          set -e
+
+          echo "log_path=${log_path}" >> "${GITHUB_OUTPUT}"
+          echo "exit_code=${exit_code}" >> "${GITHUB_OUTPUT}"
 
       - name: Restore workspace ownership
-        if: steps.selection.outputs.skip != 'true'
+        if: always() && steps.selection.outputs.skip != 'true'
         shell: bash
         run: |
           set -euo pipefail
-          sudo chown -R "$(id -u):$(id -g)" "${GITHUB_WORKSPACE}/build" "${GITHUB_WORKSPACE}/status"
+          for candidate in "${GITHUB_WORKSPACE}/build" "${GITHUB_WORKSPACE}/status"; do
+            if [[ -e "${candidate}" ]]; then
+              sudo chown -R "$(id -u):$(id -g)" "${candidate}"
+            fi
+          done
 
       - name: Summarize build output
-        if: steps.selection.outputs.skip != 'true'
+        if: always() && steps.selection.outputs.skip != 'true'
         shell: bash
         env:
           MODE: ${{ matrix.mode }}
           RUN_LABEL: ${{ steps.meta.outputs.run_label }}
+          LOG_PATH: ${{ steps.build.outputs.log_path }}
+          EXIT_CODE: ${{ steps.build.outputs.exit_code }}
         run: |
           set -euo pipefail
 
@@ -134,22 +153,39 @@ jobs:
             echo "## Lumina-OS ${MODE} build"
             echo ""
             echo "- Run Label: \`${RUN_LABEL}\`"
+            echo "- Build Exit Code: \`${EXIT_CODE:-not-recorded}\`"
             echo "- Build Manifest: \`${manifest_path:-not-found}\`"
             echo "- ISO Path: \`${iso_path:-not-found}\`"
             echo "- Handoff Folder: \`${handoff_path:-not-found}\`"
+            if [[ -n "${LOG_PATH}" && -f "${LOG_PATH}" ]]; then
+              echo ""
+              echo "### Log Tail"
+              echo '```text'
+              tail -n 80 "${LOG_PATH}"
+              echo '```'
+            fi
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Upload ISO artifact
-        if: steps.selection.outputs.skip != 'true'
+        if: always() && steps.selection.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: lumina-os-${{ matrix.mode }}-${{ steps.meta.outputs.run_label }}
           path: |
             build/github-out/${{ matrix.mode }}/*.iso
             build/github-handoff/${{ matrix.mode }}/
+            build/github-logs/${{ matrix.mode }}/
             status/builds/*.md
           if-no-files-found: error
           retention-days: 14
+
+      - name: Fail job when build step failed
+        if: steps.selection.outputs.skip != 'true' && steps.build.outputs.exit_code != '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Build container failed with exit code: ${{ steps.build.outputs.exit_code }}" >&2
+          exit 1
 
       - name: Summarize skipped mode
         if: steps.selection.outputs.skip == 'true'

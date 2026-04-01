@@ -307,6 +307,7 @@ $releaseEvidenceLines
 - Release notes source: $releaseNotesPath
 
 ## Next Step
+- validate the package with `scripts/validate-release-package.ps1`
 - publish the package with `scripts/publish-github-release.ps1`
 - upload or verify the ISO and `SHA256SUMS.txt` assets in GitHub Releases
 - paste or adapt the contents of `release-notes.md` if a final wording pass is still needed

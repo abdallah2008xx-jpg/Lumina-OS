@@ -7,11 +7,17 @@ param(
     [string]$TargetCommitish = "main",
     [switch]$Prerelease,
     [switch]$Ready,
+    [switch]$AllowAttentionState,
+    [switch]$SkipValidationGate,
     [switch]$OutputPathOnly,
-    [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+    [string]$RepoRoot = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+    $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+}
 
 function Get-MetadataValue {
     param(
@@ -101,6 +107,26 @@ function Upload-ReleaseAsset {
 
 $resolvedManifestPath = Resolve-RequiredPath -Label "Release manifest" -Value $ReleaseManifestPath
 $manifestContent = Get-Content -Raw $resolvedManifestPath
+$releaseDir = Split-Path -Parent $resolvedManifestPath
+$validationReportPath = Join-Path $releaseDir "release-validation.md"
+
+if (-not $SkipValidationGate.IsPresent) {
+    $validatorPath = Join-Path $PSScriptRoot "validate-release-package.ps1"
+    if (-not (Test-Path $validatorPath)) {
+        throw "Validation gate script is missing: $validatorPath"
+    }
+
+    $validationArgs = @{
+        ReleaseManifestPath = $resolvedManifestPath
+        RepoRoot = $RepoRoot
+    }
+
+    if ($AllowAttentionState.IsPresent) {
+        $validationArgs["AllowAttentionState"] = $true
+    }
+
+    & $validatorPath @validationArgs | Out-Null
+}
 
 $version = Get-MetadataValue -Content $manifestContent -Label "Version"
 $isoPath = Resolve-RequiredPath -Label "ISO path" -Value (Get-MetadataValue -Content $manifestContent -Label "ISO Path")
@@ -183,7 +209,7 @@ $uploadBaseUrl = ($createdRelease.upload_url -replace "\{\?name,label\}", "")
 $isoUpload = Upload-ReleaseAsset -UploadBaseUrl $uploadBaseUrl -AssetPath $isoPath -Headers $headers
 $checksumUpload = Upload-ReleaseAsset -UploadBaseUrl $uploadBaseUrl -AssetPath $checksumPath -Headers $headers
 
-$publishRecordPath = Join-Path (Split-Path -Parent $resolvedManifestPath) "github-release-publish.md"
+$publishRecordPath = Join-Path $releaseDir "github-release-publish.md"
 $publishRecord = @"
 # Lumina-OS GitHub Release Publish Record
 
@@ -197,6 +223,7 @@ $publishRecord = @"
 - Repository: $resolvedOwner/$resolvedRepo
 - Target Commitish: $TargetCommitish
 - Release Manifest: $resolvedManifestPath
+- Validation Report: $(if (Test-Path $validationReportPath) { $validationReportPath } else { "not-recorded-yet" })
 - Release Notes: $releaseNotesPath
 - Release URL: $($createdRelease.html_url)
 - Release ID: $($createdRelease.id)

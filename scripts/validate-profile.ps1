@@ -89,6 +89,7 @@ $requiredPaths = @(
     "scripts\sync-validation-matrix.ps1",
     "scripts\import-diagnostics-bundle.ps1",
     "scripts\prepare-release-package.ps1",
+    "scripts\validate-release-package.ps1",
     "scripts\publish-github-release.ps1",
     "status\builds\README.md",
     "status\vm-tests\README.md",

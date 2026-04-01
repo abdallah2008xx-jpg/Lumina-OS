@@ -66,3 +66,5 @@
 - Polished the SDDM theme with validation-oriented guidance and safer info-message coloring
 - Switched Update Center to prefer GitHub release metadata with a recorded fallback path to bundled metadata until the first real releases exist
 - Added `scripts/publish-github-release.ps1` so the first validated ISO can be turned into a real GitHub Release with a publish record
+- Added `scripts/validate-release-package.ps1` and wired it into publish gating so release manifests must pass evidence/readiness checks before GitHub publish
+- Fixed the new release-validation scripts so `RepoRoot` resolves safely at runtime and smoke-tested the validation gate with a temporary package

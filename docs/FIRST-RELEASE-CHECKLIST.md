@@ -49,6 +49,7 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] ISO checksum is generated
 - [ ] Release notes are written
 - [ ] `.\scripts\prepare-release-package.ps1 -Version "<version>" -IsoPath "<path-to-iso>" -Mode stable -RunLabel "<run-label>"` has been run
+- [ ] `.\scripts\validate-release-package.ps1 -ReleaseManifestPath "<path-to-release-manifest>"` passes
 - [ ] A GitHub token is available through `LUMINA_GITHUB_TOKEN` or `GITHUB_TOKEN`
 
 ## GitHub Release Package

@@ -17,6 +17,7 @@ This project follows a simple rule for now:
 - Release-package scaffolding for checksums, release notes drafts, and release manifests
 - A single-owner execution plan after the former Mohammad UI/UX track was absorbed into the main flow
 - GitHub release publishing automation via `scripts/publish-github-release.ps1`
+- Release-package validation gating via `scripts/validate-release-package.ps1`
 
 ### Changed
 - Live-system UI wording now presents the distro as `Lumina-OS`
@@ -25,6 +26,7 @@ This project follows a simple rule for now:
 - Update Center now exposes structured `loading`, `empty`, and `error` states with clearer channel wording
 - SDDM now uses validation-oriented guidance and safer information-message coloring
 - Update Center now prefers GitHub release metadata and records why bundled fallback metadata is used when needed
+- GitHub publishing now validates evidence/readiness state before creating a release unless the gate is intentionally skipped
 
 ### Pending Before First Tagged Release
 - First real `stable` build in Arch

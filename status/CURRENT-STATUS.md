@@ -55,6 +55,7 @@
 - SDDM now uses validation-oriented guidance and no longer paints information messages as failures
 - Update Center release-source handling now prefers GitHub and records fallback state when bundled metadata is used
 - GitHub release publishing now has a dedicated script and publish-record path
+- release publishing now has an explicit validation gate so unverified manifests cannot be published by accident
 
 ## Active Focus
 - prepare and execute the first serious Arch-side build attempt
@@ -75,6 +76,7 @@
 - keep GitHub collaboration and release-prep files aligned with the real build/test state
 - keep the absorbed UI/UX track aligned with the live-system implementation instead of leaving it as a separate plan
 - keep the release metadata and publishing path ready for the first real GitHub Release
+- keep release validation reports aligned with the real evidence chain before any publish step
 
 ## Next
 - run `stable` and `login-test` builds in a real Arch environment
@@ -99,3 +101,4 @@
 - confirm login, networking, and guest-service behavior
 - confirm the new Welcome, Update Center, and SDDM polish behaves correctly inside the ISO
 - run the first end-to-end release package and GitHub publish flow after the first successful build
+- run the first release validation report from a real evidence-backed manifest

@@ -62,6 +62,7 @@
 - generated cycle handoffs now adapt their checklist content to `stable` or `login-test`
 - cycle-chain audits now verify that build, VM, session, blockers, readiness, and release evidence stay attached to the same run label
 - release-candidate preparation now creates one current publish-readiness summary on top of prepare/validate output
+- release-candidate status can now be refreshed automatically after GitHub publish so the current summary flips to `published`
 
 ## Active Focus
 - prepare and execute the first serious Arch-side build attempt
@@ -89,6 +90,7 @@
 - keep the mode-specific handoff language aligned with the real acceptance target for each build mode
 - keep the cycle-chain audit aligned with finish-cycle and release-package output so evidence drift is caught early
 - keep release-candidate summaries aligned with release manifests and validation reports so publish readiness is visible in one place
+- keep release-candidate summaries synced after publish so the repo reflects the true latest release state
 
 ## Next
 - run `stable` and `login-test` builds in a real Arch environment
@@ -116,6 +118,7 @@
 - run the first release validation report from a real evidence-backed manifest
 - review the first real cycle-chain audit from an end-to-end labeled run
 - review the first real release-candidate summary from an end-to-end labeled run
+- confirm the first real published release candidate flips from `ready-to-publish` to `published`
 - validate the new build-manifest run-label linkage during the first real `stable` cycle
 - validate the first generated cycle handoff during the first real `stable` cycle
 - observe the first GitHub Actions run that includes the workflow smoke tests

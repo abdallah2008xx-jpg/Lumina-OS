@@ -23,6 +23,7 @@ This project follows a simple rule for now:
 - Mode-aware cycle handoffs for `stable` and `login-test`
 - Cycle-chain audits for build/VM/session/blocker/readiness consistency before release prep
 - Release-candidate preparation and current publish-readiness summaries
+- Release-candidate sync after GitHub publish
 
 ### Changed
 - Live-system UI wording now presents the distro as `Lumina-OS`

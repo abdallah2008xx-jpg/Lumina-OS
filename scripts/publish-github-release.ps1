@@ -109,6 +109,11 @@ $resolvedManifestPath = Resolve-RequiredPath -Label "Release manifest" -Value $R
 $manifestContent = Get-Content -Raw $resolvedManifestPath
 $releaseDir = Split-Path -Parent $resolvedManifestPath
 $validationReportPath = Join-Path $releaseDir "release-validation.md"
+$syncCandidateScript = Join-Path $PSScriptRoot "sync-release-candidate-status.ps1"
+
+if (-not (Test-Path $syncCandidateScript)) {
+    throw "Release candidate sync script is missing: $syncCandidateScript"
+}
 
 if (-not $SkipValidationGate.IsPresent) {
     $validatorPath = Join-Path $PSScriptRoot "validate-release-package.ps1"
@@ -239,6 +244,13 @@ $publishRecord = @"
 
 Set-Content -Path $publishRecordPath -Value $publishRecord -Encoding UTF8
 
+$candidateSummaryPath = & $syncCandidateScript `
+    -ReleaseManifestPath $resolvedManifestPath `
+    -ValidationReportPath $validationReportPath `
+    -PublishRecordPath $publishRecordPath `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
+
 if ($OutputPathOnly) {
     Write-Output $publishRecordPath
 }
@@ -246,4 +258,7 @@ else {
     Write-Host "Published Lumina-OS GitHub release:"
     Write-Host "Release: $($createdRelease.html_url)"
     Write-Host "Publish Record: $publishRecordPath"
+    if ($candidateSummaryPath) {
+        Write-Host "Candidate Summary: $candidateSummaryPath"
+    }
 }

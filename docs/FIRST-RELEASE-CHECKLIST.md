@@ -63,3 +63,4 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Link to relevant build/test evidence inside the repo
 - [ ] Generated release package is stored under `status/releases/`
 - [ ] `.\scripts\publish-github-release.ps1 -ReleaseManifestPath "<path-to-release-manifest>"` has been run
+- [ ] `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md` now shows `published`

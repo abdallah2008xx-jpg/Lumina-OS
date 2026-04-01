@@ -36,6 +36,7 @@ Keep reporting lightweight.
 11. Sync the validation matrix so both build modes are tracked side by side
 12. Review the cycle-chain audit before treating a run as the clean release candidate
 13. Prepare a release candidate so publish readiness has one current summary file
+14. Refresh the same release candidate after publish so the current summary reflects the published state
 
 ## What to Record
 - What was finished

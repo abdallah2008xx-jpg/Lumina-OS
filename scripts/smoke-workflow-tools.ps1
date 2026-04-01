@@ -22,6 +22,7 @@ function Assert-Condition {
 $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
 $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
 $releaseCandidateScript = Join-Path $PSScriptRoot "prepare-release-candidate.ps1"
+$syncReleaseCandidateScript = Join-Path $PSScriptRoot "sync-release-candidate-status.ps1"
 $releaseValidator = Join-Path $PSScriptRoot "validate-release-package.ps1"
 
 if (-not (Test-Path $handoffScript)) {
@@ -34,6 +35,10 @@ if (-not (Test-Path $cycleChainAuditScript)) {
 
 if (-not (Test-Path $releaseCandidateScript)) {
     throw "Missing smoke-test target: $releaseCandidateScript"
+}
+
+if (-not (Test-Path $syncReleaseCandidateScript)) {
+    throw "Missing smoke-test target: $syncReleaseCandidateScript"
 }
 
 if (-not (Test-Path $releaseValidator)) {
@@ -152,6 +157,21 @@ try {
     $validationContent = Get-Content -Raw $validationReportPath
     Assert-Condition -Condition ($validationContent -match [regex]::Escape("- Result: passed")) -Message "Release validation report did not pass."
     Assert-Condition -Condition ($validationContent -match [regex]::Escape("- Run Label: $smokeRunLabel")) -Message "Release validation report does not contain the expected run label."
+
+    $publishRecordPath = Join-Path (Split-Path -Parent $releaseManifestPath) "github-release-publish.md"
+    Set-Content -Path $publishRecordPath -Value "# Publish`r`n`r`n- Run Label: $smokeRunLabel`r`n- Release URL: https://example.com/releases/v0.1.0-ci`r`n- Release ID: 12345" -Encoding UTF8
+
+    $publishedCandidateSummaryPath = & $syncReleaseCandidateScript `
+        -ReleaseManifestPath $releaseManifestPath `
+        -ValidationReportPath $validationReportPath `
+        -PublishRecordPath $publishRecordPath `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $publishedCandidateSummaryPath) -Message "Published release candidate summary was not created."
+    $publishedCandidateContent = Get-Content -Raw $publishedCandidateSummaryPath
+    Assert-Condition -Condition ($publishedCandidateContent -match [regex]::Escape("- Candidate State: published")) -Message "Release candidate summary did not switch to published."
+    Assert-Condition -Condition ($publishedCandidateContent -match [regex]::Escape("- Release URL: https://example.com/releases/v0.1.0-ci")) -Message "Published release candidate summary does not expose the release URL."
 }
 finally {
     if (Test-Path $tempRoot) {

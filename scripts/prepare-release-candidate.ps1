@@ -85,6 +85,7 @@ function Format-Items {
 
 $prepareScript = Join-Path $PSScriptRoot "prepare-release-package.ps1"
 $validateScript = Join-Path $PSScriptRoot "validate-release-package.ps1"
+$syncScript = Join-Path $PSScriptRoot "sync-release-candidate-status.ps1"
 
 if (-not (Test-Path $prepareScript)) {
     throw "Missing helper: $prepareScript"
@@ -92,6 +93,10 @@ if (-not (Test-Path $prepareScript)) {
 
 if (-not (Test-Path $validateScript)) {
     throw "Missing helper: $validateScript"
+}
+
+if (-not (Test-Path $syncScript)) {
+    throw "Missing helper: $syncScript"
 }
 
 $prepareArgs = @{
@@ -138,152 +143,17 @@ catch {
     $validationError = $_.Exception.Message
 }
 
-$manifestContent = Get-Content -Raw $manifestPath
-$validationContent = if (Test-Path $validationReportPath) { Get-Content -Raw $validationReportPath } else { "" }
-
-$versionLabel = Get-MetadataValue -Content $manifestContent -Label "Version"
-$modeLabel = Get-MetadataValue -Content $manifestContent -Label "Mode"
-$runLabel = Get-MetadataValue -Content $manifestContent -Label "Run Label"
-$isoPathLabel = Get-MetadataValue -Content $manifestContent -Label "ISO Path"
-$buildManifestLabel = Get-MetadataValue -Content $manifestContent -Label "Build Manifest"
-$vmReportLabel = Get-MetadataValue -Content $manifestContent -Label "VM Report"
-$sessionSummaryLabel = Get-MetadataValue -Content $manifestContent -Label "Session Summary"
-$sessionAuditLabel = Get-MetadataValue -Content $manifestContent -Label "Session Audit"
-$cycleChainAuditLabel = Get-MetadataValue -Content $manifestContent -Label "Cycle Chain Audit"
-$readinessLabel = Get-MetadataValue -Content $manifestContent -Label "Readiness"
-$validationMatrixLabel = Get-MetadataValue -Content $manifestContent -Label "Validation Matrix"
-
-$validationResult = Get-MetadataValue -Content $validationContent -Label "Result"
-if ([string]::IsNullOrWhiteSpace($validationResult) -and -not [string]::IsNullOrWhiteSpace($validationError)) {
-    $validationResult = "failed"
+$syncArgs = @{
+    ReleaseManifestPath = $manifestPath
+    ValidationReportPath = $validationReportPath
+    RepoRoot = $RepoRoot
+    OutputPathOnly = $true
 }
 
-$readinessState = Get-MetadataValue -Content $validationContent -Label "Readiness State"
-$validationMatrixState = Get-MetadataValue -Content $validationContent -Label "Validation Matrix State"
-$blockerState = Get-MetadataValue -Content $validationContent -Label "Blocker State"
-$publishRecordPath = Join-Path (Split-Path -Parent $manifestPath) "github-release-publish.md"
-$publishState = if (Test-Path $publishRecordPath) { "published" } else { "not-published-yet" }
-
-$candidateState = switch ($validationResult) {
-    "passed" {
-        if (Test-Path $publishRecordPath) {
-            "published"
-        }
-        else {
-            "ready-to-publish"
-        }
-        break
-    }
-    "failed" { "blocked"; break }
-    default { "review-required" }
+$candidateSummaryPath = & $syncScript @syncArgs
+if (-not $candidateSummaryPath -or -not (Test-Path $candidateSummaryPath)) {
+    throw "Unable to sync the release candidate summary."
 }
-
-$summaryItems = [System.Collections.Generic.List[string]]::new()
-if ($candidateState -eq "ready-to-publish") {
-    $summaryItems.Add("Release package and validation report are in place for the selected run.") | Out-Null
-}
-elseif ($candidateState -eq "published") {
-    $summaryItems.Add("This release candidate already has a GitHub publish record.") | Out-Null
-}
-elseif ($candidateState -eq "blocked") {
-    $summaryItems.Add("The release candidate is blocked because release validation did not pass.") | Out-Null
-}
-else {
-    $summaryItems.Add("The release candidate needs manual review before publish.") | Out-Null
-}
-
-if (-not [string]::IsNullOrWhiteSpace($readinessState)) {
-    $summaryItems.Add("Readiness State: $readinessState") | Out-Null
-}
-
-if (-not [string]::IsNullOrWhiteSpace($validationMatrixState)) {
-    $summaryItems.Add("Validation Matrix State: $validationMatrixState") | Out-Null
-}
-
-if (-not [string]::IsNullOrWhiteSpace($blockerState)) {
-    $summaryItems.Add("Blocker State: $blockerState") | Out-Null
-}
-
-if (-not [string]::IsNullOrWhiteSpace($validationError)) {
-    $summaryItems.Add("Validation Error: $validationError") | Out-Null
-}
-
-$dateStamp = Get-Date -Format "yyyy-MM-dd"
-$candidateRoot = Join-Path $RepoRoot ("status\release-candidates\" + $dateStamp)
-$safeSuffix = if ([string]::IsNullOrWhiteSpace($runLabel) -or $runLabel -eq "not-recorded-yet") {
-    Get-SafeFileSegment $versionLabel
-}
-else {
-    Get-SafeFileSegment $runLabel
-}
-$candidateSummaryPath = Join-Path $candidateRoot ("release-candidate-" + $safeSuffix + ".md")
-$currentCandidatePath = Join-Path $RepoRoot "status\release-candidates\CURRENT-RELEASE-CANDIDATE.md"
-
-New-Item -ItemType Directory -Force -Path $candidateRoot | Out-Null
-New-Item -ItemType Directory -Force -Path (Split-Path $currentCandidatePath -Parent) | Out-Null
-
-$summaryContent = @"
-# Lumina-OS Release Candidate Summary
-
-- Prepared At: $(Get-Date -Format s)
-- Candidate State: $candidateState
-- Validation Result: $(if ([string]::IsNullOrWhiteSpace($validationResult)) { "not-recorded-yet" } else { $validationResult })
-- Version: $(Get-ResolvedPathOrDefault -Value $versionLabel -DefaultValue "not-recorded-yet")
-- Mode: $(Get-ResolvedPathOrDefault -Value $modeLabel -DefaultValue "not-recorded-yet")
-- Run Label: $(Get-ResolvedPathOrDefault -Value $runLabel -DefaultValue "not-recorded-yet")
-- Release Manifest: $manifestPath
-- Validation Report: $(if (Test-Path $validationReportPath) { $validationReportPath } else { "not-recorded-yet" })
-- Publish Record: $(if (Test-Path $publishRecordPath) { $publishRecordPath } else { "not-recorded-yet" })
-
-## Evidence Links
-- ISO Path: $(Get-ResolvedPathOrDefault -Value $isoPathLabel -DefaultValue "not-recorded-yet")
-- Build Manifest: $(Get-ResolvedPathOrDefault -Value $buildManifestLabel -DefaultValue "not-recorded-yet")
-- VM Report: $(Get-ResolvedPathOrDefault -Value $vmReportLabel -DefaultValue "not-recorded-yet")
-- Session Summary: $(Get-ResolvedPathOrDefault -Value $sessionSummaryLabel -DefaultValue "not-recorded-yet")
-- Session Audit: $(Get-ResolvedPathOrDefault -Value $sessionAuditLabel -DefaultValue "not-recorded-yet")
-- Cycle Chain Audit: $(Get-ResolvedPathOrDefault -Value $cycleChainAuditLabel -DefaultValue "not-recorded-yet")
-- Readiness: $(Get-ResolvedPathOrDefault -Value $readinessLabel -DefaultValue "not-recorded-yet")
-- Validation Matrix: $(Get-ResolvedPathOrDefault -Value $validationMatrixLabel -DefaultValue "not-recorded-yet")
-
-## Summary
-$(Format-Items -Items $summaryItems)
-
-## Recommendation
-$(switch ($candidateState) {
-    "ready-to-publish" { "- this candidate is ready for `scripts/publish-github-release.ps1` after one last wording review of release notes." }
-    "published" { "- this candidate is already published; keep this summary as the release trace record." }
-    "blocked" { "- fix the validation failures in `release-validation.md` before trying to publish." }
-    default { "- inspect the generated manifest, validation report, and evidence files manually before deciding to publish." }
-})
-"@
-
-$currentContent = @"
-# Lumina-OS Current Release Candidate
-
-- Updated At: $(Get-Date -Format s)
-- Candidate State: $candidateState
-- Latest Summary: $candidateSummaryPath
-- Version: $(Get-ResolvedPathOrDefault -Value $versionLabel -DefaultValue "not-recorded-yet")
-- Mode: $(Get-ResolvedPathOrDefault -Value $modeLabel -DefaultValue "not-recorded-yet")
-- Run Label: $(Get-ResolvedPathOrDefault -Value $runLabel -DefaultValue "not-recorded-yet")
-- Release Manifest: $manifestPath
-- Validation Report: $(if (Test-Path $validationReportPath) { $validationReportPath } else { "not-recorded-yet" })
-- Publish Record: $(if (Test-Path $publishRecordPath) { $publishRecordPath } else { "not-recorded-yet" })
-
-## Summary
-$(Format-Items -Items $summaryItems)
-
-## Next Step
-$(switch ($candidateState) {
-    "ready-to-publish" { "- publish this candidate with `scripts/publish-github-release.ps1` when the release notes wording is final." }
-    "published" { "- use this file as the current release trace reference until the next candidate is prepared." }
-    "blocked" { "- resolve the validation errors and rerun `scripts/prepare-release-candidate.ps1`." }
-    default { "- inspect the latest candidate manually and decide whether another prepare/validate pass is needed." }
-})
-"@
-
-Set-Content -Path $candidateSummaryPath -Value $summaryContent -Encoding UTF8
-Set-Content -Path $currentCandidatePath -Value $currentContent -Encoding UTF8
 
 if (-not [string]::IsNullOrWhiteSpace($validationError)) {
     throw "Release candidate validation failed. Summary: $candidateSummaryPath | Validation Report: $validationReportPath"

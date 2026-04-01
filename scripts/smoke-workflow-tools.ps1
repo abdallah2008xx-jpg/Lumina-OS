@@ -24,6 +24,7 @@ $startCycleScript = Join-Path $PSScriptRoot "start-vm-test-cycle.ps1"
 $buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
 $buildHandoffImportScript = Join-Path $PSScriptRoot "import-build-handoff.ps1"
 $githubArtifactImportScript = Join-Path $PSScriptRoot "import-github-actions-artifact.ps1"
+$githubArtifactDownloadScript = Join-Path $PSScriptRoot "download-github-actions-artifact.ps1"
 $isoImportScript = Join-Path $PSScriptRoot "import-iso-artifact.ps1"
 $githubArtifactCycleScript = Join-Path $PSScriptRoot "start-github-actions-vm-cycle.ps1"
 $prepareReleasePackageScript = Join-Path $PSScriptRoot "prepare-release-package.ps1"
@@ -53,6 +54,10 @@ if (-not (Test-Path $buildHandoffImportScript)) {
 
 if (-not (Test-Path $githubArtifactImportScript)) {
     throw "Missing smoke-test target: $githubArtifactImportScript"
+}
+
+if (-not (Test-Path $githubArtifactDownloadScript)) {
+    throw "Missing smoke-test target: $githubArtifactDownloadScript"
 }
 
 if (-not (Test-Path $isoImportScript)) {
@@ -180,11 +185,14 @@ try {
     Assert-Condition -Condition ($cycleChainContent -match [regex]::Escape("- Overall Status: pass")) -Message "Cycle chain audit did not pass."
     Assert-Condition -Condition ($cycleChainContent -match [regex]::Escape("- Run Label: $smokeRunLabel")) -Message "Cycle chain audit does not contain the expected run label."
 
-    $importedBuildPath = & $buildManifestImportScript `
-        -ManifestPath $externalBuildPath `
-        -Label $startCycleRunLabel `
-        -RepoRoot $tempRoot `
-        -OutputPathOnly
+    $importedBuildPath = (
+        & $buildManifestImportScript `
+            -ManifestPath $externalBuildPath `
+            -Label $startCycleRunLabel `
+            -RepoRoot $tempRoot `
+            -OutputPathOnly |
+        Select-Object -Last 1
+    ).ToString().Trim()
 
     Assert-Condition -Condition (Test-Path $importedBuildPath) -Message "Imported build manifest was not created."
     $importedBuildContent = Get-Content -Raw $importedBuildPath
@@ -199,7 +207,9 @@ try {
         -RunLabel $startCycleRunLabel `
         -RepoRoot $tempRoot
 
-    $startedSessionFile = Get-ChildItem -Path (Join-Path $tempRoot "status\test-sessions") -Filter "*.md" -Recurse | Select-Object -First 1
+    $startedSessionFile = Get-ChildItem -Path (Join-Path $tempRoot "status\test-sessions") -Filter "*.md" -Recurse |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
     Assert-Condition -Condition ($null -ne $startedSessionFile) -Message "VM cycle start did not create a session summary for the imported build path."
     $startedSessionContent = Get-Content -Raw $startedSessionFile.FullName
     Assert-Condition -Condition ($startedSessionContent -match [regex]::Escape("- Run Label: $startCycleRunLabel")) -Message "Started session does not contain the imported-build run label."
@@ -244,6 +254,8 @@ try {
     $artifactImportContent = Get-Content -Raw $artifactImportSummary
     Assert-Condition -Condition ($artifactImportContent -match [regex]::Escape("- GitHub Run Id: 23863815968")) -Message "GitHub Actions artifact import did not record the expected run id."
     Assert-Condition -Condition ($artifactImportContent -match [regex]::Escape("- Imported Handoff Count: 1")) -Message "GitHub Actions artifact import did not record the expected handoff count."
+
+    [void][scriptblock]::Create((Get-Content -Raw $githubArtifactDownloadScript))
 
     & $githubArtifactCycleScript `
         -ArtifactPath $artifactZipPath `

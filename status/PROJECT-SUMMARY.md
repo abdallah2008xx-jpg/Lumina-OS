@@ -32,6 +32,7 @@ This file gives one fast answer to two questions:
 - complete Arch-side build handoff folders can now be imported in one step when both files are transferred together
 - downloaded GitHub Actions artifact zips can now be imported directly into the same handoff path
 - downloaded GitHub Actions artifact zips can now initialize the local VM evidence chain in one command
+- GitHub Actions artifacts can now also be downloaded directly from a run id and mode before entering the same local VM evidence chain
 - GitHub Actions now has a remote ISO build workflow to trigger real build attempts without waiting on local Arch access
 - the first real GitHub Actions matrix build has now completed successfully for `stable` and `login-test`
 - generated cycle handoffs now exist for one-file execution of a real run
@@ -56,6 +57,7 @@ This file gives one fast answer to two questions:
 
 ### Real Execution Work
 - import the first successful GitHub Actions build handoff artifacts into the repo-side evidence chain
+- validate the new direct GitHub Actions artifact-download path during the first local VM cycle
 - run the first real VM validation cycle for both modes
 
 ### Runtime Verification
@@ -85,7 +87,7 @@ This file gives one fast answer to two questions:
 - Biggest blocker: the first successful remote build exists, but its handoff artifacts and VM evidence have not yet been imported into the local repo-side chain
 
 ## Recommended Next Order
-1. Import the successful GitHub Actions handoff artifacts from run `#8`
+1. Download or import the successful GitHub Actions handoff artifacts from run `#8`
 2. Run a full labeled VM cycle for `stable`
 3. Confirm the new Welcome, Update Center, and SDDM polish inside the built ISO
 4. Run a full labeled VM cycle for `login-test`

@@ -11,8 +11,8 @@ Store import summaries here when a complete Arch-side build handoff folder is br
 
 ## GitHub Actions Flow
 1. Open the successful GitHub Actions run
-2. Download the artifact zip for the mode you want to test
-3. Import that zip with `scripts/import-github-actions-artifact.ps1`
+2. Either download the artifact zip for the mode you want to test, or download it directly with `scripts/download-github-actions-artifact.ps1`
+3. Import that zip with `scripts/import-github-actions-artifact.ps1`, or let `scripts/start-github-actions-vm-cycle.ps1` perform download + import + VM-cycle initialization in one path
 4. Reuse the imported run label during VM testing and release preparation
 
 ## Typical Contents
@@ -22,3 +22,4 @@ Store import summaries here when a complete Arch-side build handoff folder is br
 - reported mode
 - reported run label
 - GitHub Actions artifact zip path when the source was a remote run
+- direct-download summary when the zip was fetched from GitHub by `RunId`

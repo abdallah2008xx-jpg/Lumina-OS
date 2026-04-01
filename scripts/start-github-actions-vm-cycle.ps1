@@ -1,6 +1,5 @@
 param(
-    [Parameter(Mandatory = $true)]
-    [string]$ArtifactPath,
+    [string]$ArtifactPath = "",
     [ValidateSet("stable", "login-test")]
     [string]$Mode = "stable",
     [ValidateSet("VirtualBox", "VMware", "QEMU", "Hyper-V", "Other")]
@@ -9,6 +8,9 @@ param(
     [string]$Firmware = "UEFI",
     [string]$RunId = "",
     [string]$ArtifactName = "",
+    [string]$Owner = "abdallah2008xx-jpg",
+    [string]$Repo = "Lumina-OS",
+    [string]$Token = "",
     [string]$RunLabel = "",
     [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 )
@@ -35,23 +37,49 @@ function Get-MetadataValue {
 }
 
 $artifactImportScript = Join-Path $PSScriptRoot "import-github-actions-artifact.ps1"
+$artifactDownloadScript = Join-Path $PSScriptRoot "download-github-actions-artifact.ps1"
 $startCycleScript = Join-Path $PSScriptRoot "start-vm-test-cycle.ps1"
 
 if (-not (Test-Path $artifactImportScript)) {
     throw "Missing helper: $artifactImportScript"
 }
 
+if (-not (Test-Path $artifactDownloadScript)) {
+    throw "Missing helper: $artifactDownloadScript"
+}
+
 if (-not (Test-Path $startCycleScript)) {
     throw "Missing helper: $startCycleScript"
 }
 
+$resolvedArtifactPath = $ArtifactPath
+if ([string]::IsNullOrWhiteSpace($resolvedArtifactPath)) {
+    if ([string]::IsNullOrWhiteSpace($RunId)) {
+        throw "Provide -ArtifactPath, or provide -RunId so the GitHub Actions artifact can be downloaded automatically."
+    }
+
+    $resolvedArtifactPath = & $artifactDownloadScript `
+        -RunId $RunId `
+        -ArtifactName $ArtifactName `
+        -Mode $Mode `
+        -Owner $Owner `
+        -Repo $Repo `
+        -Token $Token `
+        -RepoRoot $RepoRoot `
+        -OutputPathOnly
+
+    $resolvedArtifactPath = $resolvedArtifactPath.ToString().Trim()
+}
+
 $artifactImportSummaryPath = & $artifactImportScript `
-    -ArtifactPath $ArtifactPath `
+    -ArtifactPath $resolvedArtifactPath `
     -RunId $RunId `
     -ArtifactName $ArtifactName `
     -Label $(if ([string]::IsNullOrWhiteSpace($RunLabel)) { "" } else { $RunLabel.Trim() }) `
     -RepoRoot $RepoRoot `
     -OutputPathOnly
+
+$artifactImportSummaryPath = $artifactImportSummaryPath.ToString().Trim()
 
 if (-not (Test-Path $artifactImportSummaryPath)) {
     throw "Artifact import summary was not created: $artifactImportSummaryPath"
@@ -109,6 +137,7 @@ if ([string]::IsNullOrWhiteSpace($importedIsoPath) -or -not (Test-Path $imported
 }
 
 Write-Host "Imported GitHub Actions artifact for Lumina-OS."
+Write-Host "Artifact Path:   $resolvedArtifactPath"
 Write-Host "Import Summary: $artifactImportSummaryPath"
 Write-Host "Mode:           $Mode"
 Write-Host "Run Label:      $resolvedRunLabel"

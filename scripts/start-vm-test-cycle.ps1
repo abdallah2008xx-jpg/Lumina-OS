@@ -135,11 +135,14 @@ if (-not [string]::IsNullOrWhiteSpace($resolvedBuildManifestPath)) {
     $resolvedRepoBuildRoot = [System.IO.Path]::GetFullPath((Join-Path $RepoRoot "status\builds"))
 
     if (-not $resolvedBuildManifestPath.StartsWith($resolvedRepoBuildRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
-        $resolvedBuildManifestPath = & $buildManifestImportScript `
-            -ManifestPath $resolvedBuildManifestPath `
-            -Label $resolvedRunLabel `
-            -RepoRoot $RepoRoot `
-            -OutputPathOnly
+        $resolvedBuildManifestPath = (
+            & $buildManifestImportScript `
+                -ManifestPath $resolvedBuildManifestPath `
+                -Label $resolvedRunLabel `
+                -RepoRoot $RepoRoot `
+                -OutputPathOnly |
+            Select-Object -Last 1
+        ).ToString().Trim()
     }
 }
 

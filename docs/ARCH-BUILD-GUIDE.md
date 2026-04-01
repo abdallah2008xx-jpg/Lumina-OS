@@ -72,11 +72,29 @@ If the successful build came from GitHub Actions, download the workflow artifact
 
 That path unpacks the artifact, finds the exported handoff folder inside it, imports the build manifest and ISO into this workspace, and leaves behind one import summary under `status/build-handoffs/`.
 
+If you want to skip the manual zip download entirely, set `LUMINA_GITHUB_TOKEN` or `GITHUB_TOKEN` first, then download the right artifact directly from the run by mode:
+
+```powershell
+$env:LUMINA_GITHUB_TOKEN = "ghp_your_token_here"
+.\scripts\download-github-actions-artifact.ps1 -RunId 23863815968 -Mode stable
+```
+
+That helper resolves the matching `lumina-os-stable-*` artifact for the selected run, downloads the zip into `build/downloaded-artifacts/`, and records one download summary under `status/build-handoffs/`.
+
 If you want that import to immediately open the local VM evidence chain for the downloaded build, use:
 
 ```powershell
 .\scripts\start-github-actions-vm-cycle.ps1 -ArtifactPath "C:\Path\To\artifact.zip" -Mode stable -VmType VirtualBox -Firmware UEFI -RunId 23863815968
 ```
+
+Or let the same helper download and import the artifact for you in one command:
+
+```powershell
+$env:LUMINA_GITHUB_TOKEN = "ghp_your_token_here"
+.\scripts\start-github-actions-vm-cycle.ps1 -Mode stable -VmType VirtualBox -Firmware UEFI -RunId 23863815968
+```
+
+When `-ArtifactPath` is omitted, the helper now resolves the artifact from the selected mode and GitHub run, downloads it, imports the exported handoff, then opens the local VM evidence chain on the same `Run Label`.
 
 If you are already inside an Arch VM, bootstrap the build environment with:
 

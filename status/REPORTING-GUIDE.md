@@ -36,8 +36,8 @@ Keep reporting lightweight.
 4. Use `STATUS-YYYY-MM-DD.md` for end-of-day recap if useful
 5. Keep build manifests and VM test reports once real ISO runs begin
 6. If the Arch environment exported one folder containing both the build manifest and ISO, import that handoff folder first
-7. If the build came from GitHub Actions, import the downloaded artifact zip before starting the VM cycle
-8. Or use the one-command GitHub Actions -> VM-cycle bridge when you want import + VM-session initialization together
+7. If the build came from GitHub Actions, either import the downloaded artifact zip or fetch it directly from the run with `scripts/download-github-actions-artifact.ps1`
+8. Or use the one-command GitHub Actions -> VM-cycle bridge when you want download/import + VM-session initialization together
 9. Import any build manifest that was produced outside this repo clone before starting the VM cycle
 10. Import any ISO file that was produced outside this repo clone before starting release preparation
 11. Generate a cycle handoff before a serious run if you want one shared command sheet

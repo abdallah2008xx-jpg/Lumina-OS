@@ -5,8 +5,8 @@ Update it once per work block or roughly every hour.
 
 ## Current Block
 - **Date:** 2026-04-01
-- **Time:** 11:30 PDT
-- **Focus:** Stabilizing the new GitHub Actions ISO build until the first real remote matrix build succeeds
+- **Time:** 11:49 PDT
+- **Focus:** Reducing operator steps between the first successful GitHub Actions build and the first local VM validation cycle
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
@@ -18,18 +18,19 @@ Update it once per work block or roughly every hour.
 - Reached the first successful real GitHub Actions matrix build for `stable` and `login-test`
 - Added a direct GitHub Actions artifact-import path so downloaded workflow zips can go straight into local VM validation
 - Added a one-command GitHub Actions artifact -> VM-cycle bridge for faster first-ISO validation
+- Added direct GitHub Actions artifact download by `RunId + mode` so the bridge no longer depends on a manual zip download first
 
 ## In Progress
-- Updating local status files and tooling so the first successful remote build can flow directly into VM validation with minimal operator steps
+- Updating docs and generated status files so the new direct-download path is part of the normal first-VM-cycle workflow
 
 ## Next Hour
-- Download the first successful GitHub Actions artifact zip and start the first local VM cycle from it
+- Fetch the first successful GitHub Actions artifact directly from the run and start the first local VM cycle from it
 - Start the first labeled `stable` VM cycle from the successful remote build
 - Verify the complete handoff path during the first real GitHub Actions -> Windows -> VM transfer
 - Review the first real evidence trail after the successful remote build
 
 ## Blockers
-- The build itself is no longer blocked, but GitHub artifact download/import and the first VM validation cycle still need to be completed
+- The build itself is no longer blocked, but the first real GitHub Actions download/import path and the first VM validation cycle still need to be completed
 
 ## Decisions / Notes
 - Prefer GitHub as the intended release-metadata source now that the real repo exists
@@ -51,6 +52,7 @@ Update it once per work block or roughly every hour.
 - Prefer one complete build handoff folder when the Arch side can export both files together
 - Use GitHub Actions as the first practical build engine when local Arch remains blocked
 - Treat the first successful remote build as the handoff point into VM validation, not the end of the process
+- Prefer run-id-based artifact download when the successful build already exists on GitHub, so operators do not need to hunt for the right zip manually
 
 ## Ready-to-Send Mini Update
-Lumina-OS reached its first successful remote GitHub Actions matrix build for `stable` and `login-test`; the next step is importing the handoff artifacts and starting VM validation on the resulting ISO.
+Lumina-OS reached its first successful remote GitHub Actions matrix build for `stable` and `login-test`; the next step is pulling that artifact directly into the local VM workflow and recording the first real validation cycle.

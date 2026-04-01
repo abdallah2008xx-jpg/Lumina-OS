@@ -93,3 +93,4 @@
 - Reached the first successful real GitHub Actions matrix build for `stable` and `login-test`
 - Added direct GitHub Actions artifact import so downloaded workflow zips can feed the same local handoff/evidence path as manual Arch exports
 - Added a one-command GitHub Actions artifact -> VM-cycle bridge so remote build output can enter local validation without separate import/start steps
+- Added direct GitHub Actions artifact download by run id and mode so the first local VM cycle no longer depends on a manual zip download step

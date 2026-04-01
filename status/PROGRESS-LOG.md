@@ -58,3 +58,4 @@
 - Added explicit `Run Label` traceability so repeated VM cycles can stay linked without falling back to generic latest-file matching
 - Renamed visible project branding to `Lumina-OS` across GitHub-facing files and live-system UI surfaces
 - Updated build/test/report scripts so generated manifests, audits, readiness snapshots, blocker reviews, and VM reports now use `Lumina-OS` branding
+- Added `CONTRIBUTING.md`, `CHANGELOG.md`, GitHub issue templates, a PR template, and `docs/FIRST-RELEASE-CHECKLIST.md` to prepare the repo for teamwork and the first public release

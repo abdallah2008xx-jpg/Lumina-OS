@@ -1,0 +1,52 @@
+name: Feature Request
+description: Propose a product, desktop, build, or workflow improvement for Lumina-OS.
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What do you want to add or improve?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Branding
+        - Desktop UX
+        - Welcome
+        - Update Center
+        - Build System
+        - VM Testing
+        - Diagnostics / Reporting
+        - GitHub / Collaboration
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Or Gap
+      description: What problem would this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Direction
+      description: Describe the preferred solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints / Notes
+      description: Mention compatibility, build risk, or workflow concerns if any.

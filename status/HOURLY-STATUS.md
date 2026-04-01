@@ -13,6 +13,7 @@ Update it once per work block or roughly every hour.
 - Renamed the visible project and system branding to `Lumina-OS` across README, docs, boot labels, Welcome, Update Center, and status files
 - Updated ISO metadata and live-system branding so the generated image now presents itself as `Lumina-OS`
 - Updated build/test/report scripts so generated audits, manifests, VM reports, readiness snapshots, and blocker records also use `Lumina-OS`
+- Added GitHub collaboration and release-prep scaffolding with contributor guidance, changelog tracking, issue templates, PR template, and a first-release checklist
 - Re-ran profile validation after the script/report branding pass and confirmed it still passes
 
 ## In Progress
@@ -22,6 +23,7 @@ Update it once per work block or roughly every hour.
 - Decide whether to rename internal `ahmados-*` identifiers before the first real build or keep them as compatibility IDs until after validation
 - Keep the build/test workflow stable and ready for the first Arch-side `stable` build
 - Move execution to an actual Arch environment for the first real ISO build
+- Start using the new GitHub templates and release checklist as the first real build evidence arrives
 
 ## Blockers
 - Actual ISO building is blocked in the current Windows workspace; `mkarchiso` must run inside an Arch environment

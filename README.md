@@ -40,3 +40,10 @@ Current project outputs include:
 - staged Arch build/test workflow under `scripts/` and `docs/`
 - real Lumina-OS Welcome app shell under `archiso-profile/airootfs/usr/share/ahmados/welcome/`
 - real Lumina-OS Update Center shell under `archiso-profile/airootfs/usr/share/ahmados/update-center/`
+
+## Collaboration
+
+- Contributor workflow: `CONTRIBUTING.md`
+- Changelog tracking: `CHANGELOG.md`
+- First release gate: `docs/FIRST-RELEASE-CHECKLIST.md`
+- GitHub issue and PR templates live under `.github/`

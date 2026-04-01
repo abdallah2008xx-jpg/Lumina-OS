@@ -1,0 +1,75 @@
+name: Bug Report
+description: Report a real problem in Lumina-OS, the build flow, or the VM workflow.
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is broken?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Build
+        - Boot
+        - SDDM
+        - Plasma Session
+        - Welcome
+        - Update Center
+        - Diagnostics / Reports
+        - Documentation
+        - GitHub Workflow
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Build Mode
+      options:
+        - stable
+        - login-test
+        - not-applicable
+    validations:
+      required: true
+
+  - type: input
+    id: run_label
+    attributes:
+      label: Run Label
+      description: If this came from a VM cycle, add the run label.
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps To Reproduce
+      description: List the exact steps.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Result
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Result
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Add paths or links to build manifests, VM reports, diagnostics imports, audits, or screenshots.

@@ -46,6 +46,7 @@
 - validation matrix syncing added to compare `stable` and `login-test`
 - run-label traceability added across VM reports, session summaries, diagnostics imports, audits, blockers, and readiness
 - script and report output branding aligned to `Lumina-OS` while keeping internal compatibility identifiers stable
+- GitHub collaboration scaffolding added with `CONTRIBUTING.md`, `CHANGELOG.md`, issue templates, PR template, and a first-release checklist
 
 ## Active Focus
 - prepare and execute the first serious Arch-side build attempt
@@ -63,6 +64,7 @@
 - validate the path to SDDM and Plasma X11 in a VM
 - keep status updates consistent during rebuild work
 - continue staged internal rename work without breaking current build/test compatibility
+- keep GitHub collaboration and release-prep files aligned with the real build/test state
 
 ## Next
 - run `stable` and `login-test` builds in a real Arch environment
@@ -81,6 +83,7 @@
 - run and review the smoke-check report from inside the ISO
 - import the diagnostics bundle into `status/diagnostics/`
 - decide whether to run a second deep rename pass for internal `ahmados-*` identifiers after the first real ISO validation
+- use the new first-release checklist during the first successful Arch build and VM validation pass
 - test the real SDDM and Plasma theming in a built ISO
 - boot the resulting ISO in a VM
 - confirm login, networking, and guest-service behavior

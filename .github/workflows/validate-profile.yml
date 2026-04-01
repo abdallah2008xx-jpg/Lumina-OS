@@ -1,0 +1,19 @@
+name: Validate AhmadOS Profile
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  validate-profile:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run PowerShell profile validation
+        shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File .\scripts\validate-profile.ps1

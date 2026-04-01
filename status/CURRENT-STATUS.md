@@ -70,6 +70,7 @@
 - build manifests can now be imported back into this repo from a separate Arch clone or VM before starting the Windows-side VM cycle
 - ISO artifacts can now be imported back into this workspace from a separate Arch clone or VM so release preparation can use a local Windows-accessible path
 - complete build handoff folders can now be imported in one step when the Arch side sends the manifest and ISO together
+- GitHub Actions artifact zips can now be imported directly into the same handoff path used by Arch-side transfers
 - GitHub Actions now has a real remote ISO build workflow so first build attempts no longer depend only on local Arch access
 - the first real remote GitHub Actions matrix build succeeded on run `#8` for both `stable` and `login-test`
 
@@ -107,6 +108,7 @@
 - keep imported Arch-side build manifests linked into the same evidence chain when the real build happens outside this Windows workspace
 - keep imported ISO artifacts linked to the same run label when release preparation happens after a build in a separate Arch environment
 - keep complete build handoffs usable as one-step imports instead of forcing separate manifest and ISO handling when both files already travel together
+- keep downloaded GitHub Actions artifacts flowing into the same import path as manual Arch-side handoffs
 - keep the new GitHub ISO build workflow aligned with the local handoff and evidence chain so successful remote builds feed the same process
 
 ## Next

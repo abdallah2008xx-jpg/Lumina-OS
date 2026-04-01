@@ -91,3 +91,4 @@
 - Made Arch bootstrap non-interactive for CI and fixed bash conditionals in `scripts/validate-profile.sh`
 - Added `grub` to the Arch bootstrap requirements so `mkarchiso` can validate the UEFI GRUB path on the host
 - Reached the first successful real GitHub Actions matrix build for `stable` and `login-test`
+- Added direct GitHub Actions artifact import so downloaded workflow zips can feed the same local handoff/evidence path as manual Arch exports

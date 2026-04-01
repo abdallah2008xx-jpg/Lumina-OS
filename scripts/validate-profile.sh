@@ -105,6 +105,7 @@ required_paths=(
     "${repo_root}/scripts/finish-vm-test-cycle.ps1"
     "${repo_root}/scripts/import-build-manifest.ps1"
     "${repo_root}/scripts/import-build-handoff.ps1"
+    "${repo_root}/scripts/import-github-actions-artifact.ps1"
     "${repo_root}/scripts/import-iso-artifact.ps1"
     "${repo_root}/scripts/new-cycle-handoff.ps1"
     "${repo_root}/scripts/smoke-workflow-tools.ps1"

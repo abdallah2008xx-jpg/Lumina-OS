@@ -162,6 +162,7 @@ $version = Get-MetadataValue -Content $releaseCandidateContent -Label "Version"
 $headline = switch ($true) {
     { $candidateState -eq "published" } { "Lumina-OS now has a published release candidate trail with linked release evidence."; break }
     { $candidateState -eq "ready-to-publish" } { "Lumina-OS now has a release candidate prepared and validated, pending publish."; break }
+    { $readinessState -eq "needs-vm-validation" -or $validationState -eq "builds-succeeded-awaiting-vm" } { "Lumina-OS has completed its first successful remote ISO build and is now moving into VM validation."; break }
     { $readinessState -eq "ready-for-next-stage" -and $validationState -notin @("needs-first-build", "blocked") } { "Lumina-OS has a clean internal validation trail and is ready for the next execution stage."; break }
     default { "Lumina-OS has strong build/test/release workflow coverage and is waiting on the first real Arch-side execution cycle." }
 }
@@ -210,7 +211,7 @@ $(Format-Items -Items $recentProgress)
 - GitHub publish now has local release-context validation before release creation.
 
 ## What Is Still Missing
-- The first real Arch build and first real VM evidence chain.
+- The first imported build handoff and first real VM evidence chain.
 - The first real release candidate built from a real ISO.
 - The first real published Lumina-OS release on GitHub.
 

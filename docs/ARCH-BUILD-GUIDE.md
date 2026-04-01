@@ -64,6 +64,14 @@ If you prefer moving the build manifest and ISO together in one folder, import t
 .\scripts\import-build-handoff.ps1 -HandoffPath "C:\Path\To\build-handoff-folder"
 ```
 
+If the successful build came from GitHub Actions, download the workflow artifact zip from the run page and import it directly:
+
+```powershell
+.\scripts\import-github-actions-artifact.ps1 -ArtifactPath "C:\Path\To\lumina-os-stable-gha-stable-8-1.zip" -RunId 23863815968 -ArtifactName "lumina-os-stable-gha-stable-8-1"
+```
+
+That path unpacks the artifact, finds the exported handoff folder inside it, imports the build manifest and ISO into this workspace, and leaves behind one import summary under `status/build-handoffs/`.
+
 If you are already inside an Arch VM, bootstrap the build environment with:
 
 ```bash

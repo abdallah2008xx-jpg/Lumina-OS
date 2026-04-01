@@ -94,6 +94,7 @@ $requiredPaths = @(
     "scripts\finish-vm-test-cycle.ps1",
     "scripts\import-build-manifest.ps1",
     "scripts\import-build-handoff.ps1",
+    "scripts\import-github-actions-artifact.ps1",
     "scripts\import-iso-artifact.ps1",
     "scripts\new-cycle-handoff.ps1",
     "scripts\smoke-workflow-tools.ps1",

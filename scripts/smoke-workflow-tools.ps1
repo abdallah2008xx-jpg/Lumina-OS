@@ -23,6 +23,7 @@ $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
 $startCycleScript = Join-Path $PSScriptRoot "start-vm-test-cycle.ps1"
 $buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
 $buildHandoffImportScript = Join-Path $PSScriptRoot "import-build-handoff.ps1"
+$githubArtifactImportScript = Join-Path $PSScriptRoot "import-github-actions-artifact.ps1"
 $isoImportScript = Join-Path $PSScriptRoot "import-iso-artifact.ps1"
 $prepareReleasePackageScript = Join-Path $PSScriptRoot "prepare-release-package.ps1"
 $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
@@ -47,6 +48,10 @@ if (-not (Test-Path $buildManifestImportScript)) {
 
 if (-not (Test-Path $buildHandoffImportScript)) {
     throw "Missing smoke-test target: $buildHandoffImportScript"
+}
+
+if (-not (Test-Path $githubArtifactImportScript)) {
+    throw "Missing smoke-test target: $githubArtifactImportScript"
 }
 
 if (-not (Test-Path $isoImportScript)) {
@@ -211,6 +216,29 @@ try {
     $handoffImportContent = Get-Content -Raw $handoffImportSummary
     Assert-Condition -Condition ($handoffImportContent -match [regex]::Escape("- Reported Run Label: $handoffRunLabel")) -Message "Build handoff import did not record the reported run label."
     Assert-Condition -Condition ($handoffImportContent -match [regex]::Escape("- Imported ISO Path:")) -Message "Build handoff import did not record an imported ISO path."
+
+    $artifactRoot = Join-Path $tempRoot "gha-artifact"
+    $artifactPayloadRoot = Join-Path $artifactRoot "build\github-handoff\stable"
+    $artifactPayloadDir = Join-Path $artifactPayloadRoot "handoff-folder"
+    New-Item -ItemType Directory -Force -Path $artifactPayloadDir | Out-Null
+    Copy-Item -LiteralPath (Join-Path $handoffDir "handoff-manifest.md") -Destination (Join-Path $artifactPayloadDir "handoff-manifest.md") -Force
+    Copy-Item -LiteralPath (Join-Path $handoffDir "build-manifest.md") -Destination (Join-Path $artifactPayloadDir "build-manifest.md") -Force
+    Copy-Item -LiteralPath (Join-Path $handoffDir "lumina-handoff.iso") -Destination (Join-Path $artifactPayloadDir "lumina-handoff.iso") -Force
+
+    $artifactZipPath = Join-Path $tempRoot "lumina-gha-artifact.zip"
+    Compress-Archive -Path (Join-Path $artifactRoot "*") -DestinationPath $artifactZipPath -Force
+
+    $artifactImportSummary = & $githubArtifactImportScript `
+        -ArtifactPath $artifactZipPath `
+        -ArtifactName "lumina-os-stable-gha-stable-8-1" `
+        -RunId "23863815968" `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $artifactImportSummary) -Message "GitHub Actions artifact import summary was not created."
+    $artifactImportContent = Get-Content -Raw $artifactImportSummary
+    Assert-Condition -Condition ($artifactImportContent -match [regex]::Escape("- GitHub Run Id: 23863815968")) -Message "GitHub Actions artifact import did not record the expected run id."
+    Assert-Condition -Condition ($artifactImportContent -match [regex]::Escape("- Imported Handoff Count: 1")) -Message "GitHub Actions artifact import did not record the expected handoff count."
 
     $linuxOnlyBuildRunLabel = "ci-imported-iso-smoke"
     $linuxOnlyBuildPath = Join-Path $tempRoot "linux-only-build-manifest.md"

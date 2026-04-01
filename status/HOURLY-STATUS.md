@@ -16,9 +16,10 @@ Update it once per work block or roughly every hour.
 - Made Arch bootstrap non-interactive and added `grub` so `mkarchiso` host validation can pass remotely
 - Fixed a bash-conditional bug in `scripts/validate-profile.sh`
 - Reached the first successful real GitHub Actions matrix build for `stable` and `login-test`
+- Added a direct GitHub Actions artifact-import path so downloaded workflow zips can go straight into local VM validation
 
 ## In Progress
-- Updating local status files to reflect the first successful remote build and preparing the artifact-import / VM-validation handoff
+- Updating local status files and import tooling so the first successful remote build can flow directly into VM validation
 
 ## Next Hour
 - Import the first successful GitHub Actions build handoff artifacts

@@ -9,9 +9,16 @@ Store import summaries here when a complete Arch-side build handoff folder is br
 4. Import it with `scripts/import-build-handoff.ps1`
 5. Reuse the same `Run Label` during VM testing and release preparation
 
+## GitHub Actions Flow
+1. Open the successful GitHub Actions run
+2. Download the artifact zip for the mode you want to test
+3. Import that zip with `scripts/import-github-actions-artifact.ps1`
+4. Reuse the imported run label during VM testing and release preparation
+
 ## Typical Contents
 - handoff folder path
 - imported build manifest path
 - imported ISO path
 - reported mode
 - reported run label
+- GitHub Actions artifact zip path when the source was a remote run

@@ -144,6 +144,8 @@ required_paths=(
     "${repo_root}/status/readiness/CURRENT-READINESS.md"
     "${repo_root}/status/validation-matrix/README.md"
     "${repo_root}/status/validation-matrix/CURRENT-VALIDATION-MATRIX.md"
+    "${repo_root}/.github/workflows/build-iso.yml"
+    "${repo_root}/.github/workflows/validate-profile.yml"
 )
 
 for required_path in "${required_paths[@]}"; do

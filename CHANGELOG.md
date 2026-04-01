@@ -31,6 +31,7 @@ This project follows a simple rule for now:
 - Build-manifest import support for Arch builds that happen in a separate clone or VM
 - ISO import support for release preparation after Arch builds that happen in a separate clone or VM
 - Complete build-handoff export/import support for Arch->Windows transfers
+- GitHub Actions remote ISO build workflow
 
 ### Changed
 - Live-system UI wording now presents the distro as `Lumina-OS`
@@ -45,6 +46,7 @@ This project follows a simple rule for now:
 - `start-vm-test-cycle.ps1` now auto-imports an external build manifest path into `status/builds/` before creating the session summary
 - `prepare-release-package.ps1` can now fall back to a run-label-matched imported ISO when the build manifest still points at an Arch-only path
 - an Arch-side `export-build-handoff.sh` path and Windows-side `import-build-handoff.ps1` path now allow moving the manifest and ISO together as one transfer unit
+- the repo can now build `stable` and `login-test` remotely through `.github/workflows/build-iso.yml` and upload the resulting handoff artifacts
 
 ### Pending Before First Tagged Release
 - First real `stable` build in Arch

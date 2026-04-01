@@ -30,6 +30,7 @@ This file gives one fast answer to two questions:
 - external Arch-side build manifests can now be imported back into this repo before the VM cycle starts
 - external Arch-side ISO artifacts can now be imported back into this workspace so release preparation can resolve a local file path
 - complete Arch-side build handoff folders can now be imported in one step when both files are transferred together
+- GitHub Actions now has a remote ISO build workflow to trigger real build attempts without waiting on local Arch access
 - generated cycle handoffs now exist for one-file execution of a real run
 - generated cycle handoffs now adapt to `stable` and `login-test` instead of using one generic checklist
 - cycle-chain audits now verify that the recorded build/test evidence still points at the same run before release prep

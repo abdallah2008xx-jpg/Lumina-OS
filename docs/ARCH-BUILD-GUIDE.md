@@ -13,6 +13,7 @@ Run the ISO build inside Arch Linux with:
 - Arch Linux bare metal
 - Arch Linux virtual machine
 - Arch Linux container or chroot only if `mkarchiso` is known to work correctly there
+- GitHub Actions via `.github/workflows/build-iso.yml` when local Arch access is blocked
 
 ## Pre-Build Validation
 Before moving into the Arch build environment, validate the repo locally:
@@ -36,6 +37,14 @@ If you want one generated runbook for the whole cycle, create it first:
 ```
 
 That handoff now changes its verification language based on `stable` or `login-test`, so the build and VM operator sees the right acceptance target for the selected mode.
+
+If you want a remote build path instead of a local Arch machine, GitHub Actions now has a real ISO build workflow:
+
+```text
+Actions -> Build Lumina-OS ISO
+```
+
+It builds `stable` and `login-test` inside the official `archlinux:base-devel` container image and uploads the ISO plus the exported handoff folder as workflow artifacts.
 
 If the real Arch build happens in a separate clone or VM instead of this Windows workspace, copy the generated build manifest back and import it here before starting the VM cycle:
 

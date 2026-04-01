@@ -132,7 +132,9 @@ $requiredPaths = @(
     "status\readiness\README.md",
     "status\readiness\CURRENT-READINESS.md",
     "status\validation-matrix\README.md",
-    "status\validation-matrix\CURRENT-VALIDATION-MATRIX.md"
+    "status\validation-matrix\CURRENT-VALIDATION-MATRIX.md",
+    ".github\workflows\build-iso.yml",
+    ".github\workflows\validate-profile.yml"
 )
 
 foreach ($relativePath in $requiredPaths) {

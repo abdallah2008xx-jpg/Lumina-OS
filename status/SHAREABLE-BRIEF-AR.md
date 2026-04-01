@@ -1,6 +1,6 @@
 ﻿# Lumina-OS Shareable Brief (AR)
 
-- Generated At: 2026-04-01T10:51:48
+- Generated At: 2026-04-01T11:00:22
 - Readiness State: needs-build
 - Validation Matrix State: needs-first-build
 - Release Candidate State: not-recorded-yet
@@ -11,9 +11,9 @@
 - لومينا-أو-إس الآن: Lumina-OS has strong build/test/release workflow coverage and is waiting on the first real Arch-side execution cycle.
 
 ## أبرز ما تم
-- shareable updates can now be generated from current readiness, validation, and release-candidate state
 - short English and Arabic shareable briefs can now be generated from the same current project state
 - compatibility-preserving `lumina-*` runtime aliases now exist for live-session commands while the older `ahmados-*` entrypoints remain available
+- build manifests can now be imported back into this repo from a separate Arch clone or VM before starting the Windows-side VM cycle
 
 ## الخطوة التالية
 - run `stable` and `login-test` builds in a real Arch environment

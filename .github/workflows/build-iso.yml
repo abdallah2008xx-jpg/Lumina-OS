@@ -1,0 +1,131 @@
+name: Build Lumina-OS ISO
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "archiso-profile/**"
+      - "scripts/**"
+      - ".github/workflows/build-iso.yml"
+  workflow_dispatch:
+    inputs:
+      build_set:
+        description: "Which build modes to run"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - stable
+          - login-test
+      run_label:
+        description: "Optional run label prefix"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        mode:
+          - stable
+          - login-test
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.build_set == 'all' || github.event.inputs.build_set == matrix.mode
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Resolve run label
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          input_label="${{ github.event.inputs.run_label }}"
+          if [[ -n "${input_label}" ]]; then
+            safe_label="$(printf '%s' "${input_label}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9.-]+/-/g; s/^-+//; s/-+$//')"
+            run_label="${safe_label}-${{ matrix.mode }}"
+          else
+            run_label="gha-${{ matrix.mode }}-${{ github.run_number }}-${{ github.run_attempt }}"
+          fi
+
+          echo "run_label=${run_label}" >> "${GITHUB_OUTPUT}"
+
+      - name: Pull official Arch Linux image
+        shell: bash
+        run: sudo docker pull archlinux:base-devel
+
+      - name: Build ISO inside Arch container
+        shell: bash
+        env:
+          MODE: ${{ matrix.mode }}
+          RUN_LABEL: ${{ steps.meta.outputs.run_label }}
+        run: |
+          set -euo pipefail
+
+          sudo docker run --rm --privileged \
+            -e MODE="${MODE}" \
+            -e RUN_LABEL="${RUN_LABEL}" \
+            -v "${GITHUB_WORKSPACE}:/repo" \
+            -w /repo \
+            archlinux:base-devel \
+            bash -lc '
+              set -euo pipefail
+              ./scripts/bootstrap-arch-build-env.sh --install
+              ./scripts/build-iso-arch.sh \
+                --mode "${MODE}" \
+                --run-label "${RUN_LABEL}" \
+                --work "/repo/build/github-work/${MODE}" \
+                --out "/repo/build/github-out/${MODE}" \
+                --stage-root "/repo/build/github-stage"
+              ./scripts/export-build-handoff.sh \
+                --mode "${MODE}" \
+                --run-label "${RUN_LABEL}" \
+                --out-dir "/repo/build/github-handoff/${MODE}"
+            '
+
+      - name: Restore workspace ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo chown -R "$(id -u):$(id -g)" "${GITHUB_WORKSPACE}/build" "${GITHUB_WORKSPACE}/status"
+
+      - name: Summarize build output
+        shell: bash
+        env:
+          MODE: ${{ matrix.mode }}
+          RUN_LABEL: ${{ steps.meta.outputs.run_label }}
+        run: |
+          set -euo pipefail
+
+          manifest_path="$(grep -rl -- "- Run Label: ${RUN_LABEL}" status/builds | head -n1 || true)"
+          iso_path="$(find "build/github-out/${MODE}" -maxdepth 1 -type f -name '*.iso' | head -n1 || true)"
+          handoff_path="$(find "build/github-handoff/${MODE}" -maxdepth 1 -mindepth 1 -type d | head -n1 || true)"
+
+          {
+            echo "## Lumina-OS ${MODE} build"
+            echo ""
+            echo "- Run Label: \`${RUN_LABEL}\`"
+            echo "- Build Manifest: \`${manifest_path:-not-found}\`"
+            echo "- ISO Path: \`${iso_path:-not-found}\`"
+            echo "- Handoff Folder: \`${handoff_path:-not-found}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumina-os-${{ matrix.mode }}-${{ steps.meta.outputs.run_label }}
+          path: |
+            build/github-out/${{ matrix.mode }}/*.iso
+            build/github-handoff/${{ matrix.mode }}/
+            status/builds/*.md
+          if-no-files-found: error
+          retention-days: 14

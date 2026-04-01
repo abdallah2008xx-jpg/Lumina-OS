@@ -221,16 +221,16 @@ if [[ -f "${firstboot}" ]]; then
 fi
 
 export_diagnostics="${profile_path}/airootfs/usr/local/bin/ahmados-export-diagnostics"
-if [[ -f "${export_diagnostics}" && ! grep -qi "diagnostics" "${export_diagnostics}" ]]; then
+if [[ -f "${export_diagnostics}" ]] && ! grep -qi "diagnostics" "${export_diagnostics}"; then
     add_warning "ahmados-export-diagnostics may not be writing a diagnostics bundle."
 fi
 
-if [[ -f "${export_diagnostics}" && ! grep -qi "smoke-check-report" "${export_diagnostics}" ]]; then
+if [[ -f "${export_diagnostics}" ]] && ! grep -qi "smoke-check-report" "${export_diagnostics}"; then
     add_warning "ahmados-export-diagnostics does not appear to include the smoke-check report."
 fi
 
 smoke_checks="${profile_path}/airootfs/usr/local/bin/ahmados-run-smoke-checks"
-if [[ -f "${smoke_checks}" && ! grep -qi "Smoke Check Report" "${smoke_checks}" ]]; then
+if [[ -f "${smoke_checks}" ]] && ! grep -qi "Smoke Check Report" "${smoke_checks}"; then
     add_warning "ahmados-run-smoke-checks may not be writing the expected report."
 fi
 

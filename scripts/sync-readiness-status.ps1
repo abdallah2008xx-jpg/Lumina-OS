@@ -356,7 +356,7 @@ $recommendation = switch ($readinessState) {
 }
 
 $snapshotContent = @"
-# AhmadOS Readiness Snapshot
+# Lumina-OS Readiness Snapshot
 
 - Evaluated At: $(Get-Date -Format s)
 - Run Label: $(if ([string]::IsNullOrWhiteSpace($resolvedRunLabel)) { "not-recorded-yet" } else { $resolvedRunLabel })
@@ -389,7 +389,7 @@ $recommendation
 "@
 
 $currentContent = @"
-# AhmadOS Current Readiness
+# Lumina-OS Current Readiness
 
 - Updated At: $(Get-Date -Format s)
 - Run Label: $(if ([string]::IsNullOrWhiteSpace($resolvedRunLabel)) { "not-recorded-yet" } else { $resolvedRunLabel })
@@ -420,7 +420,7 @@ if ($OutputPathOnly) {
     Write-Output $snapshotPath
 }
 else {
-    Write-Host "Updated AhmadOS readiness status:"
+    Write-Host "Updated Lumina-OS readiness status:"
     Write-Host "Snapshot:          $snapshotPath"
     Write-Host "Current Readiness: $currentReadinessPath"
     Write-Host "State:             $readinessState"

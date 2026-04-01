@@ -302,7 +302,7 @@ $recommendation = switch ($overallStatus) {
 }
 
 $content = @"
-# AhmadOS Test Session Audit
+# Lumina-OS Test Session Audit
 
 - Audited At: $(Get-Date -Format s)
 - Run Label: $(if ([string]::IsNullOrWhiteSpace($resolvedRunLabel)) { "not-recorded-yet" } else { $resolvedRunLabel })
@@ -328,14 +328,14 @@ $recommendation
 Set-Content -Path $auditPath -Value $content -Encoding UTF8
 
 if ($FailOnMissing -and $overallStatus -eq "fail") {
-    Write-Error "AhmadOS test session audit failed. See: $auditPath"
+    Write-Error "Lumina-OS test session audit failed. See: $auditPath"
 }
 
 if ($OutputPathOnly) {
     Write-Output $auditPath
 }
 else {
-    Write-Host "Created AhmadOS test session audit:"
+    Write-Host "Created Lumina-OS test session audit:"
     Write-Host $auditPath
     Write-Host "Overall status: $overallStatus"
 }

@@ -185,7 +185,7 @@ $diagnosticsBundleRecorded = Get-ChecklistMark $diagnosticsDisplay
 $diagnosticsImportRecorded = Get-ChecklistMark $diagnosticsImportPath
 
 $header = @"
-# AhmadOS Test Session
+# Lumina-OS Test Session
 
 - Date: $dateStamp
 - Run Label: $resolvedRunLabel

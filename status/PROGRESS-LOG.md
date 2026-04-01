@@ -56,3 +56,5 @@
 - Added `sync-readiness-status.ps1`, a central readiness snapshot, and automatic readiness syncing at the end of each VM cycle
 - Added `sync-validation-matrix.ps1` and a side-by-side validation matrix for `stable` and `login-test`
 - Added explicit `Run Label` traceability so repeated VM cycles can stay linked without falling back to generic latest-file matching
+- Renamed visible project branding to `Lumina-OS` across GitHub-facing files and live-system UI surfaces
+- Updated build/test/report scripts so generated manifests, audits, readiness snapshots, blocker reviews, and VM reports now use `Lumina-OS` branding

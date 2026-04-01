@@ -312,7 +312,7 @@ $(Format-Items -Items $_.AttentionItems)
 }) -join "`r`n`r`n"
 
 $snapshotContent = @"
-# AhmadOS Validation Matrix
+# Lumina-OS Validation Matrix
 
 - Evaluated At: $(Get-Date -Format s)
 - Overall State: $overallState
@@ -330,7 +330,7 @@ $recommendation
 "@
 
 $currentContent = @"
-# AhmadOS Current Validation Matrix
+# Lumina-OS Current Validation Matrix
 
 - Updated At: $(Get-Date -Format s)
 - Overall State: $overallState
@@ -353,7 +353,7 @@ if ($OutputPathOnly) {
     Write-Output $snapshotPath
 }
 else {
-    Write-Host "Updated AhmadOS validation matrix:"
+    Write-Host "Updated Lumina-OS validation matrix:"
     Write-Host "Snapshot: $snapshotPath"
     Write-Host "Current:  $currentMatrixPath"
     Write-Host "State:    $overallState"

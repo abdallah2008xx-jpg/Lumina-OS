@@ -286,7 +286,7 @@ foreach ($item in $auditWarnings) {
 }
 
 $reviewContent = @"
-# AhmadOS Blocker Review
+# Lumina-OS Blocker Review
 
 - Reviewed At: $(Get-Date -Format s)
 - Run Label: $(if ([string]::IsNullOrWhiteSpace($resolvedRunLabel)) { "not-recorded-yet" } else { $resolvedRunLabel })
@@ -316,7 +316,7 @@ $(switch ($overallState) {
 "@
 
 $currentContent = @"
-# AhmadOS Current Blockers
+# Lumina-OS Current Blockers
 
 - Updated At: $(Get-Date -Format s)
 - Run Label: $(if ([string]::IsNullOrWhiteSpace($resolvedRunLabel)) { "not-recorded-yet" } else { $resolvedRunLabel })
@@ -347,7 +347,7 @@ if ($OutputPathOnly) {
     Write-Output $reviewPath
 }
 else {
-    Write-Host "Updated AhmadOS blocker register:"
+    Write-Host "Updated Lumina-OS blocker register:"
     Write-Host "Review:          $reviewPath"
     Write-Host "Current Blockers: $currentBlockersPath"
     Write-Host "Overall state:   $overallState"

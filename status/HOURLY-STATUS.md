@@ -5,31 +5,30 @@ Update it once per work block or roughly every hour.
 
 ## Current Block
 - **Date:** 2026-04-01
-- **Time:** 06:45 PDT
-- **Focus:** Turning repeated VM runs into labeled evidence chains
+- **Time:** 07:35 PDT
+- **Focus:** Converting project and workflow branding from AhmadOS to Lumina-OS without breaking compatibility
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
-- Added explicit `Run Label` support to the VM report and session-summary generators
-- Wired the same label through diagnostics import, session audit, blocker review, and readiness snapshot generation
-- Updated finish-cycle orchestration so it can resolve the intended session by label instead of relying only on latest-file lookup
-- Updated readiness wording to point at the blocker source for the specific run
-- Documented the labeled workflow in the VM checklist and reporting guide
+- Renamed the visible project and system branding to `Lumina-OS` across README, docs, boot labels, Welcome, Update Center, and status files
+- Updated ISO metadata and live-system branding so the generated image now presents itself as `Lumina-OS`
+- Updated build/test/report scripts so generated audits, manifests, VM reports, readiness snapshots, and blocker records also use `Lumina-OS`
+- Re-ran profile validation after the script/report branding pass and confirmed it still passes
 
 ## In Progress
-- Preparing the first real Arch-side build and the first labeled VM cycles that will feed the validation matrix
+- Preparing the next staged rename pass and the first real Arch-side build path
 
 ## Next Hour
-- Run the first real `stable` build in Arch
-- Boot the ISO in a VM and export diagnostics
-- Record the first real labeled VM cycle and validation matrix under `status/validation-matrix/`
+- Decide whether to rename internal `ahmados-*` identifiers before the first real build or keep them as compatibility IDs until after validation
+- Keep the build/test workflow stable and ready for the first Arch-side `stable` build
+- Move execution to an actual Arch environment for the first real ISO build
 
 ## Blockers
 - Actual ISO building is blocked in the current Windows workspace; `mkarchiso` must run inside an Arch environment
 
 ## Decisions / Notes
-- Keep build/test evidence connected end-to-end before the first serious ISO attempt
-- Treat blockers, readiness, per-mode validation, and run labels as first-class artifacts, not just free-form notes inside VM reports
+- Keep visible branding and generated reports on `Lumina-OS`
+- Keep internal `ahmados-*` paths and IDs stable for now unless we do a deliberate compatibility-preserving second pass
 
 ## Ready-to-Send Mini Update
-Added explicit run-label traceability on top of the existing workflow, so repeated VM cycles can keep their evidence chain cleanly linked instead of falling back to generic latest-file matching.
+Lumina-OS is now the visible project and system name across the repo, live UI, and generated workflow reports, while compatibility-sensitive internal identifiers remain stable until the first real ISO validation.

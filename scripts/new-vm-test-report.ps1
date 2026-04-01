@@ -45,7 +45,7 @@ New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
 $isoDisplay = if ([string]::IsNullOrWhiteSpace($IsoPath)) { "not-recorded-yet" } else { $IsoPath }
 
 $content = @"
-# AhmadOS VM Test Report
+# Lumina-OS VM Test Report
 
 - Date: $dateStamp
 - Run Label: $resolvedRunLabel
@@ -66,7 +66,7 @@ $content = @"
 - [ ] Login-test mode shows the SDDM theme
 - [ ] Manual login reaches Plasma when applicable
 
-## AhmadOS Runtime
+## Lumina-OS Runtime
 - [ ] Welcome opens for the live user
 - [ ] Welcome changes apply after the app closes
 - [ ] Update Center opens with cached release metadata
@@ -75,7 +75,7 @@ $content = @"
 
 ## Plasma Session
 - [ ] Wallpaper is branded and renders correctly
-- [ ] Panel layout matches the selected AhmadOS layout
+- [ ] Panel layout matches the selected Lumina-OS layout
 - [ ] Color scheme looks applied correctly
 - [ ] Konsole opens
 - [ ] Dolphin opens

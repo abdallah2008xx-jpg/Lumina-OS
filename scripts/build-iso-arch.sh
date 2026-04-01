@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
     cat <<'EOF'
-AhmadOS Arch build helper
+Lumina-OS Arch build helper
 
 Usage:
   ./scripts/build-iso-arch.sh [--mode stable|login-test] [--profile PATH] [--work PATH] [--out PATH] [--stage-root PATH] [--keep-stage]
@@ -80,17 +80,17 @@ if ! command -v mkarchiso >/dev/null 2>&1; then
 fi
 
 if [[ -f "${validator_path}" ]]; then
-    echo "Running AhmadOS profile validation..."
+    echo "Running Lumina-OS profile validation..."
     bash "${validator_path}" --repo-root "${repo_root}" --profile "${profile_path}"
     echo ""
 fi
 
 mkdir -p "${work_path}" "${out_path}" "${stage_root}"
 
-stage_dir="$(mktemp -d "${stage_root}/ahmados-${mode}.XXXXXX")"
+stage_dir="$(mktemp -d "${stage_root}/lumina-${mode}.XXXXXX")"
 trap 'if [[ ${keep_stage} -eq 0 ]]; then rm -rf "${stage_dir}"; else echo "Staged profile kept at: ${stage_dir}"; fi' EXIT
 
-echo "AhmadOS Arch build helper"
+echo "Lumina-OS Arch build helper"
 echo "Mode:    ${mode}"
 echo "Profile: ${profile_path}"
 echo "Stage:   ${stage_dir}"

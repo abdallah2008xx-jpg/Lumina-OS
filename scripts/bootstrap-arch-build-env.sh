@@ -3,14 +3,14 @@ set -euo pipefail
 
 usage() {
     cat <<'EOF'
-AhmadOS Arch build-environment bootstrap
+Lumina-OS Arch build-environment bootstrap
 
 Usage:
   ./scripts/bootstrap-arch-build-env.sh [--install] [--skip-validator]
 
 Options:
   --install         Install any missing packages with pacman
-  --skip-validator  Do not run the AhmadOS profile validator after checks
+  --skip-validator  Do not run the Lumina-OS profile validator after checks
 EOF
 }
 
@@ -61,7 +61,7 @@ for package_name in "${required_packages[@]}"; do
     fi
 done
 
-echo "AhmadOS Arch build-environment bootstrap"
+echo "Lumina-OS Arch build-environment bootstrap"
 echo "Repo root: ${repo_root}"
 echo ""
 
@@ -91,7 +91,7 @@ fi
 
 if [[ ${skip_validator} -eq 0 && -f "${validator_path}" ]]; then
     echo ""
-    echo "Running AhmadOS profile validation..."
+    echo "Running Lumina-OS profile validation..."
     bash "${validator_path}" --repo-root "${repo_root}" --profile "${repo_root}/archiso-profile"
 fi
 

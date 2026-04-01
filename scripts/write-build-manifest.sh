@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
     cat <<'EOF'
-AhmadOS build manifest writer
+Lumina-OS build manifest writer
 
 Usage:
   ./scripts/write-build-manifest.sh \
@@ -103,7 +103,7 @@ if [[ -n "${latest_iso}" && -f "${latest_iso}" ]]; then
 fi
 
 cat > "${manifest_file}" <<EOF
-# AhmadOS Build Manifest
+# Lumina-OS Build Manifest
 
 - Built At: ${built_at}
 - Mode: ${mode}
@@ -128,7 +128,7 @@ cat > "${manifest_file}" <<EOF
 ## Next Verification
 - Boot the ISO in a VM before deeper branding changes
 - Record a VM test report under \`status/vm-tests/\`
-- Review the AhmadOS firstboot report inside the live session
+- Review the Lumina-OS firstboot report inside the live session
 EOF
 
 echo "Build manifest written to: ${manifest_file}"

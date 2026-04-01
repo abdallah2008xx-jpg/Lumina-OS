@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
     cat <<'EOF'
-AhmadOS profile validator
+Lumina-OS profile validator
 
 Usage:
   ./scripts/validate-profile.sh [--repo-root PATH] [--profile PATH]
@@ -131,7 +131,7 @@ if [[ -d "${wallpaper_dir}" ]]; then
     shopt -u nullglob
 
     if [[ ${#wallpapers[@]} -lt 3 ]]; then
-        add_error "Expected at least three AhmadOS wallpapers, found ${#wallpapers[@]}."
+        add_error "Expected at least three Lumina-OS wallpapers, found ${#wallpapers[@]}."
     fi
 else
     add_error "Missing wallpaper directory: ${wallpaper_dir#${repo_root}/}"
@@ -226,11 +226,11 @@ if [[ ${#warnings[@]} -gt 0 ]]; then
 fi
 
 if [[ ${#errors[@]} -gt 0 ]]; then
-    echo "AhmadOS profile validation failed."
+    echo "Lumina-OS profile validation failed."
     for error_message in "${errors[@]}"; do
         echo " - ${error_message}"
     done
     exit 1
 fi
 
-echo "AhmadOS profile validation passed."
+echo "Lumina-OS profile validation passed."

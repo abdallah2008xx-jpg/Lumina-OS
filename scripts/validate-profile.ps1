@@ -133,7 +133,7 @@ $wallpaperPath = Join-Path $RepoRoot "archiso-profile\airootfs\usr\share\ahmados
 if (Test-Path $wallpaperPath) {
     $wallpapers = Get-ChildItem $wallpaperPath -Filter *.svg -ErrorAction SilentlyContinue
     if ($wallpapers.Count -lt 3) {
-        Add-Error "Expected at least three AhmadOS wallpapers, found $($wallpapers.Count)."
+        Add-Error "Expected at least three Lumina-OS wallpapers, found $($wallpapers.Count)."
     }
 }
 else {
@@ -226,11 +226,11 @@ if ($warnings.Count -gt 0) {
 }
 
 if ($errors.Count -gt 0) {
-    Write-Host "AhmadOS profile validation failed." -ForegroundColor Red
+    Write-Host "Lumina-OS profile validation failed." -ForegroundColor Red
     foreach ($errorItem in $errors) {
         Write-Host " - $errorItem" -ForegroundColor Red
     }
     exit 1
 }
 
-Write-Host "AhmadOS profile validation passed." -ForegroundColor Green
+Write-Host "Lumina-OS profile validation passed." -ForegroundColor Green

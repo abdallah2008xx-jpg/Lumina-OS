@@ -92,7 +92,7 @@ $topLevelEntries = Get-ChildItem -Path $bundleDir -ErrorAction SilentlyContinue 
 $topLevelList = if ($topLevelEntries) { ($topLevelEntries -join ", ") } else { "none" }
 
 $content = @"
-# AhmadOS Diagnostics Import
+# Lumina-OS Diagnostics Import
 
 - Imported At: $(Get-Date -Format s)
 - Import Label: $labelValue

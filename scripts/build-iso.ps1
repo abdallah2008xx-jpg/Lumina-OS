@@ -10,7 +10,7 @@ $validatorPath = Join-Path $PSScriptRoot "validate-profile.ps1"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 
 if (Test-Path $validatorPath) {
-    Write-Host "Running local AhmadOS profile validation..."
+    Write-Host "Running local Lumina-OS profile validation..."
     & $validatorPath -RepoRoot $repoRoot
     if (-not $?) {
         throw "Profile validation failed. Fix the issues above before entering the Arch build environment."
@@ -18,13 +18,13 @@ if (Test-Path $validatorPath) {
     Write-Host ""
 }
 
-Write-Host "AhmadOS build helper"
+Write-Host "Lumina-OS build helper"
 Write-Host "Profile: $ProfilePath"
 Write-Host "Work:    $WorkPath"
 Write-Host "Out:     $OutPath"
 Write-Host "Mode:    $Mode"
 Write-Host ""
-Write-Host "Run this inside the AhmadOS repo root in an Arch build environment with archiso installed:"
+Write-Host "Run this inside the Lumina-OS repo root in an Arch build environment with archiso installed:"
 Write-Host "./scripts/build-iso-arch.sh --mode '$Mode'"
 Write-Host ""
 Write-Host "Optional Arch-side custom paths:"

@@ -243,7 +243,7 @@ if (-not $validationMatrixPath) {
     throw "Unable to sync the validation matrix."
 }
 
-Write-Host "Finished AhmadOS VM test cycle."
+Write-Host "Finished Lumina-OS VM test cycle."
 Write-Host "Run Label:         $resolvedRunLabel"
 Write-Host "Diagnostics Import: $diagnosticsImportPath"
 Write-Host "Session Summary:    $updatedSessionPath"

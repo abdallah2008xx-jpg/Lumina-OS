@@ -115,7 +115,7 @@ if (-not $sessionPath) {
     throw "Unable to create the test session summary."
 }
 
-Write-Host "Started AhmadOS VM test cycle."
+Write-Host "Started Lumina-OS VM test cycle."
 Write-Host "Run Label:      $resolvedRunLabel"
 Write-Host "VM Report:      $vmReportPath"
 Write-Host "Session Summary: $sessionPath"

@@ -44,6 +44,7 @@ Current project outputs include:
 ## Collaboration
 
 - Contributor workflow: `CONTRIBUTING.md`
+- Abdullah/Mohammad execution split: `docs/TEAM-EXECUTION-PLAN.md`
 - Changelog tracking: `CHANGELOG.md`
 - First release gate: `docs/FIRST-RELEASE-CHECKLIST.md`
 - GitHub issue and PR templates live under `.github/`

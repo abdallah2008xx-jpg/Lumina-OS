@@ -28,6 +28,7 @@ This file gives one fast answer to two questions:
 - the repo is connected to GitHub under `Lumina-OS`
 - validation workflow exists in GitHub Actions
 - contributor guidance, changelog tracking, issue templates, PR template, and first-release checklist are present
+- a dedicated Abdullah/Mohammad execution plan exists under `docs/TEAM-EXECUTION-PLAN.md`
 
 ## What Is Still Remaining
 

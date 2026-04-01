@@ -1,7 +1,7 @@
 # Current Tasks
 
 ## Active
-- [ ] Audit current AhmadOS project assets that are worth reusing
+- [ ] Audit current Lumina-OS project assets that are worth reusing
 - [x] Define clean package baseline
 - [x] Create new archiso profile skeleton
 - [x] Separate stability layer from branding layer
@@ -10,7 +10,7 @@
 - [x] Define welcome app and update center scope
 - [x] Build first local interface prototypes
 - [x] Create first wallpaper pack
-- [x] Prototype AhmadOS SDDM theme direction
+- [x] Prototype Lumina-OS SDDM theme direction
 - [x] Turn the SDDM direction into a real theme package
 - [x] Add real Plasma look-and-feel defaults for the live session
 - [x] Prepare a staged Arch build workflow with `stable` and `login-test` modes

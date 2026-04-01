@@ -1,4 +1,4 @@
-# AhmadOS Roadmap
+# Lumina-OS Roadmap
 
 ## Phase 0 - Foundation
 - [ ] Define product vision

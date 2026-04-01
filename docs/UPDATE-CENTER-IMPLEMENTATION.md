@@ -1,4 +1,4 @@
-# AhmadOS Update Center Implementation
+# Lumina-OS Update Center Implementation
 
 ## Purpose
 Document the real Update Center shell that now reads release metadata from cached JSON instead of hardcoding release cards in QML.
@@ -34,5 +34,5 @@ Document the real Update Center shell that now reads release metadata from cache
 ## Next Logical Steps
 - point `etc/ahmados-release.conf` at the real GitHub owner and repo once releases exist
 - add explicit install, restart, and history behavior
-- separate core-platform updates from AhmadOS app-level updates
+- separate core-platform updates from Lumina-OS app-level updates
 - validate metadata loading and channel behavior inside a built ISO

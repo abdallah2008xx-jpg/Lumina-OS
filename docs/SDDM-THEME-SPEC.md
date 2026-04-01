@@ -1,4 +1,4 @@
-# AhmadOS SDDM Theme Spec
+# Lumina-OS SDDM Theme Spec
 
 ## Goal
 Make login feel premium and calm without adding fragile boot-time complexity.
@@ -10,7 +10,7 @@ Make login feel premium and calm without adding fragile boot-time complexity.
 - subtle dim overlay behind the auth surface
 
 ## Required Elements
-- AhmadOS wordmark
+- Lumina-OS wordmark
 - user avatar
 - password field
 - session picker
@@ -42,5 +42,5 @@ Make login feel premium and calm without adding fragile boot-time complexity.
 
 ## Implementation Notes
 - first theme should ship with static assets only
-- use the AhmadOS wallpaper pack and brand tokens directly
+- use the Lumina-OS wallpaper pack and brand tokens directly
 - keep theme sizing reliable for 1366x768 through 4K

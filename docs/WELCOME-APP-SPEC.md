@@ -1,11 +1,11 @@
-# AhmadOS Welcome App Spec
+# Lumina-OS Welcome App Spec
 
 ## Purpose
 Orient new users in under five minutes without overwhelming them.
 
 ## Product Role
 The Welcome app is the first guided product surface after login.
-It should introduce AhmadOS language, appearance choices, and key next actions.
+It should introduce Lumina-OS language, appearance choices, and key next actions.
 
 ## Phase 1 Scope
 - lightweight first-run shell
@@ -27,7 +27,7 @@ It should introduce AhmadOS language, appearance choices, and key next actions.
 
 ## Screen Notes
 ### 1. Welcome
-- show AhmadOS thesis in one short sentence
+- show Lumina-OS thesis in one short sentence
 - present Arabic and English as equal options
 - allow `Start` and `Skip for now`
 
@@ -38,7 +38,7 @@ It should introduce AhmadOS language, appearance choices, and key next actions.
 
 ### 3. Appearance
 - light and dark preview cards
-- accent color choices from the AhmadOS palette
+- accent color choices from the Lumina-OS palette
 - wallpaper family preview
 
 ### 4. Desktop Layout

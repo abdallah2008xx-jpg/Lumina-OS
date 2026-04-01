@@ -1,4 +1,4 @@
-# AhmadOS Current Blockers
+# Lumina-OS Current Blockers
 
 - Updated At: not-recorded-yet
 - Overall State: not-recorded-yet

@@ -30,5 +30,5 @@ if command -v xdg-open >/dev/null 2>&1; then
     exit 0
 fi
 
-echo "Unable to open the AhmadOS firstboot report automatically." >&2
+echo "Unable to open the Lumina-OS firstboot report automatically." >&2
 exit 1

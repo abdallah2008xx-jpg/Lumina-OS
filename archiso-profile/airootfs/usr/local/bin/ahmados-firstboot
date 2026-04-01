@@ -102,7 +102,7 @@ session_type="${XDG_SESSION_TYPE:-unknown}"
 desktop_session="${XDG_CURRENT_DESKTOP:-unknown}"
 
 cat > "${report_file}" <<EOF
-# AhmadOS First Boot Report
+# Lumina-OS First Boot Report
 
 - Generated: ${generated_at}
 - Hostname: ${hostname_value}
@@ -110,7 +110,7 @@ cat > "${report_file}" <<EOF
 - Session Type: ${session_type}
 - Desktop Session: ${desktop_session}
 
-## Saved AhmadOS Choices
+## Saved Lumina-OS Choices
 - Language: ${language_choice}
 - Appearance: ${appearance_choice}
 - Layout: ${layout_choice}
@@ -133,7 +133,7 @@ cat > "${report_file}" <<EOF
 - sddm enabled: $(service_enabled_state sddm.service)
 - sddm active: $(service_active_state sddm.service)
 
-## AhmadOS Artifacts
+## Lumina-OS Artifacts
 - Welcome config: $(file_state "${config_file}")
 - Release cache: $(file_state "${release_cache}")
 - Release status: $(file_state "${release_status}")
@@ -142,7 +142,7 @@ cat > "${report_file}" <<EOF
 EOF
 
 desktop_dir="${HOME}/Desktop"
-desktop_report="${desktop_dir}/AhmadOS First Boot Report.md"
+desktop_report="${desktop_dir}/Lumina-OS First Boot Report.md"
 
 if [[ -d "${desktop_dir}" ]]; then
     cp "${report_file}" "${desktop_report}"

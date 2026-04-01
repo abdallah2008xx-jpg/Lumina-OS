@@ -1,4 +1,4 @@
-# AhmadOS Readiness Records
+# Lumina-OS Readiness Records
 
 Store readiness snapshots here after syncing the latest build, test, audit, and blocker state.
 

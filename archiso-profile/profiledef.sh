@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034
 
-iso_name="ahmados"
-iso_label="AHMADOS_$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y%m)"
-iso_publisher="AhmadOS <https://github.com/>"
-iso_application="AhmadOS Live ISO"
+iso_name="lumina-os"
+iso_label="LUMINA_OS_$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y%m)"
+iso_publisher="Lumina-OS <https://github.com/abdallah2008xx-jpg/Lumina-OS>"
+iso_application="Lumina-OS Live ISO"
 iso_version="0.1.0-dev"
 install_dir="arch"
 buildmodes=('iso')

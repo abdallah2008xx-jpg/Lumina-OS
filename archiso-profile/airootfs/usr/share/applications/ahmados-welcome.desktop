@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=Welcome to AhmadOS
-Name[ar]=مرحبًا بك في AhmadOS
+Name=Welcome to Lumina-OS
+Name[ar]=Ù…Ø±Ø­Ø¨Ù‹Ø§ Ø¨Ùƒ ÙÙŠ Lumina-OS
 Comment=First-run orientation and quick setup
-Comment[ar]=جولة أولى وتعريف سريع بالنظام
+Comment[ar]=Ø¬ÙˆÙ„Ø© Ø£ÙˆÙ„Ù‰ ÙˆØªØ¹Ø±ÙŠÙ Ø³Ø±ÙŠØ¹ Ø¨Ø§Ù„Ù†Ø¸Ø§Ù…
 Exec=/usr/local/bin/ahmados-welcome
 Icon=preferences-desktop-theme-global
 Terminal=false

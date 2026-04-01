@@ -1,7 +1,7 @@
-# AhmadOS UX Agent Report
+# Lumina-OS UX Agent Report
 
 ## Executive Direction
-AhmadOS should position itself as a **premium, calm, trustworthy desktop**: the elegance and spatial discipline people associate with macOS, combined with the familiarity, discoverability, and practical controls that make Windows easy for mainstream users.
+Lumina-OS should position itself as a **premium, calm, trustworthy desktop**: the elegance and spatial discipline people associate with macOS, combined with the familiarity, discoverability, and practical controls that make Windows easy for mainstream users.
 
 The key product decision is this:
 
@@ -18,7 +18,7 @@ That means the experience should feel:
 
 ## Product UX Thesis
 
-### What AhmadOS should feel like
+### What Lumina-OS should feel like
 - **Premium**: strong spacing, controlled animation, consistent surfaces, excellent typography
 - **Approachable**: easy app launching, obvious settings, no Linux jargon in core flows
 - **Efficient**: quick access to apps, files, toggles, updates, and system status
@@ -26,7 +26,7 @@ That means the experience should feel:
 - **Localized**: Arabic-first friendliness in layout, fonts, defaults, and onboarding language tone
 
 ### What to avoid
-- over-themed “Linux distro art project” visuals
+- over-themed Ã¢â‚¬Å“Linux distro art projectÃ¢â‚¬Â visuals
 - inconsistent icon packs and mixed widget styles
 - too many custom panels or broken shell tweaks
 - hidden system controls that look beautiful but reduce usability
@@ -65,7 +65,7 @@ That means the experience should feel:
 ### Color
 Use a restrained system:
 - **Base surfaces**: soft graphite, mist white, and cool gray layers
-- **Primary accent**: one elegant AhmadOS signature color (recommend deep blue leaning slightly teal)
+- **Primary accent**: one elegant Lumina-OS signature color (recommend deep blue leaning slightly teal)
 - **Semantic colors**: green for safe, amber for caution, red for destructive, but muted not neon
 
 ### Typography
@@ -106,19 +106,19 @@ Make login feel premium, secure, and fast while staying technically robust.
   - large touch-friendly password field
   - clear power/restart/shutdown buttons
 - **Branding**:
-  - AhmadOS wordmark visible but understated
+  - Lumina-OS wordmark visible but understated
   - one signature wallpaper family tied to the release identity
 - **Usability**:
   - visible keyboard layout indicator
   - one-click language switch for Arabic/English where possible
-  - clear error states: “Incorrect password” not vague failures
+  - clear error states: Ã¢â‚¬Å“Incorrect passwordÃ¢â‚¬Â not vague failures
 - **Technical caution**:
   - keep custom theming layered on top of a stable SDDM base
   - avoid heavy login scripts, fragile animations, or unusual pre-session logic early on
 
 ### Login maturity path
 - **Phase 1**: lightly branded stock-stable login
-- **Phase 2**: custom AhmadOS theme with typography, avatar framing, and better spacing
+- **Phase 2**: custom Lumina-OS theme with typography, avatar framing, and better spacing
 - **Phase 3**: dynamic background variants and refined accessibility options
 
 ---
@@ -129,11 +129,11 @@ Make login feel premium, secure, and fast while staying technically robust.
 Help new users feel oriented, not overwhelmed.
 
 ### Recommended direction
-Create a **Welcome to AhmadOS** app that opens after first login and can be reopened later.
+Create a **Welcome to Lumina-OS** app that opens after first login and can be reopened later.
 
 ### Core onboarding pages
 1. **Welcome**
-   - short statement of AhmadOS philosophy
+   - short statement of Lumina-OS philosophy
    - select language
    - choose light/dark appearance
 2. **Connect**
@@ -153,11 +153,11 @@ Create a **Welcome to AhmadOS** app that opens after first login and can be reop
    - quick links: open store, settings, files, help
 
 ### UX standards
-- 5–6 steps maximum
+- 5Ã¢â‚¬â€œ6 steps maximum
 - no walls of text
-- every page should answer: “What do I need to do now?”
+- every page should answer: Ã¢â‚¬Å“What do I need to do now?Ã¢â‚¬Â
 - progress indicator visible
-- “Skip for now” always available
+- Ã¢â‚¬Å“Skip for nowÃ¢â‚¬Â always available
 
 ### Premium touches
 - large illustrations or soft abstract visuals
@@ -205,7 +205,7 @@ Offer simple desktop modes rather than forcing a single philosophy:
 - **Classic**: more Windows-like left-aligned taskbar behavior
 - **Minimal**: reduced chrome, more macOS-like simplicity
 
-This lets AhmadOS appeal to both aesthetic and practical users without fragmenting the base product.
+This lets Lumina-OS appeal to both aesthetic and practical users without fragmenting the base product.
 
 ### Design constraints
 - Do not overload the panel with widgets
@@ -221,7 +221,7 @@ This lets AhmadOS appeal to both aesthetic and practical users without fragmenti
 Make app discovery feel safe, modern, and understandable.
 
 ### Store positioning
-The AhmadOS Store should feel less like a package manager and more like a curated software destination.
+The Lumina-OS Store should feel less like a package manager and more like a curated software destination.
 
 ### Core sections
 - Home
@@ -233,8 +233,8 @@ The AhmadOS Store should feel less like a package manager and more like a curate
 
 ### Home page recommendations
 - hero banner for featured apps or collections
-- “Essential apps” row
-- “For work”, “For study”, “For creators”, “For Arabic users” collections
+- Ã¢â‚¬Å“Essential appsÃ¢â‚¬Â row
+- Ã¢â‚¬Å“For workÃ¢â‚¬Â, Ã¢â‚¬Å“For studyÃ¢â‚¬Â, Ã¢â‚¬Å“For creatorsÃ¢â‚¬Â, Ã¢â‚¬Å“For Arabic usersÃ¢â‚¬Â collections
 - recently updated apps
 
 ### App page recommendations
@@ -251,13 +251,13 @@ Each app page should clearly show:
 This is important for premium feel.
 Users should know where software comes from.
 Add visible labels such as:
-- AhmadOS Verified
+- Lumina-OS Verified
 - Community Package
 - Third-Party Source
 
 ### Phase strategy
 - **Phase 1**: polish the existing software center with branding and curated collections
-- **Phase 2**: add AhmadOS-specific store shell or plugin layer
+- **Phase 2**: add Lumina-OS-specific store shell or plugin layer
 - **Phase 3**: deeper curation, editorial collections, and clearer trust metadata
 
 ---
@@ -268,8 +268,8 @@ Add visible labels such as:
 Make settings feel elegant, organized, and easier than typical Linux control panels.
 
 ### Recommended direction
-Settings should be one of AhmadOS’s strongest differentiators.
-Take Windows’ discoverability and pair it with cleaner Apple-like page design.
+Settings should be one of Lumina-OS's strongest differentiators.
+Take WindowsÃ¢â‚¬â„¢ discoverability and pair it with cleaner Apple-like page design.
 
 ### Structural recommendations
 Use a two-pane layout:
@@ -291,29 +291,29 @@ Use a two-pane layout:
 - Sound
 - Privacy & Security
 - System Update
-- About AhmadOS
+- About Lumina-OS
 
 ### Design recommendations
 - avoid deeply nested technical labels
-- use plain language: “Mouse & Touchpad” instead of obscure hardware labels
+- use plain language: Ã¢â‚¬Å“Mouse & TouchpadÃ¢â‚¬Â instead of obscure hardware labels
 - add contextual search at the top
 - use summary text under each category title
 - important toggles should be visible without excessive scrolling
 
-### AhmadOS-specific standout pages
+### Lumina-OS-specific standout pages
 1. **Appearance**
    - theme mode, accent color, wallpaper, transparency level, icon density
 2. **Desktop & Dock**
    - panel mode, icon size, alignment, auto-hide, app indicator style
 3. **System Update**
    - channel, last checked, pending updates, release notes, recovery options
-4. **About AhmadOS**
+4. **About Lumina-OS**
    - version, codename, channel, hardware summary, support links, credits
 
 ### Phase strategy
 - **Phase 1**: streamline KDE settings exposure and remove rough/duplicate entry points
-- **Phase 2**: create AhmadOS-branded landing pages for key categories
-- **Phase 3**: unify more settings into a cohesive AhmadOS shell
+- **Phase 2**: create Lumina-OS-branded landing pages for key categories
+- **Phase 3**: unify more settings into a cohesive Lumina-OS shell
 
 ---
 
@@ -338,10 +338,10 @@ The Update Center should explain updates in the language of benefits and safety,
 ### Key UX features
 - very clear channel selector: dev / alpha / beta / stable
 - plain-language descriptions of channel risk
-- badges like “Recommended” for stable
+- badges like Ã¢â‚¬Å“RecommendedÃ¢â‚¬Â for stable
 - clear distinction between:
   - app updates
-  - AhmadOS platform updates
+  - Lumina-OS platform updates
   - full release upgrades
 
 ### Trust-building details
@@ -359,13 +359,13 @@ The Update Center should explain updates in the language of benefits and safety,
 ### Phase strategy
 - **Phase 1**: GitHub release awareness UI with manual download guidance
 - **Phase 2**: in-system Update Center showing release notes and channels
-- **Phase 3**: managed AhmadOS package updates with history and recovery UX
+- **Phase 3**: managed Lumina-OS package updates with history and recovery UX
 
 ---
 
 ## Phased Premium UX Roadmap
 
-## Phase A — Stable Premium Baseline
+## Phase A Ã¢â‚¬â€ Stable Premium Baseline
 **Goal:** Look polished without introducing fragility.
 
 ### Deliverables
@@ -383,7 +383,7 @@ The Update Center should explain updates in the language of benefits and safety,
 - **Onboarding**: welcome screen with language, theme, and essentials
 - **Desktop**: balanced dock/taskbar hybrid default
 - **Store**: branded software center with curated home sections
-- **Settings**: remove clutter and define AhmadOS category map
+- **Settings**: remove clutter and define Lumina-OS category map
 - **Update Center**: simple release-awareness page or placeholder with roadmap messaging
 
 ### Success criteria
@@ -393,14 +393,14 @@ The Update Center should explain updates in the language of benefits and safety,
 
 ---
 
-## Phase B — Cohesive Product Identity
-**Goal:** Make AhmadOS feel like one product, not a themed KDE setup.
+## Phase B Ã¢â‚¬â€ Cohesive Product Identity
+**Goal:** Make Lumina-OS feel like one product, not a themed KDE setup.
 
 ### Deliverables
 - custom design system tokens documented
 - full login theme refinement
 - polished onboarding flow with persistence
-- AhmadOS settings landing pages
+- Lumina-OS settings landing pages
 - store trust labels and better curation
 - Update Center with channels and release notes
 
@@ -409,17 +409,17 @@ The Update Center should explain updates in the language of benefits and safety,
 - **Onboarding**: finish personalization and update education
 - **Desktop**: multiple layout presets (Balanced / Classic / Minimal)
 - **Store**: app trust labels, curated bundles, featured collections
-- **Settings**: AhmadOS-specific appearance, dock, about, and update sections
+- **Settings**: Lumina-OS-specific appearance, dock, about, and update sections
 - **Update Center**: GitHub release integration and channel explanation
 
 ### Success criteria
-- screenshots look recognizably AhmadOS
+- screenshots look recognizably Lumina-OS
 - major surfaces share the same visual grammar
 - update flow feels safer than a typical Linux distro
 
 ---
 
-## Phase C — Premium Usability Differentiators
+## Phase C Ã¢â‚¬â€ Premium Usability Differentiators
 **Goal:** Win on daily experience, not just looks.
 
 ### Deliverables
@@ -439,14 +439,14 @@ The Update Center should explain updates in the language of benefits and safety,
 - **Update Center**: update history, rollback guidance, restart scheduling
 
 ### Success criteria
-- AhmadOS feels easier, not just prettier
+- Lumina-OS feels easier, not just prettier
 - both new and intermediate users can operate confidently
 - Arabic and English users both get a first-class experience
 
 ---
 
-## Phase D — Release-Grade Signature Experience
-**Goal:** Prepare AhmadOS for public identity and sustained reputation.
+## Phase D Ã¢â‚¬â€ Release-Grade Signature Experience
+**Goal:** Prepare Lumina-OS for public identity and sustained reputation.
 
 ### Deliverables
 - finalized visual language guidelines
@@ -459,11 +459,11 @@ The Update Center should explain updates in the language of benefits and safety,
 ### Success criteria
 - product looks premium in screenshots and in use
 - distro identity is memorable without being loud
-- public testers can describe AhmadOS in a sentence
+- public testers can describe Lumina-OS in a sentence
 
 Recommended sentence:
 
-> **AhmadOS is a premium Linux desktop that combines macOS-level polish with Windows-like usability, built for people who want a beautiful system that still feels easy and practical.**
+> **Lumina-OS is a premium Linux desktop that combines macOS-level polish with Windows-like usability, built for people who want a beautiful system that still feels easy and practical.**
 
 ---
 
@@ -496,7 +496,7 @@ Recommended sentence:
 ## Practical Implementation Notes
 
 ### Best near-term tactic
-Use KDE Plasma as the stable engine, but treat AhmadOS as a **product layer** on top of it:
+Use KDE Plasma as the stable engine, but treat Lumina-OS as a **product layer** on top of it:
 - tightly control defaults
 - hide rough edges
 - unify naming
@@ -516,7 +516,7 @@ This order gives the largest visible quality gain with relatively controlled tec
 ---
 
 ## Final Recommendation
-The strongest version of AhmadOS is **not** “macOS on Linux” and **not** “another KDE theme pack.”
+The strongest version of Lumina-OS is **not** Ã¢â‚¬Å“macOS on LinuxÃ¢â‚¬Â and **not** Ã¢â‚¬Å“another KDE theme pack.Ã¢â‚¬Â
 It should be:
 
 - a polished KDE-based distro with product discipline
@@ -524,6 +524,6 @@ It should be:
 - a premium visual environment with restrained branding
 - a safer and more understandable Linux experience
 
-If execution stays disciplined, AhmadOS can stand out by doing the uncommon thing well:
+If execution stays disciplined, Lumina-OS can stand out by doing the uncommon thing well:
 
 > **making Linux feel finished.**

@@ -1,4 +1,4 @@
-﻿# AhmadOS Current Readiness
+# Lumina-OS Current Readiness
 
 - Updated At: 2026-04-01T06:46:59
 - Run Label: not-recorded-yet

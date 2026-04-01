@@ -1,4 +1,4 @@
-# AhmadOS Design Brief
+# Lumina-OS Design Brief
 
 ## Desired Feel
 - modern

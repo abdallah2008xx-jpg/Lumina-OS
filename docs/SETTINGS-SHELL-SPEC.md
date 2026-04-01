@@ -1,4 +1,4 @@
-# AhmadOS Settings Shell Spec
+# Lumina-OS Settings Shell Spec
 
 ## Goal
 Make settings easier to scan than stock Linux control panels while staying technically realistic for KDE.
@@ -24,16 +24,16 @@ Make settings easier to scan than stock Linux control panels while staying techn
 - Sound
 - Privacy and Security
 - System Update
-- About AhmadOS
+- About Lumina-OS
 
 ## Phase 1 Priorities
 - Appearance
 - Desktop and Dock
 - Users and Login
 - System Update
-- About AhmadOS
+- About Lumina-OS
 
-## AhmadOS Page Style
+## Lumina-OS Page Style
 - strong page title
 - one-sentence summary below the title
 - settings grouped into 2 to 4 large cards
@@ -44,7 +44,7 @@ Make settings easier to scan than stock Linux control panels while staying techn
 - Arabic and English terms should both be supported later
 - results should jump directly to the relevant card or page
 
-## About AhmadOS Page
+## About Lumina-OS Page
 - version
 - channel
 - codename

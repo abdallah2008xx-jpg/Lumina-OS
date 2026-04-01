@@ -1,4 +1,4 @@
-# AhmadOS Validation Matrix
+# Lumina-OS Validation Matrix
 
 Store multi-mode coverage snapshots here after syncing the latest `stable` and `login-test` evidence.
 

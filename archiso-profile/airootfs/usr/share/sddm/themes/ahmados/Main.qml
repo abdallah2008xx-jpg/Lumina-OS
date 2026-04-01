@@ -97,7 +97,7 @@ Rectangle {
                 spacing: 2
 
                 Text {
-                    text: "AhmadOS"
+                    text: "Lumina-OS"
                     color: root.primaryText
                     font.pixelSize: 22
                     font.bold: true

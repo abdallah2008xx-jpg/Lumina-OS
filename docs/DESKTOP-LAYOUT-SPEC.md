@@ -1,4 +1,4 @@
-# AhmadOS Desktop Layout Spec
+# Lumina-OS Desktop Layout Spec
 
 ## Goal
 Ship one desktop default that feels polished immediately and remains familiar to mainstream users.
@@ -20,7 +20,7 @@ It combines:
 - content alignment: centered task area, utility area on the right, launcher on the left edge of the centered cluster
 
 ### Left zone
-- AhmadOS launcher
+- Lumina-OS launcher
 - search-first app menu
 - optional workspace overview trigger later
 
@@ -58,7 +58,7 @@ It combines:
 ## Window and Multitasking Rules
 - expose virtual desktops, but do not force them
 - overview should be easy to discover from the launcher or a gesture
-- window chrome should stay clean and consistent with the AhmadOS color system
+- window chrome should stay clean and consistent with the Lumina-OS color system
 
 ## Default Pinned Apps
 - Browser
@@ -72,7 +72,7 @@ It combines:
 ### Balanced
 - centered task zone
 - floating look
-- default for AhmadOS
+- default for Lumina-OS
 
 ### Classic
 - left-aligned task visibility
@@ -97,5 +97,5 @@ It combines:
 
 ## Success Criteria
 - a new user can launch apps, connect Wi-Fi, open settings, and shut down without hunting
-- the desktop looks recognizably AhmadOS in screenshots
+- the desktop looks recognizably Lumina-OS in screenshots
 - the layout still feels stable in VM and low-spec environments

@@ -1,4 +1,4 @@
-# AhmadOS Update Center Spec
+# Lumina-OS Update Center Spec
 
 ## Goal
 Make updates understandable, trustworthy, and safe to approach.
@@ -7,7 +7,7 @@ Make updates understandable, trustworthy, and safe to approach.
 For the first milestone, Update Center is a release-awareness surface rather than a full package manager.
 
 ## Phase 1 Scope
-- show current AhmadOS version
+- show current Lumina-OS version
 - show current release channel
 - check GitHub releases for newer versions later
 - present release notes clearly
@@ -30,7 +30,7 @@ For the first milestone, Update Center is a release-awareness surface rather tha
 - signed or verified status when available
 
 ## Available Updates
-- separate AhmadOS release updates from app updates
+- separate Lumina-OS release updates from app updates
 - show estimated size and restart requirement
 - explain risk level in plain language
 

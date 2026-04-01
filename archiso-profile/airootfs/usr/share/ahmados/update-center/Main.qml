@@ -10,7 +10,7 @@ ApplicationWindow {
     width: 1320
     height: 860
     visible: true
-    title: qsTr("AhmadOS Update Center")
+    title: qsTr("Lumina-OS Update Center")
     color: "#09131A"
 
     property var releases: []
@@ -34,7 +34,7 @@ ApplicationWindow {
         { "id": "dev", "name": qsTr("Dev"), "text": qsTr("Earliest internal work and the highest expected instability.") },
         { "id": "alpha", "name": qsTr("Alpha"), "text": qsTr("Feature previews for early testing with visible rough edges.") },
         { "id": "beta", "name": qsTr("Beta"), "text": qsTr("Near-release builds with lower risk and broader validation.") },
-        { "id": "stable", "name": qsTr("Stable"), "text": qsTr("Recommended for normal users and the default AhmadOS channel.") }
+        { "id": "stable", "name": qsTr("Stable"), "text": qsTr("Recommended for normal users and the default Lumina-OS channel.") }
     ]
 
     Settings {
@@ -248,7 +248,7 @@ ApplicationWindow {
                     spacing: 6
 
                     Label {
-                        text: qsTr("AhmadOS Update Center")
+                        text: qsTr("Lumina-OS Update Center")
                         color: ink
                         font.pixelSize: 30
                         font.bold: true

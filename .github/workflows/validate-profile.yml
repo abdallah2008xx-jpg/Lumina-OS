@@ -1,4 +1,4 @@
-name: Validate AhmadOS Profile
+name: Validate Lumina-OS Profile
 
 on:
   push:

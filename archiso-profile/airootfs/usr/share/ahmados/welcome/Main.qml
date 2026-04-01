@@ -9,7 +9,7 @@ ApplicationWindow {
     width: 1280
     height: 820
     visible: true
-    title: qsTr("Welcome to AhmadOS")
+    title: qsTr("Welcome to Lumina-OS")
     color: "#09131A"
 
     property int currentStep: 0
@@ -23,11 +23,11 @@ ApplicationWindow {
         {
             "eyebrow": qsTr("Welcome"),
             "title": qsTr("A calmer Linux desktop, ready from the first minute."),
-            "body": qsTr("AhmadOS now saves real first-run choices for appearance, layout, wallpaper, and update direction instead of treating Welcome as a static tour."),
+            "body": qsTr("Lumina-OS now saves real first-run choices for appearance, layout, wallpaper, and update direction instead of treating Welcome as a static tour."),
             "sideTitle": qsTr("What this pass now controls"),
             "items": [
-                qsTr("Language preference for AhmadOS surfaces"),
-                qsTr("Light and dark AhmadOS color directions"),
+                qsTr("Language preference for Lumina-OS surfaces"),
+                qsTr("Light and dark Lumina-OS color directions"),
                 qsTr("Balanced, Classic, or Minimal Plasma layouts"),
                 qsTr("Wallpaper and release-channel defaults")
             ]
@@ -35,14 +35,14 @@ ApplicationWindow {
         {
             "eyebrow": qsTr("Language"),
             "title": qsTr("Arabic and English should both feel intentional."),
-            "body": qsTr("This choice is now saved as your AhmadOS preference so future first-party surfaces can honor it consistently."),
-            "sideTitle": qsTr("Choose the preferred AhmadOS language"),
+            "body": qsTr("This choice is now saved as your Lumina-OS preference so future first-party surfaces can honor it consistently."),
+            "sideTitle": qsTr("Choose the preferred Lumina-OS language"),
             "items": []
         },
         {
             "eyebrow": qsTr("Appearance"),
             "title": qsTr("Pick the surface tone and wallpaper direction."),
-            "body": qsTr("The live session can now switch between the main AhmadOS palette and a dedicated night variant, alongside the branded wallpaper set."),
+            "body": qsTr("The live session can now switch between the main Lumina-OS palette and a dedicated night variant, alongside the branded wallpaper set."),
             "sideTitle": qsTr("Choose your visual baseline"),
             "items": []
         },
@@ -55,19 +55,19 @@ ApplicationWindow {
         },
         {
             "eyebrow": qsTr("Updates"),
-            "title": qsTr("Choose the release track you want AhmadOS to emphasize."),
+            "title": qsTr("Choose the release track you want Lumina-OS to emphasize."),
             "body": qsTr("The Update Center now reads metadata from cacheable JSON, and this selection defines the release channel it should foreground."),
             "sideTitle": qsTr("Choose your release preference"),
             "items": []
         },
         {
             "eyebrow": qsTr("Ready"),
-            "title": qsTr("Your AhmadOS session choices are ready to apply."),
-            "body": qsTr("Closing Welcome now writes your selections to AhmadOS config and reapplies the live-session defaults on top of the current Plasma session."),
+            "title": qsTr("Your Lumina-OS session choices are ready to apply."),
+            "body": qsTr("Closing Welcome now writes your selections to Lumina-OS config and reapplies the live-session defaults on top of the current Plasma session."),
             "sideTitle": qsTr("What will happen next"),
             "items": [
                 qsTr("The selected Plasma layout is applied"),
-                qsTr("The selected AhmadOS color scheme is applied"),
+                qsTr("The selected Lumina-OS color scheme is applied"),
                 qsTr("The selected wallpaper becomes active"),
                 qsTr("Update Center foregrounds the chosen release channel")
             ]
@@ -78,12 +78,12 @@ ApplicationWindow {
         {
             "id": "ar",
             "label": qsTr("Arabic"),
-            "body": qsTr("RTL-aware AhmadOS surfaces should prioritize Arabic-first reading comfort.")
+            "body": qsTr("RTL-aware Lumina-OS surfaces should prioritize Arabic-first reading comfort.")
         },
         {
             "id": "en",
             "label": qsTr("English"),
-            "body": qsTr("Keep English as the preferred language for AhmadOS-first surfaces and onboarding copy.")
+            "body": qsTr("Keep English as the preferred language for Lumina-OS-first surfaces and onboarding copy.")
         }
     ]
 
@@ -91,12 +91,12 @@ ApplicationWindow {
         {
             "id": "light",
             "label": qsTr("Light"),
-            "body": qsTr("Use the current AhmadOS palette with soft light surfaces and restrained blue accents.")
+            "body": qsTr("Use the current Lumina-OS palette with soft light surfaces and restrained blue accents.")
         },
         {
             "id": "dark",
             "label": qsTr("Night"),
-            "body": qsTr("Use the new AhmadOSNight scheme for darker surfaces, brighter text, and calmer nighttime contrast.")
+            "body": qsTr("Use the new Lumina-OS Night scheme for darker surfaces, brighter text, and calmer nighttime contrast.")
         }
     ]
 
@@ -104,13 +104,13 @@ ApplicationWindow {
         {
             "id": "lagoon",
             "label": qsTr("Lagoon"),
-            "body": qsTr("Balanced blue-green depth for the default AhmadOS direction."),
+            "body": qsTr("Balanced blue-green depth for the default Lumina-OS direction."),
             "path": "/usr/share/ahmados/wallpapers/ahmados-lagoon.svg"
         },
         {
             "id": "horizon",
             "label": qsTr("Horizon"),
-            "body": qsTr("Warmer morning tones with a lighter AhmadOS atmosphere."),
+            "body": qsTr("Warmer morning tones with a lighter Lumina-OS atmosphere."),
             "path": "/usr/share/ahmados/wallpapers/ahmados-horizon.svg"
         },
         {
@@ -143,12 +143,12 @@ ApplicationWindow {
         {
             "id": "stable",
             "label": qsTr("Stable"),
-            "body": qsTr("Foreground the most normal-user-ready AhmadOS release path.")
+            "body": qsTr("Foreground the most normal-user-ready Lumina-OS release path.")
         },
         {
             "id": "beta",
             "label": qsTr("Beta"),
-            "body": qsTr("Track near-release AhmadOS builds that still need broader validation.")
+            "body": qsTr("Track near-release Lumina-OS builds that still need broader validation.")
         },
         {
             "id": "alpha",
@@ -158,7 +158,7 @@ ApplicationWindow {
         {
             "id": "dev",
             "label": qsTr("Dev"),
-            "body": qsTr("Surface the earliest AhmadOS work where change is fastest and risk is highest.")
+            "body": qsTr("Surface the earliest Lumina-OS work where change is fastest and risk is highest.")
         }
     ]
 
@@ -209,7 +209,7 @@ ApplicationWindow {
 
     function currentNotice() {
         if (currentStep === 1) {
-            return qsTr("Language preference is stored now for AhmadOS-owned surfaces. System-wide locale switching is still a later build step.")
+            return qsTr("Language preference is stored now for Lumina-OS-owned surfaces. System-wide locale switching is still a later build step.")
         }
 
         if (currentStep === 2) {
@@ -225,7 +225,7 @@ ApplicationWindow {
         }
 
         if (currentStep === 5) {
-            return qsTr("Finish will save the config and reapply AhmadOS session defaults immediately.")
+            return qsTr("Finish will save the config and reapply Lumina-OS session defaults immediately.")
         }
 
         return qsTr("The Welcome app now behaves as a first-run settings writer, not only a visual tour.")
@@ -313,7 +313,7 @@ ApplicationWindow {
                         spacing: 4
 
                         Label {
-                            text: "AhmadOS"
+                            text: "Lumina-OS"
                             color: ink
                             font.pixelSize: 24
                             font.bold: true
@@ -459,7 +459,7 @@ ApplicationWindow {
                 }
 
                 Label {
-                    text: qsTr("These choices are now written to AhmadOS config so the session can reuse them after Welcome closes.")
+                    text: qsTr("These choices are now written to Lumina-OS config so the session can reuse them after Welcome closes.")
                     color: mist
                     wrapMode: Text.WordWrap
                     font.pixelSize: 14

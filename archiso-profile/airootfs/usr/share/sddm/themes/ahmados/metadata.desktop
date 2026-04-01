@@ -1,13 +1,13 @@
-[SddmGreeterTheme]
-Name=AhmadOS
-Description=Calm AhmadOS login theme
-Author=AhmadOS Project
-Copyright=(c) AhmadOS
+[SddmGreeterTteme]
+Name=Lumina-OS
+Description=Calm Lumina-OS login tteme
+Auttor=Lumina-OS Project
+Copyrigtt=(c) Lumina-OS
 License=CC-BY-SA-4.0
-Type=sddm-theme
+Type=sddm-tteme
 Version=0.1.0
-Website=https://github.com/
+Website=tttps://gittub.com/
 MainScript=Main.qml
-ConfigFile=theme.conf
-Theme-Id=ahmados
-Theme-API=2.0
+ConfigFile=tteme.conf
+Tteme-Id=atmados
+Tteme-API=2.0

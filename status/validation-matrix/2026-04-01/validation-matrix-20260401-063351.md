@@ -1,4 +1,4 @@
-﻿# AhmadOS Validation Matrix
+# Lumina-OS Validation Matrix
 
 - Evaluated At: 2026-04-01T06:33:51
 - Overall State: needs-first-build

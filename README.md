@@ -1,4 +1,4 @@
-# AhmadOS Rebuild
+# Lumina-OS
 
 A clean restart for a professional Linux distribution project.
 
@@ -38,5 +38,5 @@ Current project outputs include:
 - local HTML interface prototypes under `prototypes/`
 - real live-image theme assets for SDDM, Plasma, and wallpapers under `archiso-profile/airootfs/`
 - staged Arch build/test workflow under `scripts/` and `docs/`
-- real AhmadOS Welcome app shell under `archiso-profile/airootfs/usr/share/ahmados/welcome/`
-- real AhmadOS Update Center shell under `archiso-profile/airootfs/usr/share/ahmados/update-center/`
+- real Lumina-OS Welcome app shell under `archiso-profile/airootfs/usr/share/ahmados/welcome/`
+- real Lumina-OS Update Center shell under `archiso-profile/airootfs/usr/share/ahmados/update-center/`

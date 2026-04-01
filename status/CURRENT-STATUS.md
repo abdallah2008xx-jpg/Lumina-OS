@@ -11,24 +11,24 @@
 - bootloader scaffolding added for BIOS and UEFI paths
 - mkinitcpio archiso preset and bootstrap package list added
 - live user and service setup moved into build-time customization
-- AhmadOS brand system baseline documented
+- Lumina-OS brand system baseline documented
 - desktop, welcome, update center, and settings specs added
 - first local HTML interface prototypes added under `prototypes/`
-- first AhmadOS wallpaper pack added under `branding/wallpapers/`
+- first Lumina-OS wallpaper pack added under `branding/wallpapers/`
 - SDDM login direction documented and prototyped
-- real AhmadOS wallpapers added into the live image under `/usr/share/ahmados/wallpapers/`
-- real AhmadOS SDDM theme added and set as the active SDDM theme
-- real AhmadOS Plasma look-and-feel and color-scheme defaults added for the live session
+- real Lumina-OS wallpapers added into the live image under `/usr/share/ahmados/wallpapers/`
+- real Lumina-OS SDDM theme added and set as the active SDDM theme
+- real Lumina-OS Plasma look-and-feel and color-scheme defaults added for the live session
 - staged Arch build workflow added with `stable` and `login-test` modes
 - VM test checklist and Arch build guide added
-- real AhmadOS Welcome app shell added to the live image and autostarted once for the `live` user
-- real AhmadOS Update Center app shell added to the live image
+- real Lumina-OS Welcome app shell added to the live image and autostarted once for the `live` user
+- real Lumina-OS Update Center app shell added to the live image
 - real Welcome persistence added for appearance, wallpaper, layout, and release-channel choices
 - additional Plasma layout variants added: Classic and Minimal
-- AhmadOSNight color scheme added for a real dark-session option
+- Lumina-OS Night color scheme added for a real dark-session option
 - metadata refresh/cache path added for Update Center with bundled fallback and GitHub-ready config
 - local PowerShell profile validation added before the first serious Arch build
-- real AhmadOS firstboot reporting added for session/runtime diagnostics
+- real Lumina-OS firstboot reporting added for session/runtime diagnostics
 - Arch-side shell validation added before `mkarchiso`
 - firstboot report launcher and backup autostart path added for easier VM verification
 - Arch-side build manifest generation added after successful ISO builds

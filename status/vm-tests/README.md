@@ -1,4 +1,4 @@
-# AhmadOS VM Test Records
+# Lumina-OS VM Test Records
 
 Store VM test reports here by date.
 

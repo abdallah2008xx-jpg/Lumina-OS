@@ -1,4 +1,4 @@
-﻿# AhmadOS Readiness Snapshot
+# Lumina-OS Readiness Snapshot
 
 - Evaluated At: 2026-04-01T06:45:48
 - Run Label: not-recorded-yet

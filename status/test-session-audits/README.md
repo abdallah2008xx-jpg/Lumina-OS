@@ -1,4 +1,4 @@
-# AhmadOS Test Session Audits
+# Lumina-OS Test Session Audits
 
 Store audit reports here after checking that a session summary still points to real evidence.
 

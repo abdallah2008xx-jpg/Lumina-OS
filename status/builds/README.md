@@ -1,4 +1,4 @@
-# AhmadOS Build Records
+# Lumina-OS Build Records
 
 Store build manifests here after real Arch-side ISO builds.
 

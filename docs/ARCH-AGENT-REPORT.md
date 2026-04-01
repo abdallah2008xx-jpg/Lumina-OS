@@ -1,4 +1,4 @@
-# AhmadOS Rebuild: Archiso Architecture Review
+# Lumina-OS: Archiso Architecture Review
 
 ## Executive summary
 The rebuild is pointed in the right direction: Arch + Plasma + SDDM, minimal branding, and a stability-first live ISO goal. The current profile is a good skeleton, but it is **not yet build-ready** and still carries a few choices that can create the same kind of session instability you were trying to avoid.
@@ -29,7 +29,7 @@ Current state:
 - `home/live/.bash_profile` still tries to run `startplasma-x11` on tty1
 
 Why this is risky:
-- this recreates the exact class of “black screen / conflicting startup path” problems that often happen in custom live ISOs
+- this recreates the exact class of â€œblack screen / conflicting startup pathâ€ problems that often happen in custom live ISOs
 - tty autostart and display-manager autostart should not coexist in the first milestone
 
 Recommendation:
@@ -55,7 +55,7 @@ Recommendation:
 Preferred early baseline:
 - keep packaged `sddm.service`
 - keep packaged `NetworkManager.service`
-- only add config drop-ins where AhmadOS behavior truly differs
+- only add config drop-ins where Lumina-OS behavior truly differs
 
 ---
 
@@ -135,7 +135,7 @@ Current state:
 - there is no visible validation checklist tied to each ISO build attempt
 
 Recommendation:
-Adopt a hard gate for “build-ready”:
+Adopt a hard gate for â€œbuild-readyâ€:
 
 A profile is build-ready only when all are true:
 1. `mkarchiso` completes with no manual fixes
@@ -152,9 +152,9 @@ A profile is build-ready only when all are true:
 ## Concrete architecture recommendations
 
 ### A) Treat the live ISO as a product-specific variant of Arch releng, not a custom OS yet
-For the first milestone, AhmadOS should behave like:
+For the first milestone, Lumina-OS should behave like:
 - Arch ISO boot pipeline
-- AhmadOS branding/config layer on top
+- Lumina-OS branding/config layer on top
 
 That means:
 - minimal changes to bootloader behavior
@@ -168,16 +168,16 @@ This is the fastest route to a trustworthy base.
 
 ### B) Split packages into tiers
 Recommended structure:
-- `packages.base` → required for all builds
-- `packages.desktop` → Plasma session
-- `packages.branding` → fonts/themes/icons/wallpapers
-- `packages.vm` → guest packages only for VM-oriented test images
+- `packages.base` â†’ required for all builds
+- `packages.desktop` â†’ Plasma session
+- `packages.branding` â†’ fonts/themes/icons/wallpapers
+- `packages.vm` â†’ guest packages only for VM-oriented test images
 - generated `packages.x86_64` for the selected build flavor
 
 Why this helps:
 - easier debugging
 - smaller change sets
-- clear difference between “must boot” and “nice to have”
+- clear difference between â€œmust bootâ€ and â€œnice to haveâ€
 
 If you want to stay simple, keep one final `packages.x86_64` file but annotate it with sections matching those tiers.
 
@@ -186,7 +186,7 @@ If you want to stay simple, keep one final `packages.x86_64` file but annotate i
 ### C) Use override files, not copied units
 Replace full copies with one of these patterns:
 - symlink packaged services into wanted targets
-- use `etc/systemd/system/sddm.service.d/*.conf` for AhmadOS-specific overrides
+- use `etc/systemd/system/sddm.service.d/*.conf` for Lumina-OS-specific overrides
 - use `etc/systemd/system.conf.d/*.conf` only if system-level tuning is truly needed
 
 This keeps the ISO closer to upstream and reduces maintenance burden.
@@ -201,7 +201,7 @@ Recommendation:
 - milestone 2: add Wayland session as non-default test target
 - milestone 3: evaluate whether Wayland becomes the default on supported hardware
 
-Do not try to solve “perfect Wayland + perfect VM + custom branding” at the same time.
+Do not try to solve â€œperfect Wayland + perfect VM + custom brandingâ€ at the same time.
 
 ---
 
@@ -212,7 +212,7 @@ Current file should be simplified.
 
 Recommended result:
 ```bash
-# AhmadOS live user shell profile
+# Lumina-OS live user shell profile
 # Keep graphical startup under SDDM only for milestone 1.
 ```
 
@@ -239,7 +239,7 @@ Practical recommendation now:
 
 ## Build-readiness plan
 
-### Phase 1 — Stabilize the live desktop path
+### Phase 1 â€” Stabilize the live desktop path
 Do now:
 1. Remove tty-based Plasma autostart from `.bash_profile`
 2. Stop copying full upstream service units
@@ -252,7 +252,7 @@ Success criteria:
 - SDDM appears reliably
 - Plasma session starts reliably
 
-### Phase 2 — Improve observability
+### Phase 2 â€” Improve observability
 Add:
 - post-boot test checklist in `docs/BUILD-PLAN.md`
 - log capture notes: `journalctl -b`, `systemctl status sddm`, `loginctl session-status`, `glxinfo -B` or equivalent if installed
@@ -261,7 +261,7 @@ Add:
 Success criteria:
 - every failed build gives clear evidence instead of guesswork
 
-### Phase 3 — Controlled polish
+### Phase 3 â€” Controlled polish
 Add back gradually:
 - fonts beyond the minimum set
 - guest tools per VM target
@@ -298,11 +298,11 @@ For each new ISO:
 ## Bottom line
 The rebuild is structurally promising, but the next smart move is not more customization. It is **less**.
 
-For the first serious AhmadOS ISO, aim for:
+For the first serious Lumina-OS ISO, aim for:
 - stock archiso behavior
 - stock SDDM service
 - one graphical startup path only
 - one tested desktop session only
 - the smallest package set that still feels like a real product
 
-If you do that, AhmadOS gets a stable base you can safely make beautiful later instead of another hard-to-debug boot experiment.
+If you do that, Lumina-OS gets a stable base you can safely make beautiful later instead of another hard-to-debug boot experiment.

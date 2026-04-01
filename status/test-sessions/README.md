@@ -1,4 +1,4 @@
-# AhmadOS Test Sessions
+# Lumina-OS Test Sessions
 
 Store one high-level summary per real build-and-test cycle here.
 

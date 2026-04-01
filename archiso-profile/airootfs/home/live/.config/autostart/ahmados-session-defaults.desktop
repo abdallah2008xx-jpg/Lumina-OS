@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=AhmadOS Session Defaults
+Name=Lumina-OS Session Defaults
 Exec=/home/live/.local/bin/ahmados-apply-session-defaults
 OnlyShowIn=KDE;
 NoDisplay=true

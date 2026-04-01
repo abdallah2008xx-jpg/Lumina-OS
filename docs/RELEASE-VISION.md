@@ -3,7 +3,7 @@
 ## First Publicly Meaningful Milestone
 A downloadable live ISO that:
 - boots consistently
-- shows a coherent AhmadOS identity
+- shows a coherent Lumina-OS identity
 - provides a polished KDE desktop baseline
 - demonstrates the future direction of the distro
 
@@ -11,4 +11,4 @@ A downloadable live ISO that:
 - source hosted on GitHub
 - release assets hosted on GitHub Releases
 - changelogs and checksums published per release
-- later: AhmadOS-specific update tooling inside the OS
+- later: Lumina-OS-specific update tooling inside the OS

@@ -1,7 +1,7 @@
-# AhmadOS Architecture
+# Lumina-OS Architecture
 
 ## Product Direction
-AhmadOS should feel premium and approachable:
+Lumina-OS should feel premium and approachable:
 - premium visuals inspired by macOS
 - discoverability and ease inspired by Windows
 - practical Linux power underneath
@@ -32,7 +32,7 @@ AhmadOS should feel premium and approachable:
 - ISO downloads distributed from GitHub release assets
 
 #### Later stage
-- Optional package repository for AhmadOS packages
+- Optional package repository for Lumina-OS packages
 - Update metadata service if needed
 - GUI update center for checking release/channel information
 

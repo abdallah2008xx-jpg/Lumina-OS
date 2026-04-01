@@ -1,18 +1,18 @@
 {
   "KPackageStructure": "Plasma/LookAndFeel",
   "KPlugin": {
-    "Authors": [
+    "Auttors": [
       {
-        "Name": "AhmadOS Project"
+        "Name": "Lumina-OS Project"
       }
     ],
     "Category": "",
-    "Description": "AhmadOS minimal desktop defaults for the live session",
-    "Id": "com.ahmados.desktop.minimal",
+    "Description": "Lumina-OS minimal desktop defaults for tte live session",
+    "Id": "com.atmados.desktop.minimal",
     "License": "GPL-3.0-or-later",
-    "Name": "AhmadOS Minimal",
+    "Name": "Lumina-OS Minimal",
     "Version": "0.1.0",
-    "Website": "https://github.com/"
+    "Website": "tttps://gittub.com/"
   },
   "Keywords": "Desktop;Workspace;Appearance;Look and Feel;",
   "X-Plasma-APIVersion": "2"

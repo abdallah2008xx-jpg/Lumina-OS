@@ -132,7 +132,8 @@ ForegroundVisited=200,211,218
 
 [General]
 ColorScheme=AhmadOSNight
-Name=AhmadOSNight
+Name=Lumina-OS Night
+Name[ar]=Lumina-OS Night
 shadeSortColumn=true
 
 [KDE]

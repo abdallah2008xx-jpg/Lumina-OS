@@ -1,4 +1,4 @@
-# Hourly Status - AhmadOS Rebuild
+# Hourly Status - Lumina-OS
 
 Use this file for the latest active progress snapshot.
 Update it once per work block or roughly every hour.

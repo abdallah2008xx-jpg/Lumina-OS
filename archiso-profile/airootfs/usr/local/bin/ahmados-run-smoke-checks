@@ -6,7 +6,7 @@ config_root="${HOME}/.config/ahmados"
 config_file="${config_root}/welcome.conf"
 kdeglobals_file="${HOME}/.config/kdeglobals"
 report_file="${state_root}/smoke-check-report.md"
-desktop_report="${HOME}/Desktop/AhmadOS Smoke Check Report.md"
+desktop_report="${HOME}/Desktop/Lumina-OS Smoke Check Report.md"
 open_after=0
 
 if [[ "${1:-}" == "--open" ]]; then
@@ -177,14 +177,14 @@ else
 fi
 
 cat > "${report_file}" <<EOF
-# AhmadOS Smoke Check Report
+# Lumina-OS Smoke Check Report
 
 - Generated: $(date -Iseconds)
 - Hostname: $(hostname 2>/dev/null || printf '%s' 'unknown')
 - Session Type: ${XDG_SESSION_TYPE:-unknown}
 - Desktop Session: ${XDG_CURRENT_DESKTOP:-unknown}
 
-## Saved AhmadOS Expectations
+## Saved Lumina-OS Expectations
 - Language: ${expected_language}
 - Appearance: ${expected_appearance}
 - Layout: ${expected_layout}
@@ -211,4 +211,4 @@ if [[ "${open_after}" -eq 1 ]]; then
     fi
 fi
 
-echo "AhmadOS smoke checks written to: ${report_file}"
+echo "Lumina-OS smoke checks written to: ${report_file}"

@@ -1,7 +1,7 @@
 # Build Plan
 
 ## Immediate Goal
-Produce a first clean AhmadOS ISO that:
+Produce a first clean Lumina-OS ISO that:
 - boots in a VM
 - reaches SDDM
 - can enter a Plasma session

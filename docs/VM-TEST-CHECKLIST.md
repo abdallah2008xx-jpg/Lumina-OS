@@ -1,4 +1,4 @@
-# AhmadOS VM Test Checklist
+# Lumina-OS VM Test Checklist
 
 ## Goal
 Keep VM testing consistent across each ISO build.
@@ -93,8 +93,8 @@ If you want to refresh the side-by-side mode coverage after manual edits, use:
 
 ## Stable Mode Checks
 - autologin reaches Plasma
-- wallpaper is AhmadOS branded
-- panel layout matches AhmadOS defaults
+- wallpaper is Lumina-OS branded
+- panel layout matches Lumina-OS defaults
 - color scheme looks applied
 
 ## Login-Test Checks
@@ -127,15 +127,15 @@ If you want to refresh the side-by-side mode coverage after manual edits, use:
 - no obvious unreadable text areas
 - Arabic and English text rendering should be noted if tested
 
-## AhmadOS Runtime Checks
+## Lumina-OS Runtime Checks
 - Welcome opens once for the `live` user
 - changing layout, wallpaper, or appearance in Welcome applies after the app closes
 - firstboot report is generated at `~/.local/state/ahmados/firstboot-report.md`
 - smoke-check report is generated at `~/.local/state/ahmados/smoke-check-report.md`
 - Desktop copy of the firstboot report exists if the Desktop directory is present
-- `AhmadOS First Boot Report` launcher opens the generated report or its directory
-- `Run AhmadOS Smoke Checks` creates and opens the smoke-check report
-- `Export AhmadOS Diagnostics` creates a bundle under `~/Documents/AhmadOS Diagnostics/`
+- `Lumina-OS First Boot Report` launcher opens the generated report or its directory
+- `Run Lumina-OS Smoke Checks` creates and opens the smoke-check report
+- `Export Lumina-OS Diagnostics` creates a bundle under `~/Documents/Lumina-OS Diagnostics/`
 - Update Center opens with release metadata loaded from local cache
 
 ## Blocker Format

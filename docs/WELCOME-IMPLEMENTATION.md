@@ -1,7 +1,7 @@
-# AhmadOS Welcome Implementation
+# Lumina-OS Welcome Implementation
 
 ## Purpose
-Document the real Welcome app that now ships inside the live image and writes first-run AhmadOS choices into local config.
+Document the real Welcome app that now ships inside the live image and writes first-run Lumina-OS choices into local config.
 
 ## Implemented Now
 - QML application at `archiso-profile/airootfs/usr/share/ahmados/welcome/Main.qml`
@@ -19,14 +19,14 @@ Document the real Welcome app that now ships inside the live image and writes fi
 
 ## Current Scope
 - multi-step onboarding with real saved choices
-- preferred AhmadOS language selection
-- light or night AhmadOS appearance selection
+- preferred Lumina-OS language selection
+- light or night Lumina-OS appearance selection
 - wallpaper selection from the live wallpaper pack
 - Balanced, Classic, and Minimal Plasma layout choices
 - preferred release-channel selection for Update Center
 
 ## Current Limitation
-- language preference is stored for AhmadOS-owned surfaces, but it is not yet a full system locale switch
+- language preference is stored for Lumina-OS-owned surfaces, but it is not yet a full system locale switch
 - Welcome still closes into the live session instead of offering deep task automation
 - app-launch actions are still lightweight compared with a full first-run control center
 
@@ -34,4 +34,4 @@ Document the real Welcome app that now ships inside the live image and writes fi
 - connect language preference to a real locale/input path
 - expose more first-session actions directly from Welcome
 - add validation inside a built ISO to confirm layout and wallpaper changes behave correctly after boot
-- extend the saved AhmadOS profile beyond the live session baseline
+- extend the saved Lumina-OS profile beyond the live session baseline

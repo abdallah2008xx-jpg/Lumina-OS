@@ -132,8 +132,8 @@ ForegroundVisited=63,143,149
 
 [General]
 ColorScheme=AhmadOS
-Name=AhmadOS
-Name[ar]=أحمد أو إس
+Name=Lumina-OS
+Name[ar]=Lumina-OS
 shadeSortColumn=true
 
 [KDE]

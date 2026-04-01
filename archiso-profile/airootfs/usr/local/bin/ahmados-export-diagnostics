@@ -4,7 +4,7 @@ set -euo pipefail
 state_root="${XDG_STATE_HOME:-${HOME}/.local/state}/ahmados"
 cache_root="${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados"
 config_root="${HOME}/.config/ahmados"
-export_root="${HOME}/Documents/AhmadOS Diagnostics"
+export_root="${HOME}/Documents/Lumina-OS Diagnostics"
 timestamp="$(date +%Y%m%d-%H%M%S)"
 bundle_name="ahmados-diagnostics-${timestamp}"
 bundle_dir="${export_root}/${bundle_name}"
@@ -27,7 +27,7 @@ fi
 summary_file="${bundle_dir}/summary.md"
 
 cat > "${summary_file}" <<EOF
-# AhmadOS Diagnostics Export
+# Lumina-OS Diagnostics Export
 
 - Generated: $(date -Iseconds)
 - Hostname: $(hostname 2>/dev/null || printf '%s' 'unknown')
@@ -98,5 +98,5 @@ elif command -v xdg-open >/dev/null 2>&1; then
     xdg-open "${export_root}" >/dev/null 2>&1 &
 fi
 
-echo "AhmadOS diagnostics exported to: ${bundle_dir}"
+echo "Lumina-OS diagnostics exported to: ${bundle_dir}"
 echo "Archive path: ${archive_path}"

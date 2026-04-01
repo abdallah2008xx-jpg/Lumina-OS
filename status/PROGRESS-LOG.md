@@ -12,24 +12,24 @@
 - Added `mkinitcpio` archiso preset and bootstrap package list
 - Replaced fragile passwd/group and systemd unit overlays with `customize_airootfs.sh`
 - Added `plasma-x11-session` and passwordless wheel sudo for the live user baseline
-- Added a documented AhmadOS brand system and desktop layout specification
+- Added a documented Lumina-OS brand system and desktop layout specification
 - Added scoped specs for Welcome app, Update Center, and Settings shell
 - Added a local `prototypes/` gallery with Welcome, Update Center, and Settings HTML mockups
-- Added the first AhmadOS wallpaper pack as editable SVG assets
+- Added the first Lumina-OS wallpaper pack as editable SVG assets
 - Added an SDDM theme spec and local login prototype
-- Added real AhmadOS wallpaper assets into the archiso live image
+- Added real Lumina-OS wallpaper assets into the archiso live image
 - Added a real SDDM theme package and switched SDDM to it
 - Added a real Plasma look-and-feel package, color scheme, and one-time live-session defaults script
 - Added a staged Arch build helper with separate `stable` and `login-test` modes
 - Added an Arch build guide and repeatable VM validation checklist
-- Added a real QML-based AhmadOS Welcome app shell, launcher, and first-run autostart path
-- Added a real QML-based AhmadOS Update Center shell and launcher path
+- Added a real QML-based Lumina-OS Welcome app shell, launcher, and first-run autostart path
+- Added a real QML-based Lumina-OS Update Center shell and launcher path
 
 ## 2026-04-01
 - Turned Welcome into a real first-run settings writer backed by `~/.config/ahmados/welcome.conf`
 - Added real Welcome choices for appearance, wallpaper, desktop layout, and release channel
 - Added two more Plasma look-and-feel variants: Classic and Minimal
-- Added the `AhmadOSNight` color scheme for a real dark appearance path
+- Added the `Lumina-OS Night` color scheme for a real dark appearance path
 - Updated the session-defaults script to reapply saved Welcome choices to Plasma
 - Added a metadata refresh/cache pipeline for Update Center
 - Added bundled release JSON and a GitHub-ready release-source config path
@@ -40,7 +40,7 @@
 - Wired firstboot reporting into the Welcome completion path so diagnostics are captured after session choices are applied
 - Added `validate-profile.sh` so Arch-side builds run their own structural checks before `mkarchiso`
 - Cleaned the Windows-to-Arch handoff so the helper prints portable Arch commands instead of Windows-only paths
-- Added an AhmadOS firstboot report launcher and hidden autostart fallback for easier VM verification
+- Added an Lumina-OS firstboot report launcher and hidden autostart fallback for easier VM verification
 - Added `write-build-manifest.sh` so successful Arch builds leave behind a reproducible build record
 - Added `new-vm-test-report.ps1` plus `status/builds/` and `status/vm-tests/` to formalize build/test evidence capture
 - Added `bootstrap-arch-build-env.sh` to prepare the first real Arch build environment

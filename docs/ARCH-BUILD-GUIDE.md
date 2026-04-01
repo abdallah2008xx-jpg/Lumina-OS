@@ -1,7 +1,7 @@
-# AhmadOS Arch Build Guide
+# Lumina-OS Arch Build Guide
 
 ## Purpose
-Provide one reproducible path for building AhmadOS in a real Arch environment.
+Provide one reproducible path for building Lumina-OS in a real Arch environment.
 
 ## Build Requirement
 Run the ISO build inside Arch Linux with:

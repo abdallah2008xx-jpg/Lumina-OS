@@ -1,4 +1,4 @@
-# AhmadOS Reporting Guide
+# Lumina-OS Reporting Guide
 
 Keep reporting lightweight.
 

@@ -1,14 +1,14 @@
-# AhmadOS Release Agent Report
+# Lumina-OS Release Agent Report
 
 ## Purpose
-This report turns the current AhmadOS-Rebuild state into an actionable release, build, packaging, and update plan that can scale from local ISO experiments to public GitHub releases.
+This report turns the current Lumina-OS state into an actionable release, build, packaging, and update plan that can scale from local ISO experiments to public GitHub releases.
 
 ---
 
 ## 1. Current Project Assessment
 
 ## What already exists
-- Clean project structure in `AhmadOS-Rebuild`
+- Clean project structure in `Lumina-OS`
 - Arch-based `archiso` profile skeleton
 - Minimal KDE Plasma + SDDM package baseline
 - Early `airootfs` customization
@@ -60,7 +60,7 @@ Use a staged release ladder instead of jumping straight to "public stable":
    - clear support window and update rules
 
 ## Recommendation
-For AhmadOS right now, target this sequence:
+For Lumina-OS right now, target this sequence:
 - `0.1.0-dev` = local-only
 - `0.1.0-alpha.1` = first bootable public VM-focused ISO
 - `0.1.0-beta.1` = first polished tester release
@@ -91,9 +91,9 @@ Example:
 
 ## ISO naming
 Use predictable names:
-- `AhmadOS-0.1.0-alpha.1-x86_64.iso`
-- `AhmadOS-0.1.0-beta.1-x86_64.iso`
-- `AhmadOS-1.0.0-x86_64.iso`
+- `Lumina-OS-0.1.0-alpha.1-x86_64.iso`
+- `Lumina-OS-0.1.0-beta.1-x86_64.iso`
+- `Lumina-OS-1.0.0-x86_64.iso`
 
 Also publish:
 - `SHA256SUMS.txt`
@@ -282,7 +282,7 @@ Create `CHANGELOG.md` using simple categories:
 ## 6. Update Channel Strategy
 
 ## Short-term reality
-For a live ISO project, users do **not** have a safe OTA story yet. Pretending otherwise would be a mistake. Early AhmadOS should treat updates as:
+For a live ISO project, users do **not** have a safe OTA story yet. Pretending otherwise would be a mistake. Early Lumina-OS should treat updates as:
 - new ISO downloads
 - manual reinstall or manual upgrade guidance
 
@@ -311,7 +311,7 @@ Add a machine-readable file later, such as `releases/channels.json` in the repo 
 }
 ```
 
-This can later power an AhmadOS Update Center.
+This can later power an Lumina-OS Update Center.
 
 ## Update Center roadmap
 Do not build it yet, but plan for it:
@@ -336,9 +336,9 @@ Right now the main product is the ISO. That is correct.
 - release notes and checksums
 
 ### Principle
-Keep AhmadOS-specific customization in the repo, not hand-edited inside build leftovers.
+Keep Lumina-OS-specific customization in the repo, not hand-edited inside build leftovers.
 
-## Stage 2: AhmadOS package split
+## Stage 2: Lumina-OS package split
 As the project matures, split customizations into discrete packages instead of baking everything directly into `airootfs`.
 
 Recommended future package families:
@@ -357,7 +357,7 @@ Packaging custom components makes it easier to:
 - roll back bad changes
 - reuse the same components in ISO and installed systems
 
-## Stage 3: AhmadOS package repository
+## Stage 3: Lumina-OS package repository
 Only start this after alpha quality is real.
 
 ### Recommended repo structure later
@@ -366,7 +366,7 @@ Only start this after alpha quality is real.
 - optional `testing-ahmados` aligned to beta/dev channels
 
 ## Important warning
-Do **not** fork half of Arch unnecessarily. AhmadOS should package only what is truly AhmadOS-specific and inherit as much as possible from upstream Arch.
+Do **not** fork half of Arch unnecessarily. Lumina-OS should package only what is truly Lumina-OS-specific and inherit as much as possible from upstream Arch.
 
 ---
 
@@ -394,7 +394,7 @@ Do **not** fork half of Arch unnecessarily. AhmadOS should package only what is 
 
 ## 9. Milestones: From Local Builds to Public Releases
 
-## Milestone 0 — Project hardening
+## Milestone 0 â€” Project hardening
 Goal: make the repo release-aware.
 
 ### Deliverables
@@ -410,7 +410,7 @@ One documented local build produces a named ISO and checksum.
 
 ---
 
-## Milestone 1 — First repeatable local ISO
+## Milestone 1 â€” First repeatable local ISO
 Goal: same ISO pipeline works more than once.
 
 ### Deliverables
@@ -424,7 +424,7 @@ The maintainer can rebuild and retest after changes without improvising.
 
 ---
 
-## Milestone 2 — Internal pre-alpha snapshot pipeline
+## Milestone 2 â€” Internal pre-alpha snapshot pipeline
 Goal: start release discipline without public pressure.
 
 ### Deliverables
@@ -439,8 +439,8 @@ Every mainline change can be validated and optionally produce a snapshot artifac
 
 ---
 
-## Milestone 3 — First public alpha release
-Goal: publish the first serious AhmadOS test ISO.
+## Milestone 3 â€” First public alpha release
+Goal: publish the first serious Lumina-OS test ISO.
 
 ### Deliverables
 - tagged release `v0.1.0-alpha.1`
@@ -454,7 +454,7 @@ Testers can download, verify, boot, and report issues with a known release ident
 
 ---
 
-## Milestone 4 — Beta readiness
+## Milestone 4 â€” Beta readiness
 Goal: move from "boots in VM" to "usable test distro".
 
 ### Deliverables
@@ -465,17 +465,17 @@ Goal: move from "boots in VM" to "usable test distro".
 - channel metadata format designed or implemented
 
 ### Success condition
-AhmadOS is stable enough that non-developer testers can try it without constant handholding.
+Lumina-OS is stable enough that non-developer testers can try it without constant handholding.
 
 ---
 
-## Milestone 5 — Stable release foundation
+## Milestone 5 â€” Stable release foundation
 Goal: be credible as a public distro project.
 
 ### Deliverables
 - signed releases
-- package split for AhmadOS-specific components
-- initial AhmadOS package repository plan or implementation
+- package split for Lumina-OS-specific components
+- initial Lumina-OS package repository plan or implementation
 - update-center design tied to real channel metadata
 - installer/recovery/documentation maturity
 
@@ -503,7 +503,7 @@ Treat the next release target as:
 - **not** a polished public distro
 - **yes** a disciplined, bootable, testable pre-alpha foundation
 
-That is the right move. AhmadOS needs a trustworthy pipeline before it needs flashy release marketing.
+That is the right move. Lumina-OS needs a trustworthy pipeline before it needs flashy release marketing.
 
 ---
 
@@ -512,7 +512,7 @@ That is the right move. AhmadOS needs a trustworthy pipeline before it needs fla
 Recommended new files for the repo:
 
 ```text
-AhmadOS-Rebuild/
+Lumina-OS/
   VERSION
   CHANGELOG.md
   .github/workflows/ci-validate.yml
@@ -530,11 +530,11 @@ AhmadOS-Rebuild/
 
 ## 12. Final Recommendation
 
-The best strategy for AhmadOS is:
+The best strategy for Lumina-OS is:
 - **ISO-first**
 - **stability-first**
 - **GitHub Releases first, OTA later**
-- **package AhmadOS-specific parts only**
+- **package Lumina-OS-specific parts only**
 - **use alpha/beta/stable channels before promising seamless in-place upgrades**
 
 In plain terms: build a release pipeline that people can trust, then build an update system on top of that trust.

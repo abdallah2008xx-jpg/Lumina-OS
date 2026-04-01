@@ -1,4 +1,4 @@
-# AhmadOS Blocker Records
+# Lumina-OS Blocker Records
 
 Store blocker reviews here after syncing the latest VM-cycle results.
 

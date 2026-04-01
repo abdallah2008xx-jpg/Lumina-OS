@@ -111,6 +111,7 @@ $auditScript = Join-Path $PSScriptRoot "audit-test-session.ps1"
 $blockerScript = Join-Path $PSScriptRoot "sync-test-blockers.ps1"
 $readinessScript = Join-Path $PSScriptRoot "sync-readiness-status.ps1"
 $matrixScript = Join-Path $PSScriptRoot "sync-validation-matrix.ps1"
+$cycleChainScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
 
 if (-not (Test-Path $importScript)) {
     throw "Missing helper: $importScript"
@@ -134,6 +135,10 @@ if (-not (Test-Path $readinessScript)) {
 
 if (-not (Test-Path $matrixScript)) {
     throw "Missing helper: $matrixScript"
+}
+
+if (-not (Test-Path $cycleChainScript)) {
+    throw "Missing helper: $cycleChainScript"
 }
 
 $resolvedBundlePath = (Resolve-Path $BundlePath).Path
@@ -247,6 +252,22 @@ if (-not $validationMatrixPath) {
     throw "Unable to sync the validation matrix."
 }
 
+$cycleChainAuditPath = & $cycleChainScript `
+    -BuildManifestPath $resolvedBuildManifestPath `
+    -VmReportPath $resolvedVmReportPath `
+    -SessionPath $updatedSessionPath `
+    -AuditPath $auditPath `
+    -BlockerPath $blockerReviewPath `
+    -ReadinessPath $readinessSnapshotPath `
+    -ValidationMatrixPath $validationMatrixPath `
+    -RunLabel $resolvedRunLabel `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
+
+if (-not $cycleChainAuditPath) {
+    throw "Unable to audit the full cycle evidence chain."
+}
+
 Write-Host "Finished Lumina-OS VM test cycle."
 Write-Host "Run Label:         $resolvedRunLabel"
 Write-Host "Diagnostics Import: $diagnosticsImportPath"
@@ -255,3 +276,4 @@ Write-Host "Session Audit:      $auditPath"
 Write-Host "Blocker Review:     $blockerReviewPath"
 Write-Host "Readiness Snapshot: $readinessSnapshotPath"
 Write-Host "Validation Matrix:  $validationMatrixPath"
+Write-Host "Cycle Chain Audit:  $cycleChainAuditPath"

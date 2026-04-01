@@ -9,6 +9,7 @@ param(
     [string]$VmReportPath = "",
     [string]$SessionPath = "",
     [string]$AuditPath = "",
+    [string]$CycleChainAuditPath = "",
     [string]$ReadinessPath = "",
     [string]$ValidationMatrixPath = "",
     [switch]$OutputPathOnly,
@@ -216,6 +217,20 @@ if ([string]::IsNullOrWhiteSpace($resolvedAuditPath)) {
     }
 }
 
+$resolvedCycleChainAuditPath = $CycleChainAuditPath
+if ([string]::IsNullOrWhiteSpace($resolvedCycleChainAuditPath)) {
+    $candidate = if ([string]::IsNullOrWhiteSpace($RunLabel)) {
+        Get-LatestFile -Path (Join-Path $RepoRoot "status\cycle-chain-audits") -Filter "*.md"
+    }
+    else {
+        Get-FileByRunLabel -Path (Join-Path $RepoRoot "status\cycle-chain-audits") -Filter "*.md" -RunLabel $RunLabel
+    }
+
+    if ($candidate) {
+        $resolvedCycleChainAuditPath = $candidate.FullName
+    }
+}
+
 $resolvedReadinessPath = if ([string]::IsNullOrWhiteSpace($ReadinessPath)) {
     Join-Path $RepoRoot "status\readiness\CURRENT-READINESS.md"
 }
@@ -280,6 +295,7 @@ $releaseEvidenceLines = @(
     "- VM Report: $(Get-ResolvedPathOrDefault -Value $resolvedVmReportPath -DefaultValue "not-recorded-yet")",
     "- Session Summary: $(Get-ResolvedPathOrDefault -Value $resolvedSessionPath -DefaultValue "not-recorded-yet")",
     "- Session Audit: $(Get-ResolvedPathOrDefault -Value $resolvedAuditPath -DefaultValue "not-recorded-yet")",
+    "- Cycle Chain Audit: $(Get-ResolvedPathOrDefault -Value $resolvedCycleChainAuditPath -DefaultValue "not-recorded-yet")",
     "- Readiness: $(Get-ResolvedPathOrDefault -Value $resolvedReadinessPath -DefaultValue "not-recorded-yet")",
     "- Validation Matrix: $(Get-ResolvedPathOrDefault -Value $resolvedValidationMatrixPath -DefaultValue "not-recorded-yet")"
 ) -join "`r`n"

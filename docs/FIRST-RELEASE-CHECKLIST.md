@@ -25,7 +25,7 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Run smoke checks
 - [ ] Export diagnostics
 - [ ] Finish the cycle with `.\scripts\finish-vm-test-cycle.ps1`
-- [ ] Review blockers, readiness, and validation matrix
+- [ ] Review blockers, readiness, validation matrix, and cycle-chain audit
 
 ## Login-Test Build
 - [ ] Run `./scripts/build-iso-arch.sh --mode login-test`
@@ -40,12 +40,13 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Confirm theming and runtime behavior
 - [ ] Export diagnostics
 - [ ] Finish the cycle with `.\scripts\finish-vm-test-cycle.ps1`
-- [ ] Review blockers, readiness, and validation matrix
+- [ ] Review blockers, readiness, validation matrix, and cycle-chain audit
 
 ## Release Gate
 - [ ] `status/readiness/CURRENT-READINESS.md` is no longer `needs-build`
 - [ ] `status/validation-matrix/CURRENT-VALIDATION-MATRIX.md` shows acceptable mode coverage
 - [ ] No blocking issue remains for the chosen release candidate
+- [ ] The selected run has a passing or acceptable cycle-chain audit
 - [ ] ISO checksum is generated
 - [ ] Release notes are written
 - [ ] `.\scripts\prepare-release-package.ps1 -Version "<version>" -IsoPath "<path-to-iso>" -Mode stable -RunLabel "<run-label>"` has been run

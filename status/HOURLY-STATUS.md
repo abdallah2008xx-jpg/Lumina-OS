@@ -5,24 +5,24 @@ Update it once per work block or roughly every hour.
 
 ## Current Block
 - **Date:** 2026-04-01
-- **Time:** 08:13 PDT
-- **Focus:** Making generated cycle handoffs mode-aware so `stable` and `login-test` no longer share the same generic acceptance script
+- **Time:** 09:24 PDT
+- **Focus:** Adding cycle-chain auditing so one labeled run can be checked for evidence drift before release prep
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
-- Added mode-specific focus, in-session checks, review notes, and release guidance to the generated cycle handoff
-- Expanded the workflow smoke test so it now verifies both `stable` and `login-test` handoff content
-- Updated build and VM docs so the handoff generator is described as mode-aware instead of generic
-- Kept CI aligned with the stronger handoff generator
+- Added a new cycle-chain audit script for `Run Label` consistency across build, VM, session, blocker, readiness, and validation files
+- Wired cycle-chain auditing into `finish-vm-test-cycle.ps1` and release-package evidence
+- Fixed the workflow smoke test so its release-path `Run Label` is explicit and the new cycle-chain audit is exercised in CI
+- Updated release and reporting docs so the new evidence check is part of the normal workflow
 
 ## In Progress
-- Re-validating the repo after the mode-aware handoff pass and preparing the next commit
+- Re-validating the repo after the cycle-chain audit pass and preparing the next commit
 
 ## Next Hour
-- Run validation and push the mode-aware handoff pass to GitHub
+- Run validation and push the cycle-chain audit pass to GitHub
 - Keep the build/test workflow stable and ready for the first Arch-side `stable` build
 - Move execution to an actual Arch environment for the first real ISO build
-- Use the new `login-test` handoff wording during the first real manual-login cycle
+- Use the new cycle-chain audit during the first real labeled VM cycle before release prep
 
 ## Blockers
 - Actual ISO building is blocked in the current Windows workspace; `mkarchiso` must run inside an Arch environment
@@ -35,6 +35,7 @@ Update it once per work block or roughly every hour.
 - Prefer a generated handoff file before the first serious stable cycle so every step is written down once
 - Let CI exercise the workflow scripts themselves, not only the repo structure
 - Let the selected mode decide the operator checklist instead of reusing one merged path
+- Treat release prep as blocked if the recorded run no longer points to one clean evidence chain
 
 ## Ready-to-Send Mini Update
-Lumina-OS now generates different handoffs for `stable` and `login-test`, and CI checks both paths so the operator sees the right acceptance target for each mode.
+Lumina-OS now audits whether a labeled run still has one clean evidence chain from build through readiness, and CI exercises that release path before the first real ISO run.

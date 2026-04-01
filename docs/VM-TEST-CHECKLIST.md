@@ -60,6 +60,7 @@ The finish step now also updates:
 - `status/test-session-audits/`
 - `status/blockers/CURRENT-BLOCKERS.md`
 - `status/blockers/YYYY-MM-DD/`
+- `status/cycle-chain-audits/YYYY-MM-DD/`
 - `status/readiness/CURRENT-READINESS.md`
 - `status/readiness/YYYY-MM-DD/`
 - `status/validation-matrix/CURRENT-VALIDATION-MATRIX.md`

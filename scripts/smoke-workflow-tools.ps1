@@ -20,6 +20,7 @@ function Assert-Condition {
 }
 
 $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
+$cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
 $releaseValidator = Join-Path $PSScriptRoot "validate-release-package.ps1"
 
 if (-not (Test-Path $handoffScript)) {
@@ -28,6 +29,10 @@ if (-not (Test-Path $handoffScript)) {
 
 if (-not (Test-Path $releaseValidator)) {
     throw "Missing smoke-test target: $releaseValidator"
+}
+
+if (-not (Test-Path $cycleChainAuditScript)) {
+    throw "Missing smoke-test target: $cycleChainAuditScript"
 }
 
 foreach ($handoffCase in @(
@@ -70,6 +75,7 @@ $tempRoot = Join-Path $env:TEMP ("lumina-workflow-smoke-" + [guid]::NewGuid().To
 New-Item -ItemType Directory -Path $tempRoot | Out-Null
 
 try {
+    $smokeRunLabel = "ci-release-smoke"
     $isoPath = Join-Path $tempRoot "lumina-smoke.iso"
     $notesPath = Join-Path $tempRoot "release-notes.md"
     $checksumPath = Join-Path $tempRoot "SHA256SUMS.txt"
@@ -77,22 +83,40 @@ try {
     $vmPath = Join-Path $tempRoot "vm-report.md"
     $sessionPath = Join-Path $tempRoot "session-summary.md"
     $auditPath = Join-Path $tempRoot "session-audit.md"
+    $blockersPath = Join-Path $tempRoot "blocker-review.md"
     $readinessPath = Join-Path $tempRoot "CURRENT-READINESS.md"
     $validationPath = Join-Path $tempRoot "CURRENT-VALIDATION-MATRIX.md"
-    $blockersPath = Join-Path $tempRoot "CURRENT-BLOCKERS.md"
     $manifestPath = Join-Path $tempRoot "release-manifest.md"
 
     Set-Content -Path $isoPath -Value "lumina-smoke-iso" -Encoding ASCII
     $isoHash = (Get-FileHash -Algorithm SHA256 -Path $isoPath).Hash.ToLowerInvariant()
     Set-Content -Path $checksumPath -Value "$isoHash *lumina-smoke.iso" -Encoding ASCII
     Set-Content -Path $notesPath -Value "# Lumina Smoke Notes" -Encoding UTF8
-    Set-Content -Path $buildPath -Value "# Build`r`n`r`n- Mode: stable`r`n- Run Label: $smokeRunLabel" -Encoding UTF8
+    Set-Content -Path $buildPath -Value "# Build`r`n`r`n- Mode: stable`r`n- Run Label: $smokeRunLabel`r`n- Full Path: $isoPath" -Encoding UTF8
     Set-Content -Path $vmPath -Value "# VM`r`n`r`n- Mode: stable`r`n- Run Label: $smokeRunLabel" -Encoding UTF8
-    Set-Content -Path $sessionPath -Value "# Session`r`n`r`n- Mode: stable`r`n- Run Label: $smokeRunLabel" -Encoding UTF8
-    Set-Content -Path $auditPath -Value "# Audit`r`n`r`n- Audit State: passed`r`n- Run Label: $smokeRunLabel" -Encoding UTF8
-    Set-Content -Path $blockersPath -Value "# Blockers`r`n`r`n- Overall State: clear" -Encoding UTF8
-    Set-Content -Path $readinessPath -Value "# Readiness`r`n`r`n- Readiness State: ready-for-next-stage`r`n- Blocker Source: $blockersPath" -Encoding UTF8
-    Set-Content -Path $validationPath -Value "# Validation`r`n`r`n- Overall State: ready-for-next-stage" -Encoding UTF8
+    Set-Content -Path $sessionPath -Value "# Session`r`n`r`n- Date: 2026-04-01`r`n- Mode: stable`r`n- Run Label: $smokeRunLabel`r`n- Build Manifest: $buildPath`r`n- VM Report: $vmPath" -Encoding UTF8
+    Set-Content -Path $auditPath -Value "# Audit`r`n`r`n- Overall Status: pass`r`n- Run Label: $smokeRunLabel`r`n- Session Path: $sessionPath" -Encoding UTF8
+    Set-Content -Path $blockersPath -Value "# Blockers`r`n`r`n- Run Label: $smokeRunLabel`r`n- Overall State: clear`r`n- Session Path: $sessionPath`r`n- VM Report Path: $vmPath`r`n- Audit Path: $auditPath" -Encoding UTF8
+    Set-Content -Path $readinessPath -Value "# Readiness`r`n`r`n- Run Label: $smokeRunLabel`r`n- Readiness State: ready-for-next-stage`r`n- Mode: stable`r`n- Build Manifest: $buildPath`r`n- Session Summary: $sessionPath`r`n- Session Audit: $auditPath`r`n- Blocker Source: $blockersPath" -Encoding UTF8
+    Set-Content -Path $validationPath -Value "# Validation`r`n`r`n- Overall State: ready-for-next-stage`r`n`r`n## Mode Summary`r`n- stable: ready-for-next-stage" -Encoding UTF8
+
+    $cycleChainAuditPath = & $cycleChainAuditScript `
+        -BuildManifestPath $buildPath `
+        -VmReportPath $vmPath `
+        -SessionPath $sessionPath `
+        -AuditPath $auditPath `
+        -BlockerPath $blockersPath `
+        -ReadinessPath $readinessPath `
+        -ValidationMatrixPath $validationPath `
+        -RunLabel $smokeRunLabel `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $cycleChainAuditPath) -Message "Cycle chain audit report was not created."
+
+    $cycleChainContent = Get-Content -Raw $cycleChainAuditPath
+    Assert-Condition -Condition ($cycleChainContent -match [regex]::Escape("- Overall Status: pass")) -Message "Cycle chain audit did not pass."
+    Assert-Condition -Condition ($cycleChainContent -match [regex]::Escape("- Run Label: $smokeRunLabel")) -Message "Cycle chain audit does not contain the expected run label."
 
     $manifestContent = @"
 # Lumina-OS Release Manifest
@@ -109,6 +133,7 @@ try {
 - VM Report: $vmPath
 - Session Summary: $sessionPath
 - Session Audit: $auditPath
+- Cycle Chain Audit: $cycleChainAuditPath
 - Readiness: $readinessPath
 - Validation Matrix: $validationPath
 "@

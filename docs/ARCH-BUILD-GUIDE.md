@@ -27,7 +27,7 @@ The Windows helper below now runs the same validation automatically before print
 .\scripts\build-iso.ps1 -Mode stable
 ```
 
-It now also prints a suggested `Run Label`. Reuse that same label during the VM cycle so the build manifest, VM report, session summary, readiness snapshot, and release package stay linked.
+It now also prints a suggested `Run Label`. Reuse that same label during the VM cycle so the build manifest, VM report, session summary, readiness snapshot, cycle-chain audit, and release package stay linked.
 
 If you want one generated runbook for the whole cycle, create it first:
 

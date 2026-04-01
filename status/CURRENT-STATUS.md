@@ -60,6 +60,7 @@
 - generated cycle handoffs now exist so a full `build -> VM -> release` run can be executed from one stored runbook
 - GitHub Actions now smoke-tests the handoff and release-validation tools instead of validating file presence only
 - generated cycle handoffs now adapt their checklist content to `stable` or `login-test`
+- cycle-chain audits now verify that build, VM, session, blockers, readiness, and release evidence stay attached to the same run label
 
 ## Active Focus
 - prepare and execute the first serious Arch-side build attempt
@@ -85,6 +86,7 @@
 - keep generated cycle handoffs aligned with the real script flow so operators can trust them during the first build
 - keep CI aligned with the workflow scripts so regressions are caught before the first real ISO cycle
 - keep the mode-specific handoff language aligned with the real acceptance target for each build mode
+- keep the cycle-chain audit aligned with finish-cycle and release-package output so evidence drift is caught early
 
 ## Next
 - run `stable` and `login-test` builds in a real Arch environment
@@ -110,6 +112,7 @@
 - confirm the new Welcome, Update Center, and SDDM polish behaves correctly inside the ISO
 - run the first end-to-end release package and GitHub publish flow after the first successful build
 - run the first release validation report from a real evidence-backed manifest
+- review the first real cycle-chain audit from an end-to-end labeled run
 - validate the new build-manifest run-label linkage during the first real `stable` cycle
 - validate the first generated cycle handoff during the first real `stable` cycle
 - observe the first GitHub Actions run that includes the workflow smoke tests

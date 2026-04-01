@@ -11,6 +11,7 @@ Keep reporting lightweight.
 - `HOURLY-STATUS-TEMPLATE.md` -> copy from this for new updates
 - `builds/` -> Arch-side build manifests
 - `cycle-handoffs/` -> generated runbooks for full build/VM/release cycles
+- `cycle-chain-audits/` -> run-label evidence-link audits across build, VM, session, blockers, and readiness
 - `vm-tests/` -> VM test reports grouped by date
 - `diagnostics/` -> imported diagnostics bundles from live-session exports
 - `releases/` -> prepared release manifests, draft notes, checksums, release validation reports, and GitHub publish records
@@ -32,6 +33,7 @@ Keep reporting lightweight.
 9. Sync blockers so the current run has a central blocker state
 10. Sync readiness so the current run has a single high-level go/no-go status
 11. Sync the validation matrix so both build modes are tracked side by side
+12. Review the cycle-chain audit before treating a run as the clean release candidate
 
 ## What to Record
 - What was finished

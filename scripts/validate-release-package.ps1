@@ -96,6 +96,7 @@ $buildManifestPath = Resolve-ExistingPath -Label "Build Manifest" -Value (Get-Me
 $vmReportPath = Resolve-ExistingPath -Label "VM Report" -Value (Get-MetadataValue -Content $manifestContent -Label "VM Report") -Errors $errors
 $sessionPath = Resolve-ExistingPath -Label "Session Summary" -Value (Get-MetadataValue -Content $manifestContent -Label "Session Summary") -Errors $errors
 $auditPath = Resolve-ExistingPath -Label "Session Audit" -Value (Get-MetadataValue -Content $manifestContent -Label "Session Audit") -Errors $errors
+$cycleChainAuditPath = Resolve-ExistingPath -Label "Cycle Chain Audit" -Value (Get-MetadataValue -Content $manifestContent -Label "Cycle Chain Audit") -Errors $errors
 $readinessPath = Resolve-ExistingPath -Label "Readiness" -Value (Get-MetadataValue -Content $manifestContent -Label "Readiness") -Errors $errors
 $validationMatrixPath = Resolve-ExistingPath -Label "Validation Matrix" -Value (Get-MetadataValue -Content $manifestContent -Label "Validation Matrix") -Errors $errors
 
@@ -174,6 +175,28 @@ if (-not [string]::IsNullOrWhiteSpace($auditPath)) {
 
     if ($auditState -eq "failed") {
         Add-ValidationItem -Bucket $errors -Message "Session audit reports a failed state."
+    }
+}
+
+if (-not [string]::IsNullOrWhiteSpace($cycleChainAuditPath)) {
+    $cycleChainContent = Get-Content -Raw $cycleChainAuditPath
+    $cycleChainState = Get-StateValue -Content $cycleChainContent -Labels @("Overall Status", "Overall State")
+    $cycleChainRunLabel = Get-MetadataValue -Content $cycleChainContent -Label "Run Label"
+
+    if ($cycleChainState -eq "fail") {
+        Add-ValidationItem -Bucket $errors -Message "Cycle chain audit reports a failed state."
+    }
+    elseif ($cycleChainState -eq "warning") {
+        Add-ValidationItem -Bucket $warnings -Message "Cycle chain audit reports warnings. Review the evidence chain before publishing."
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace($cycleChainState)) {
+        Add-ValidationItem -Bucket $notes -Message "Cycle chain audit state is acceptable for release gating: $cycleChainState"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
+        -not [string]::IsNullOrWhiteSpace($cycleChainRunLabel) -and
+        $cycleChainRunLabel -ne $runLabel) {
+        Add-ValidationItem -Bucket $errors -Message "Cycle chain audit Run Label does not match the release manifest Run Label."
     }
 }
 

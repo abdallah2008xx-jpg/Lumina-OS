@@ -31,6 +31,7 @@ This file gives one fast answer to two questions:
 - cycle-chain audits now verify that the recorded build/test evidence still points at the same run before release prep
 - release-candidate summaries now show whether a prepared package is blocked, ready to publish, or already published
 - release publishing can now refresh the same candidate summary automatically instead of leaving stale pre-publish state behind
+- GitHub publish now checks that the chosen release manifest still matches the current release candidate before creation
 - release packaging and GitHub release publishing now both have dedicated scripts and status records
 - release publishing is now guarded by a dedicated release-package validation pass
 - GitHub Actions now smoke-tests key workflow tools instead of only running structural validation

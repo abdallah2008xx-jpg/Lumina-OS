@@ -105,6 +105,7 @@ required_paths=(
     "${repo_root}/scripts/prepare-release-package.ps1"
     "${repo_root}/scripts/prepare-release-candidate.ps1"
     "${repo_root}/scripts/sync-release-candidate-status.ps1"
+    "${repo_root}/scripts/validate-github-release-context.ps1"
     "${repo_root}/scripts/validate-release-package.ps1"
     "${repo_root}/scripts/publish-github-release.ps1"
     "${repo_root}/status/builds/README.md"

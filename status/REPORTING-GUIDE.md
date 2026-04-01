@@ -37,6 +37,7 @@ Keep reporting lightweight.
 12. Review the cycle-chain audit before treating a run as the clean release candidate
 13. Prepare a release candidate so publish readiness has one current summary file
 14. Refresh the same release candidate after publish so the current summary reflects the published state
+15. Keep the GitHub release context report with the release package so publish intent stays auditable
 
 ## What to Record
 - What was finished

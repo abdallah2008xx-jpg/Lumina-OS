@@ -23,6 +23,7 @@ $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
 $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
 $releaseCandidateScript = Join-Path $PSScriptRoot "prepare-release-candidate.ps1"
 $syncReleaseCandidateScript = Join-Path $PSScriptRoot "sync-release-candidate-status.ps1"
+$releaseContextScript = Join-Path $PSScriptRoot "validate-github-release-context.ps1"
 $releaseValidator = Join-Path $PSScriptRoot "validate-release-package.ps1"
 
 if (-not (Test-Path $handoffScript)) {
@@ -39,6 +40,10 @@ if (-not (Test-Path $releaseCandidateScript)) {
 
 if (-not (Test-Path $syncReleaseCandidateScript)) {
     throw "Missing smoke-test target: $syncReleaseCandidateScript"
+}
+
+if (-not (Test-Path $releaseContextScript)) {
+    throw "Missing smoke-test target: $releaseContextScript"
 }
 
 if (-not (Test-Path $releaseValidator)) {
@@ -157,6 +162,19 @@ try {
     $validationContent = Get-Content -Raw $validationReportPath
     Assert-Condition -Condition ($validationContent -match [regex]::Escape("- Result: passed")) -Message "Release validation report did not pass."
     Assert-Condition -Condition ($validationContent -match [regex]::Escape("- Run Label: $smokeRunLabel")) -Message "Release validation report does not contain the expected run label."
+
+    $contextReportPath = & $releaseContextScript `
+        -ReleaseManifestPath $releaseManifestPath `
+        -Owner "abdallah2008xx-jpg" `
+        -Repo "Lumina-OS" `
+        -Token "ci-fake-token" `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $contextReportPath) -Message "GitHub release context report was not created."
+    $contextContent = Get-Content -Raw $contextReportPath
+    Assert-Condition -Condition ($contextContent -match [regex]::Escape("- Overall State: pass")) -Message "GitHub release context did not pass."
+    Assert-Condition -Condition ($contextContent -match [regex]::Escape("- GitHub Repository: abdallah2008xx-jpg/Lumina-OS")) -Message "GitHub release context report does not contain the expected repository."
 
     $publishRecordPath = Join-Path (Split-Path -Parent $releaseManifestPath) "github-release-publish.md"
     Set-Content -Path $publishRecordPath -Value "# Publish`r`n`r`n- Run Label: $smokeRunLabel`r`n- Release URL: https://example.com/releases/v0.1.0-ci`r`n- Release ID: 12345" -Encoding UTF8

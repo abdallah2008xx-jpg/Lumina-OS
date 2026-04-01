@@ -24,6 +24,7 @@ This project follows a simple rule for now:
 - Cycle-chain audits for build/VM/session/blocker/readiness consistency before release prep
 - Release-candidate preparation and current publish-readiness summaries
 - Release-candidate sync after GitHub publish
+- GitHub release-context validation before publish
 
 ### Changed
 - Live-system UI wording now presents the distro as `Lumina-OS`

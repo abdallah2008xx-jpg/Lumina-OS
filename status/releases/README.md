@@ -18,6 +18,7 @@ Store prepared release packages here.
 4. Review the generated `release-manifest.md`
 5. Review the generated `release-notes.md`
 6. Confirm the linked cycle-chain audit reflects the intended run
-7. Run `scripts/publish-github-release.ps1` with the prepared manifest
-8. Confirm `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md` now shows the published state
-9. Verify the ISO and `SHA256SUMS.txt` assets in GitHub Releases
+7. Run `scripts/validate-github-release-context.ps1`
+8. Run `scripts/publish-github-release.ps1` with the prepared manifest
+9. Confirm `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md` now shows the published state
+10. Verify the ISO and `SHA256SUMS.txt` assets in GitHub Releases

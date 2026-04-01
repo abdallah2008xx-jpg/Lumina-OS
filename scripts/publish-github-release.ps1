@@ -9,6 +9,7 @@ param(
     [switch]$Ready,
     [switch]$AllowAttentionState,
     [switch]$SkipValidationGate,
+    [switch]$SkipContextGate,
     [switch]$OutputPathOnly,
     [string]$RepoRoot = ""
 )
@@ -110,9 +111,14 @@ $manifestContent = Get-Content -Raw $resolvedManifestPath
 $releaseDir = Split-Path -Parent $resolvedManifestPath
 $validationReportPath = Join-Path $releaseDir "release-validation.md"
 $syncCandidateScript = Join-Path $PSScriptRoot "sync-release-candidate-status.ps1"
+$contextValidatorScript = Join-Path $PSScriptRoot "validate-github-release-context.ps1"
 
 if (-not (Test-Path $syncCandidateScript)) {
     throw "Release candidate sync script is missing: $syncCandidateScript"
+}
+
+if (-not (Test-Path $contextValidatorScript)) {
+    throw "GitHub release context validator is missing: $contextValidatorScript"
 }
 
 if (-not $SkipValidationGate.IsPresent) {
@@ -176,6 +182,21 @@ else {
     throw "No GitHub token found. Set LUMINA_GITHUB_TOKEN or GITHUB_TOKEN, or pass -Token."
 }
 
+$contextReportPath = Join-Path $releaseDir "github-release-context.md"
+
+if (-not $SkipContextGate.IsPresent) {
+    $contextArgs = @{
+        ReleaseManifestPath = $resolvedManifestPath
+        Owner = $resolvedOwner
+        Repo = $resolvedRepo
+        Token = $resolvedToken
+        RepoRoot = $RepoRoot
+        OutputPathOnly = $true
+    }
+
+    $contextReportPath = & $contextValidatorScript @contextArgs
+}
+
 $releaseNotes = Get-Content -Raw $releaseNotesPath
 $tagName = if ($version.StartsWith("v")) { $version } else { "v$version" }
 $releaseName = "Lumina-OS $version"
@@ -229,6 +250,7 @@ $publishRecord = @"
 - Target Commitish: $TargetCommitish
 - Release Manifest: $resolvedManifestPath
 - Validation Report: $(if (Test-Path $validationReportPath) { $validationReportPath } else { "not-recorded-yet" })
+- Context Report: $(if (Test-Path $contextReportPath) { $contextReportPath } else { "not-recorded-yet" })
 - Release Notes: $releaseNotesPath
 - Release URL: $($createdRelease.html_url)
 - Release ID: $($createdRelease.id)

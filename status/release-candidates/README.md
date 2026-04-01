@@ -11,6 +11,7 @@ Keep the latest prepared release candidate state here.
 1. Finish a real labeled build and VM evidence chain
 2. Run `scripts/prepare-release-candidate.ps1`
 3. Review `CURRENT-RELEASE-CANDIDATE.md`
-4. If the candidate is clean, publish it with `scripts/publish-github-release.ps1`
-5. Let `scripts/sync-release-candidate-status.ps1` refresh the candidate to `published`
-6. Keep the candidate summary as the release trace even after publish
+4. Validate the GitHub publish context against the current candidate
+5. If the candidate is clean, publish it with `scripts/publish-github-release.ps1`
+6. Let `scripts/sync-release-candidate-status.ps1` refresh the candidate to `published`
+7. Keep the candidate summary as the release trace even after publish

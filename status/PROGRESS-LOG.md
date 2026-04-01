@@ -77,3 +77,4 @@
 - Added cycle-chain auditing so one labeled run can be checked for build/VM/session/blocker/readiness consistency before release prep
 - Added release-candidate preparation so prepared manifests and validation reports now produce one current publish-readiness summary
 - Added release-candidate sync so GitHub publish can update the same summary to a published state
+- Added GitHub release-context validation so publish now checks manifest/candidate alignment before release creation

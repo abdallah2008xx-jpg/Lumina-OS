@@ -5,24 +5,24 @@ Update it once per work block or roughly every hour.
 
 ## Current Block
 - **Date:** 2026-04-01
-- **Time:** 10:07 PDT
-- **Focus:** Keeping release-candidate summaries in sync after GitHub publish so the repo reflects the true latest release state
+- **Time:** 10:21 PDT
+- **Focus:** Adding a local GitHub publish context gate so stale manifests cannot be published by accident
 - **Owner:** Abdallah / assistant
 
 ## Done This Hour
-- Added a release-candidate sync path so candidate summaries can be refreshed without rerunning package prep
-- Wired GitHub publish to refresh the release-candidate summary after writing the publish record
-- Extended the workflow smoke test to verify the candidate can move from `ready-to-publish` to `published`
-- Updated docs so the publish path now includes candidate-state confirmation
+- Added a GitHub release context validator tied to the current release candidate and manifest
+- Wired GitHub publish to call the context gate before creating the release
+- Extended the workflow smoke test to verify the context gate before the simulated published-state transition
+- Updated release docs so publish now includes an explicit context-validation step
 
 ## In Progress
-- Re-validating the repo after the release-candidate sync pass and preparing the next commit
+- Re-validating the repo after the GitHub publish context pass and preparing the next commit
 
 ## Next Hour
-- Run validation and push the release-candidate sync pass to GitHub
+- Run validation and push the GitHub publish context pass to GitHub
 - Keep the build/test workflow stable and ready for the first Arch-side `stable` build
 - Move execution to an actual Arch environment for the first real ISO build
-- Use the new release-candidate summary during the first real labeled VM cycle before and after publish
+- Use the new release-candidate summary and context report during the first real labeled VM cycle before publish
 
 ## Blockers
 - Actual ISO building is blocked in the current Windows workspace; `mkarchiso` must run inside an Arch environment
@@ -38,6 +38,7 @@ Update it once per work block or roughly every hour.
 - Treat release prep as blocked if the recorded run no longer points to one clean evidence chain
 - Treat publish readiness as a first-class tracked state, not just a set of loose files under `status/releases/`
 - Treat the published state as another tracked transition, not something inferred manually from GitHub only
+- Treat publish context as its own gate so the chosen manifest must still match the current candidate
 
 ## Ready-to-Send Mini Update
-Lumina-OS now refreshes the same release-candidate summary after publish, so the repo can show `published` state without manually reconciling release files and GitHub.
+Lumina-OS now validates the GitHub publish context against the current release candidate before release creation, so a stale manifest is much less likely to be published by mistake.

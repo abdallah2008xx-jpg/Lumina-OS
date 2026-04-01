@@ -37,14 +37,30 @@ jobs:
         mode:
           - stable
           - login-test
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.build_set == 'all' || github.event.inputs.build_set == matrix.mode
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Resolve build selection
+        id: selection
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          skip="false"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            selected_set="${{ github.event.inputs.build_set }}"
+            if [[ "${selected_set}" != "all" && "${selected_set}" != "${{ matrix.mode }}" ]]; then
+              skip="true"
+            fi
+          fi
+
+          echo "skip=${skip}" >> "${GITHUB_OUTPUT}"
+
       - name: Resolve run label
         id: meta
+        if: steps.selection.outputs.skip != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -60,10 +76,12 @@ jobs:
           echo "run_label=${run_label}" >> "${GITHUB_OUTPUT}"
 
       - name: Pull official Arch Linux image
+        if: steps.selection.outputs.skip != 'true'
         shell: bash
         run: sudo docker pull archlinux:base-devel
 
       - name: Build ISO inside Arch container
+        if: steps.selection.outputs.skip != 'true'
         shell: bash
         env:
           MODE: ${{ matrix.mode }}
@@ -93,12 +111,14 @@ jobs:
             '
 
       - name: Restore workspace ownership
+        if: steps.selection.outputs.skip != 'true'
         shell: bash
         run: |
           set -euo pipefail
           sudo chown -R "$(id -u):$(id -g)" "${GITHUB_WORKSPACE}/build" "${GITHUB_WORKSPACE}/status"
 
       - name: Summarize build output
+        if: steps.selection.outputs.skip != 'true'
         shell: bash
         env:
           MODE: ${{ matrix.mode }}
@@ -120,6 +140,7 @@ jobs:
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Upload ISO artifact
+        if: steps.selection.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: lumina-os-${{ matrix.mode }}-${{ steps.meta.outputs.run_label }}
@@ -129,3 +150,14 @@ jobs:
             status/builds/*.md
           if-no-files-found: error
           retention-days: 14
+
+      - name: Summarize skipped mode
+        if: steps.selection.outputs.skip == 'true'
+        shell: bash
+        run: |
+          {
+            echo "## Lumina-OS ${{ matrix.mode }} build"
+            echo ""
+            echo "- Status: skipped"
+            echo "- Reason: workflow_dispatch selected a different build set"
+          } >> "${GITHUB_STEP_SUMMARY}"

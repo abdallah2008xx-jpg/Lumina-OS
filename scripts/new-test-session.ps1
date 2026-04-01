@@ -240,6 +240,18 @@ $isoDisplay = Get-RecordedValue -PreferredValue $IsoPath -FallbackValue $(if ([s
 $diagnosticsDisplay = Get-RecordedValue -PreferredValue $DiagnosticsBundlePath -FallbackValue $(if ([string]::IsNullOrWhiteSpace($existingDiagnosticsBundlePath)) { "not-recorded-yet" } else { $existingDiagnosticsBundlePath })
 $diagnosticsImportPath = Get-RecordedValue -PreferredValue $DiagnosticsImportPath -FallbackValue (Get-RecordedValue -PreferredValue $(if ($latestDiagnosticsImport) { $latestDiagnosticsImport.FullName } else { "" }) -FallbackValue $(if ([string]::IsNullOrWhiteSpace($existingDiagnosticsImportPath)) { "not-recorded-yet" } else { $existingDiagnosticsImportPath }))
 
+if (-not [string]::IsNullOrWhiteSpace($buildManifestPath) -and $buildManifestPath -ne "not-recorded-yet" -and (Test-Path $buildManifestPath)) {
+    $buildManifestPath = (Resolve-Path $buildManifestPath).Path
+}
+
+if (-not [string]::IsNullOrWhiteSpace($vmReportPath) -and $vmReportPath -ne "not-recorded-yet" -and (Test-Path $vmReportPath)) {
+    $vmReportPath = (Resolve-Path $vmReportPath).Path
+}
+
+if (-not [string]::IsNullOrWhiteSpace($diagnosticsImportPath) -and $diagnosticsImportPath -ne "not-recorded-yet" -and (Test-Path $diagnosticsImportPath)) {
+    $diagnosticsImportPath = (Resolve-Path $diagnosticsImportPath).Path
+}
+
 $buildManifestRecorded = Get-ChecklistMark $buildManifestPath
 $vmReportRecorded = Get-ChecklistMark $vmReportPath
 $diagnosticsBundleRecorded = Get-ChecklistMark $diagnosticsDisplay

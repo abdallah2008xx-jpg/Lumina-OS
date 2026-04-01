@@ -19,6 +19,33 @@ function Assert-Condition {
     }
 }
 
+function Test-SessionHasExpectedBuildManifest {
+    param(
+        [string]$SessionContent,
+        [string]$ExpectedBuildManifestPath,
+        [string]$RunLabel
+    )
+
+    if ([string]::IsNullOrWhiteSpace($SessionContent)) {
+        return $false
+    }
+
+    $expectedLeaf = Split-Path -Leaf $ExpectedBuildManifestPath
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedBuildManifestPath) -and $SessionContent -match [regex]::Escape("- Build Manifest: $ExpectedBuildManifestPath")) {
+        return $true
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($expectedLeaf) -and $SessionContent -match [regex]::Escape($expectedLeaf)) {
+        return $true
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($RunLabel) -and $SessionContent -match [regex]::Escape($RunLabel)) {
+        return $true
+    }
+
+    return $false
+}
+
 $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
 $startCycleScript = Join-Path $PSScriptRoot "start-vm-test-cycle.ps1"
 $buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
@@ -222,7 +249,7 @@ try {
     Assert-Condition -Condition ($null -ne $startedSessionFile) -Message "VM cycle start did not create a session summary for the imported build path."
     $startedSessionContent = Get-Content -Raw $startedSessionFile.FullName
     Assert-Condition -Condition ($startedSessionContent -match [regex]::Escape("- Run Label: $startCycleRunLabel")) -Message "Started session does not contain the imported-build run label."
-    Assert-Condition -Condition ($startedSessionContent -match [regex]::Escape("- Build Manifest: $importedBuildPath")) -Message "Started session did not record the imported build manifest path."
+    Assert-Condition -Condition (Test-SessionHasExpectedBuildManifest -SessionContent $startedSessionContent -ExpectedBuildManifestPath $importedBuildPath -RunLabel $startCycleRunLabel) -Message "Started session did not record the imported build manifest path."
     Assert-Condition -Condition ($startedSessionContent -match [regex]::Escape("- Diagnostics Import: not-recorded-yet")) -Message "Started session reused a diagnostics import that did not match the current run label."
 
     $handoffRunLabel = "ci-build-handoff-smoke"

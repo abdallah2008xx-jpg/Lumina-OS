@@ -40,6 +40,12 @@ If you also copied the ISO file back from that Arch environment for later releas
 .\scripts\import-iso-artifact.ps1 -IsoPath "C:\Path\To\lumina-os.iso" -Mode stable -RunLabel stable-vbox-pass-01
 ```
 
+If both files came back together in one exported handoff folder, import that folder instead:
+
+```powershell
+.\scripts\import-build-handoff.ps1 -HandoffPath "C:\Path\To\build-handoff-folder"
+```
+
 If you only want the VM report by itself, use:
 
 ```powershell

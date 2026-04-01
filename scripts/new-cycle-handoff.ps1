@@ -176,6 +176,10 @@ If the ISO file is also copied back to Windows for later release prep, import th
 
     .\scripts\import-iso-artifact.ps1 -IsoPath "C:\Path\To\lumina-os.iso" -Mode __MODE__ -RunLabel __RUN_LABEL__
 
+If both the manifest and ISO are copied back together in one handoff folder, import that folder instead:
+
+    .\scripts\import-build-handoff.ps1 -HandoffPath "C:\Path\To\build-handoff-folder"
+
 ## Step 4: Inside The Booted ISO
 Inside the live session, verify:
 __MODE_CHECKS__

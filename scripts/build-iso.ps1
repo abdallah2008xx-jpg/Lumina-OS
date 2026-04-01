@@ -46,3 +46,6 @@ Write-Host ".\scripts\import-build-manifest.ps1 -ManifestPath `"C:\Path\To\build
 Write-Host ""
 Write-Host "If the ISO file itself comes back from that Arch environment, import it too before release prep:"
 Write-Host ".\scripts\import-iso-artifact.ps1 -IsoPath `"C:\Path\To\lumina-os.iso`" -Mode $Mode -RunLabel $resolvedRunLabel"
+Write-Host ""
+Write-Host "Or move both together in one folder and import the complete handoff:"
+Write-Host ".\scripts\import-build-handoff.ps1 -HandoffPath `"C:\Path\To\build-handoff-folder`""

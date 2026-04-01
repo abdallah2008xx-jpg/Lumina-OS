@@ -49,6 +49,12 @@ If the ISO file itself is also copied back from that Arch environment, import it
 .\scripts\import-iso-artifact.ps1 -IsoPath "C:\Path\To\lumina-os.iso" -Mode stable -RunLabel stable-vbox-pass-01
 ```
 
+If you prefer moving the build manifest and ISO together in one folder, import the complete handoff instead:
+
+```powershell
+.\scripts\import-build-handoff.ps1 -HandoffPath "C:\Path\To\build-handoff-folder"
+```
+
 If you are already inside an Arch VM, bootstrap the build environment with:
 
 ```bash
@@ -57,6 +63,11 @@ If you are already inside an Arch VM, bootstrap the build environment with:
 
 Inside Arch, the build helper now runs `scripts/validate-profile.sh` automatically before staging the profile and calling `mkarchiso`.
 After a successful build, it also writes a build manifest under `status/builds/`.
+You can then package the manifest and ISO together for transfer with:
+
+```bash
+./scripts/export-build-handoff.sh --mode stable --run-label stable-vbox-pass-01
+```
 
 ## Build Modes
 ### `stable`

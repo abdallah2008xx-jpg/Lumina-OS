@@ -22,6 +22,7 @@ function Assert-Condition {
 $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
 $startCycleScript = Join-Path $PSScriptRoot "start-vm-test-cycle.ps1"
 $buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
+$buildHandoffImportScript = Join-Path $PSScriptRoot "import-build-handoff.ps1"
 $isoImportScript = Join-Path $PSScriptRoot "import-iso-artifact.ps1"
 $prepareReleasePackageScript = Join-Path $PSScriptRoot "prepare-release-package.ps1"
 $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
@@ -42,6 +43,10 @@ if (-not (Test-Path $startCycleScript)) {
 
 if (-not (Test-Path $buildManifestImportScript)) {
     throw "Missing smoke-test target: $buildManifestImportScript"
+}
+
+if (-not (Test-Path $buildHandoffImportScript)) {
+    throw "Missing smoke-test target: $buildHandoffImportScript"
 }
 
 if (-not (Test-Path $isoImportScript)) {
@@ -189,6 +194,23 @@ try {
     $startedSessionContent = Get-Content -Raw $startedSessionFile.FullName
     Assert-Condition -Condition ($startedSessionContent -match [regex]::Escape("- Run Label: $startCycleRunLabel")) -Message "Started session does not contain the imported-build run label."
     Assert-Condition -Condition ($startedSessionContent -match [regex]::Escape("- Build Manifest: $importedBuildPath")) -Message "Started session did not record the imported build manifest path."
+
+    $handoffRunLabel = "ci-build-handoff-smoke"
+    $handoffDir = Join-Path $tempRoot "arch-build-handoff"
+    New-Item -ItemType Directory -Force -Path $handoffDir | Out-Null
+    Set-Content -Path (Join-Path $handoffDir "build-manifest.md") -Value "# Build`r`n`r`n- Built At: 2026-04-01T11:55:00`r`n- Mode: stable`r`n- Run Label: $handoffRunLabel`r`n- Full Path: /var/tmp/lumina-handoff.iso" -Encoding UTF8
+    Copy-Item -LiteralPath $isoPath -Destination (Join-Path $handoffDir "lumina-handoff.iso") -Force
+    Set-Content -Path (Join-Path $handoffDir "handoff-manifest.md") -Value "# Handoff`r`n`r`n- Mode: stable`r`n- Run Label: $handoffRunLabel" -Encoding UTF8
+
+    $handoffImportSummary = & $buildHandoffImportScript `
+        -HandoffPath $handoffDir `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $handoffImportSummary) -Message "Build handoff import summary was not created."
+    $handoffImportContent = Get-Content -Raw $handoffImportSummary
+    Assert-Condition -Condition ($handoffImportContent -match [regex]::Escape("- Reported Run Label: $handoffRunLabel")) -Message "Build handoff import did not record the reported run label."
+    Assert-Condition -Condition ($handoffImportContent -match [regex]::Escape("- Imported ISO Path:")) -Message "Build handoff import did not record an imported ISO path."
 
     $linuxOnlyBuildRunLabel = "ci-imported-iso-smoke"
     $linuxOnlyBuildPath = Join-Path $tempRoot "linux-only-build-manifest.md"

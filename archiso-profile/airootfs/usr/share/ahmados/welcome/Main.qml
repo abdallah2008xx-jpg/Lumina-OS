@@ -6,9 +6,28 @@ import QtQuick.Window 2.15
 
 ApplicationWindow {
     id: root
-    width: 1280
-    height: 820
+    readonly property int availableScreenWidth: Screen.desktopAvailableWidth > 0 ? Screen.desktopAvailableWidth : Screen.width
+    readonly property int availableScreenHeight: Screen.desktopAvailableHeight > 0 ? Screen.desktopAvailableHeight : Screen.height
+    readonly property bool compact: availableScreenWidth > 0 && availableScreenWidth < 1180 || availableScreenHeight > 0 && availableScreenHeight < 820
+    readonly property bool narrow: availableScreenWidth > 0 && availableScreenWidth < 1050 || availableScreenHeight > 0 && availableScreenHeight < 760
+    readonly property real uiScale: narrow ? 0.82 : compact ? 0.9 : 1.0
+    readonly property int edgeMargin: Math.max(16, Math.round(24 * uiScale))
+    readonly property int panelSpacing: Math.max(12, Math.round(20 * uiScale))
+    readonly property int shellRadius: Math.max(24, Math.round(30 * uiScale))
+    readonly property int shellPadding: Math.max(18, Math.round(28 * uiScale))
+    readonly property int sectionSpacing: Math.max(14, Math.round(22 * uiScale))
+    readonly property int optionSpacing: Math.max(8, Math.round(12 * uiScale))
+    readonly property int heroTitleSize: narrow ? 28 : compact ? 32 : 38
+    readonly property int heroBodySize: narrow ? 14 : compact ? 15 : 17
+    readonly property int headingSize: narrow ? 20 : 22
+    readonly property int cardTitleSize: narrow ? 15 : 18
+    readonly property int labelSize: narrow ? 12 : 13
+    readonly property int choiceTitleSize: narrow ? 16 : 18
+    readonly property int chipTextSize: 11
+    width: availableScreenWidth > 0 ? Math.min(1280, Math.max(920, availableScreenWidth - 40)) : 1280
+    height: availableScreenHeight > 0 ? Math.min(820, Math.max(680, availableScreenHeight - 56)) : 820
     visible: true
+    visibility: compact ? Window.Maximized : Window.Windowed
     title: qsTr("Welcome to Lumina-OS")
     color: "#09131A"
 
@@ -317,22 +336,22 @@ ApplicationWindow {
 
     RowLayout {
         anchors.fill: parent
-        anchors.margins: 24
-        spacing: 20
+        anchors.margins: edgeMargin
+        spacing: panelSpacing
 
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.preferredWidth: 3
-            radius: 30
+            radius: shellRadius
             color: "#D6F7F3ED"
             border.color: lineSoft
             border.width: 1
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 28
-                spacing: 22
+                anchors.margins: shellPadding
+                spacing: sectionSpacing
 
                 RowLayout {
                     Layout.fillWidth: true
@@ -343,30 +362,30 @@ ApplicationWindow {
                         Label {
                             text: "Lumina-OS"
                             color: ink
-                            font.pixelSize: 24
+                            font.pixelSize: compact ? 21 : 24
                             font.bold: true
                         }
 
                         Label {
                             text: qsTr("Live orientation")
                             color: "#5B7180"
-                            font.pixelSize: 13
+                            font.pixelSize: labelSize
                         }
                     }
 
                     Item { Layout.fillWidth: true }
 
                     Rectangle {
-                        width: 48
-                        height: 48
-                        radius: 24
+                        width: Math.max(40, Math.round(48 * uiScale))
+                        height: Math.max(40, Math.round(48 * uiScale))
+                        radius: width / 2
                         color: brand
 
                         Label {
                             anchors.centerIn: parent
                             text: "A"
                             color: ivory
-                            font.pixelSize: 18
+                            font.pixelSize: compact ? 16 : 18
                             font.bold: true
                         }
                     }
@@ -394,7 +413,7 @@ ApplicationWindow {
                     Label {
                         text: pages[currentStep].eyebrow
                         color: brand
-                        font.pixelSize: 12
+                        font.pixelSize: labelSize
                         font.bold: true
                     }
 
@@ -412,7 +431,7 @@ ApplicationWindow {
                             anchors.centerIn: parent
                             text: qsTr("Step %1 of %2").arg(root.currentStep + 1).arg(root.pages.length)
                             color: brand
-                            font.pixelSize: 12
+                            font.pixelSize: labelSize
                             font.bold: true
                         }
                     }
@@ -423,7 +442,7 @@ ApplicationWindow {
                     text: pages[currentStep].title
                     color: ink
                     wrapMode: Text.WordWrap
-                    font.pixelSize: 38
+                    font.pixelSize: heroTitleSize
                     font.bold: true
                 }
 
@@ -433,32 +452,40 @@ ApplicationWindow {
                     color: "#4D6271"
                     wrapMode: Text.WordWrap
                     lineHeight: 1.3
-                    font.pixelSize: 17
+                    font.pixelSize: heroBodySize
                 }
 
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    radius: 24
+                    radius: Math.max(20, Math.round(24 * uiScale))
                     color: "#AAEDF2F4"
                     border.color: "#1409131A"
 
-                    ColumnLayout {
+                    ScrollView {
+                        id: contentScroller
                         anchors.fill: parent
-                        anchors.margins: 24
-                        spacing: 14
+                        anchors.margins: Math.max(16, Math.round(24 * uiScale))
+                        clip: true
+                        padding: 0
+                        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
-                        Label {
-                            text: pages[currentStep].sideTitle
-                            color: ink
-                            font.pixelSize: 18
-                            font.bold: true
-                        }
+                        ColumnLayout {
+                            width: contentScroller.availableWidth
+                            spacing: Math.max(10, Math.round(14 * uiScale))
 
-                        Loader {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            sourceComponent: root.currentContentComponent()
+                            Label {
+                                text: pages[currentStep].sideTitle
+                                color: ink
+                                font.pixelSize: cardTitleSize
+                                font.bold: true
+                                wrapMode: Text.WordWrap
+                            }
+
+                            Loader {
+                                Layout.fillWidth: true
+                                sourceComponent: root.currentContentComponent()
+                            }
                         }
                     }
                 }
@@ -491,162 +518,181 @@ ApplicationWindow {
 
         Rectangle {
             Layout.fillHeight: true
-            Layout.preferredWidth: 360
-            radius: 30
+            Layout.preferredWidth: compact ? 308 : 360
+            radius: shellRadius
             color: "#CC10212D"
             border.color: "#22F7F3ED"
             border.width: 1
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 24
-                spacing: 16
+                anchors.margins: edgeMargin
+                spacing: Math.max(12, Math.round(16 * uiScale))
 
-                Label {
-                    text: qsTr("Session Preview")
-                    color: ivory
-                    font.pixelSize: 22
-                    font.bold: true
-                }
-
-                Label {
-                    text: qsTr("These choices are now written to Lumina-OS config so the session can reuse them after Welcome closes.")
-                    color: mist
-                    wrapMode: Text.WordWrap
-                    font.pixelSize: 14
-                }
-
-                Rectangle {
+                ScrollView {
+                    id: previewScroller
                     Layout.fillWidth: true
-                    radius: 22
-                    color: "#142D6C8A"
-                    border.color: "#222D6C8A"
+                    Layout.fillHeight: true
+                    clip: true
+                    padding: 0
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                     ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        spacing: 10
+                        width: previewScroller.availableWidth
+                        spacing: Math.max(12, Math.round(16 * uiScale))
 
                         Label {
-                            text: qsTr("Current selection")
+                            text: qsTr("Session Preview")
                             color: ivory
-                            font.pixelSize: 16
+                            font.pixelSize: headingSize
                             font.bold: true
                         }
 
                         Label {
-                            text: qsTr("Language") + ": " + root.choiceLabel(root.languageChoices, root.selectedLanguage, qsTr("Arabic"))
+                            text: qsTr("These choices are now written to Lumina-OS config so the session can reuse them after Welcome closes.")
                             color: mist
-                            font.pixelSize: 13
+                            wrapMode: Text.WordWrap
+                            font.pixelSize: compact ? 13 : 14
                         }
 
-                        Label {
-                            text: qsTr("Appearance") + ": " + root.choiceLabel(root.appearanceChoices, root.selectedAppearance, qsTr("Light"))
-                            color: mist
-                            font.pixelSize: 13
+                        Rectangle {
+                            Layout.fillWidth: true
+                            radius: Math.max(18, Math.round(22 * uiScale))
+                            color: "#142D6C8A"
+                            border.color: "#222D6C8A"
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: Math.max(14, Math.round(18 * uiScale))
+                                spacing: Math.max(8, Math.round(10 * uiScale))
+
+                                Label {
+                                    text: qsTr("Current selection")
+                                    color: ivory
+                                    font.pixelSize: cardTitleSize
+                                    font.bold: true
+                                }
+
+                                Label {
+                                    text: qsTr("Language") + ": " + root.choiceLabel(root.languageChoices, root.selectedLanguage, qsTr("Arabic"))
+                                    color: mist
+                                    font.pixelSize: labelSize
+                                    wrapMode: Text.WordWrap
+                                }
+
+                                Label {
+                                    text: qsTr("Appearance") + ": " + root.choiceLabel(root.appearanceChoices, root.selectedAppearance, qsTr("Light"))
+                                    color: mist
+                                    font.pixelSize: labelSize
+                                    wrapMode: Text.WordWrap
+                                }
+
+                                Label {
+                                    text: qsTr("Color scheme") + ": " + root.resolvedColorSchemeLabel()
+                                    color: mist
+                                    font.pixelSize: labelSize
+                                    wrapMode: Text.WordWrap
+                                }
+
+                                Label {
+                                    text: qsTr("Layout") + ": " + root.choiceLabel(root.layoutChoices, root.selectedLayout, qsTr("Balanced"))
+                                    color: mist
+                                    font.pixelSize: labelSize
+                                    wrapMode: Text.WordWrap
+                                }
+
+                                Label {
+                                    text: qsTr("Panel style") + ": " + root.resolvedLookAndFeelLabel()
+                                    color: mist
+                                    font.pixelSize: labelSize
+                                    wrapMode: Text.WordWrap
+                                }
+
+                                Label {
+                                    text: qsTr("Wallpaper") + ": " + root.choiceLabel(root.wallpaperChoices, root.selectedWallpaper, qsTr("Lagoon"))
+                                    color: mist
+                                    font.pixelSize: labelSize
+                                    wrapMode: Text.WordWrap
+                                }
+
+                                Label {
+                                    text: qsTr("Release channel") + ": " + root.choiceLabel(root.channelChoices, root.selectedChannel, qsTr("Stable"))
+                                    color: mist
+                                    font.pixelSize: labelSize
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
                         }
 
-                        Label {
-                            text: qsTr("Color scheme") + ": " + root.resolvedColorSchemeLabel()
-                            color: mist
-                            font.pixelSize: 13
+                        Rectangle {
+                            Layout.fillWidth: true
+                            radius: Math.max(18, Math.round(22 * uiScale))
+                            color: "#14C9895B"
+                            border.color: "#22C9895B"
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: Math.max(14, Math.round(18 * uiScale))
+                                spacing: Math.max(8, Math.round(10 * uiScale))
+
+                                Label {
+                                    text: qsTr("What will apply")
+                                    color: ivory
+                                    font.pixelSize: cardTitleSize
+                                    font.bold: true
+                                }
+
+                                Label {
+                                    text: root.resolvedColorSchemeLabel() + qsTr(" with ") + root.choiceLabel(root.wallpaperChoices, root.selectedWallpaper, qsTr("Lagoon"))
+                                    color: mist
+                                    wrapMode: Text.WordWrap
+                                    font.pixelSize: labelSize
+                                }
+
+                                Label {
+                                    text: root.resolvedLookAndFeelLabel() + qsTr(" for the Plasma shell")
+                                    color: mist
+                                    wrapMode: Text.WordWrap
+                                    font.pixelSize: labelSize
+                                }
+
+                                Label {
+                                    text: qsTr("Update Center will foreground the %1 track").arg(root.choiceLabel(root.channelChoices, root.selectedChannel, qsTr("Stable")))
+                                    color: mist
+                                    wrapMode: Text.WordWrap
+                                    font.pixelSize: labelSize
+                                }
+                            }
                         }
 
-                        Label {
-                            text: qsTr("Layout") + ": " + root.choiceLabel(root.layoutChoices, root.selectedLayout, qsTr("Balanced"))
-                            color: mist
-                            font.pixelSize: 13
-                        }
+                        Rectangle {
+                            Layout.fillWidth: true
+                            radius: Math.max(18, Math.round(22 * uiScale))
+                            color: "#163F8F95"
+                            border.color: "#203F8F95"
 
-                        Label {
-                            text: qsTr("Panel style") + ": " + root.resolvedLookAndFeelLabel()
-                            color: mist
-                            font.pixelSize: 13
-                        }
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: Math.max(14, Math.round(18 * uiScale))
+                                spacing: Math.max(8, Math.round(10 * uiScale))
 
-                        Label {
-                            text: qsTr("Wallpaper") + ": " + root.choiceLabel(root.wallpaperChoices, root.selectedWallpaper, qsTr("Lagoon"))
-                            color: mist
-                            font.pixelSize: 13
-                        }
+                                Label {
+                                    text: qsTr("Live note")
+                                    color: ivory
+                                    font.pixelSize: cardTitleSize
+                                    font.bold: true
+                                }
 
-                        Label {
-                            text: qsTr("Release channel") + ": " + root.choiceLabel(root.channelChoices, root.selectedChannel, qsTr("Stable"))
-                            color: mist
-                            font.pixelSize: 13
+                                Label {
+                                    text: root.currentNotice()
+                                    color: mist
+                                    wrapMode: Text.WordWrap
+                                    font.pixelSize: labelSize
+                                }
+                            }
                         }
                     }
                 }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    radius: 22
-                    color: "#14C9895B"
-                    border.color: "#22C9895B"
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        spacing: 8
-
-                        Label {
-                            text: qsTr("What will apply")
-                            color: ivory
-                            font.pixelSize: 16
-                            font.bold: true
-                        }
-
-                        Label {
-                            text: root.resolvedColorSchemeLabel() + qsTr(" with ") + root.choiceLabel(root.wallpaperChoices, root.selectedWallpaper, qsTr("Lagoon"))
-                            color: mist
-                            wrapMode: Text.WordWrap
-                            font.pixelSize: 13
-                        }
-
-                        Label {
-                            text: root.resolvedLookAndFeelLabel() + qsTr(" for the Plasma shell")
-                            color: mist
-                            wrapMode: Text.WordWrap
-                            font.pixelSize: 13
-                        }
-
-                        Label {
-                            text: qsTr("Update Center will foreground the %1 track").arg(root.choiceLabel(root.channelChoices, root.selectedChannel, qsTr("Stable")))
-                            color: mist
-                            wrapMode: Text.WordWrap
-                            font.pixelSize: 13
-                        }
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    radius: 22
-                    color: "#163F8F95"
-                    border.color: "#203F8F95"
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        spacing: 8
-
-                        Label {
-                            text: qsTr("Live note")
-                            color: ivory
-                            font.pixelSize: 16
-                            font.bold: true
-                        }
-
-                        Label {
-                            text: root.currentNotice()
-                            color: mist
-                            wrapMode: Text.WordWrap
-                            font.pixelSize: 13
-                        }
-                    }
-                }
-
-                Item { Layout.fillHeight: true }
 
                 Button {
                     Layout.fillWidth: true
@@ -661,22 +707,23 @@ ApplicationWindow {
         id: overviewComponent
 
         ColumnLayout {
-            spacing: 12
+            spacing: root.optionSpacing
 
             Repeater {
                 model: pages[0].items
 
                 Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: 58
-                    radius: 18
+                    implicitHeight: Math.max(root.compact ? 64 : 58, overviewRow.implicitHeight + 28)
+                    radius: Math.max(16, Math.round(18 * root.uiScale))
                     color: "#CCFFFFFF"
                     border.color: "#1209131A"
 
                     RowLayout {
+                        id: overviewRow
                         anchors.fill: parent
-                        anchors.margins: 14
-                        spacing: 12
+                        anchors.margins: Math.max(12, Math.round(14 * root.uiScale))
+                        spacing: Math.max(10, Math.round(12 * root.uiScale))
 
                         Rectangle {
                             width: 12
@@ -690,7 +737,7 @@ ApplicationWindow {
                             text: modelData
                             color: ink
                             wrapMode: Text.WordWrap
-                            font.pixelSize: 14
+                            font.pixelSize: root.compact ? 13 : 14
                         }
                     }
                 }
@@ -702,15 +749,15 @@ ApplicationWindow {
         id: languageComponent
 
         ColumnLayout {
-            spacing: 12
+            spacing: root.optionSpacing
 
             Repeater {
                 model: root.languageChoices
 
                 Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: 88
-                    radius: 20
+                    implicitHeight: Math.max(root.compact ? 96 : 88, languageChoiceContent.implicitHeight + 32)
+                    radius: Math.max(18, Math.round(20 * root.uiScale))
                     color: modelData.id === root.selectedLanguage ? "#142D6C8A" : "#CCFFFFFF"
                     border.color: modelData.id === root.selectedLanguage ? "#2D6C8A" : "#1209131A"
                     border.width: modelData.id === root.selectedLanguage ? 2 : 1
@@ -722,14 +769,15 @@ ApplicationWindow {
                     }
 
                     ColumnLayout {
+                        id: languageChoiceContent
                         anchors.fill: parent
-                        anchors.margins: 16
+                        anchors.margins: Math.max(14, Math.round(16 * root.uiScale))
                         spacing: 6
 
                         Label {
                             text: modelData.label
                             color: modelData.id === root.selectedLanguage ? ivory : ink
-                            font.pixelSize: 18
+                            font.pixelSize: root.choiceTitleSize
                             font.bold: true
                         }
 
@@ -737,7 +785,7 @@ ApplicationWindow {
                             text: modelData.body
                             color: modelData.id === root.selectedLanguage ? mist : "#546A79"
                             wrapMode: Text.WordWrap
-                            font.pixelSize: 13
+                            font.pixelSize: root.labelSize
                         }
                     }
                 }
@@ -749,12 +797,12 @@ ApplicationWindow {
         id: appearanceComponent
 
         ColumnLayout {
-            spacing: 12
+            spacing: root.optionSpacing
 
             Label {
                 text: qsTr("Color direction")
                 color: ink
-                font.pixelSize: 16
+                font.pixelSize: root.cardTitleSize
                 font.bold: true
             }
 
@@ -763,8 +811,8 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: 88
-                    radius: 20
+                    implicitHeight: Math.max(root.compact ? 104 : 88, appearanceChoiceContent.implicitHeight + 32)
+                    radius: Math.max(18, Math.round(20 * root.uiScale))
                     color: modelData.id === root.selectedAppearance ? "#142D6C8A" : "#CCFFFFFF"
                     border.color: modelData.id === root.selectedAppearance ? "#2D6C8A" : "#1209131A"
                     border.width: modelData.id === root.selectedAppearance ? 2 : 1
@@ -776,14 +824,15 @@ ApplicationWindow {
                     }
 
                     ColumnLayout {
+                        id: appearanceChoiceContent
                         anchors.fill: parent
-                        anchors.margins: 16
+                        anchors.margins: Math.max(14, Math.round(16 * root.uiScale))
                         spacing: 6
 
                         Label {
                             text: modelData.label
                             color: modelData.id === root.selectedAppearance ? ivory : ink
-                            font.pixelSize: 18
+                            font.pixelSize: root.choiceTitleSize
                             font.bold: true
                         }
 
@@ -815,7 +864,7 @@ ApplicationWindow {
                                     anchors.centerIn: parent
                                     text: qsTr("Recommended")
                                     color: modelData.id === root.selectedAppearance ? ivory : brand
-                                    font.pixelSize: 11
+                                    font.pixelSize: root.chipTextSize
                                     font.bold: true
                                 }
                             }
@@ -825,7 +874,7 @@ ApplicationWindow {
                             text: modelData.body
                             color: modelData.id === root.selectedAppearance ? mist : "#546A79"
                             wrapMode: Text.WordWrap
-                            font.pixelSize: 13
+                            font.pixelSize: root.labelSize
                         }
                     }
                 }
@@ -834,7 +883,7 @@ ApplicationWindow {
             Label {
                 text: qsTr("Wallpaper")
                 color: ink
-                font.pixelSize: 16
+                font.pixelSize: root.cardTitleSize
                 font.bold: true
                 topPadding: 6
             }
@@ -844,8 +893,8 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: 84
-                    radius: 20
+                    implicitHeight: Math.max(root.compact ? 100 : 84, wallpaperChoiceContent.implicitHeight + 32)
+                    radius: Math.max(18, Math.round(20 * root.uiScale))
                     color: modelData.path === root.selectedWallpaper ? "#163F8F95" : "#CCFFFFFF"
                     border.color: modelData.path === root.selectedWallpaper ? "#203F8F95" : "#1209131A"
                     border.width: modelData.path === root.selectedWallpaper ? 2 : 1
@@ -857,14 +906,15 @@ ApplicationWindow {
                     }
 
                     ColumnLayout {
+                        id: wallpaperChoiceContent
                         anchors.fill: parent
-                        anchors.margins: 16
+                        anchors.margins: Math.max(14, Math.round(16 * root.uiScale))
                         spacing: 6
 
                         Label {
                             text: modelData.label
                             color: modelData.path === root.selectedWallpaper ? ivory : ink
-                            font.pixelSize: 17
+                            font.pixelSize: root.choiceTitleSize
                             font.bold: true
                         }
 
@@ -896,7 +946,7 @@ ApplicationWindow {
                                     anchors.centerIn: parent
                                     text: qsTr("Recommended")
                                     color: ivory
-                                    font.pixelSize: 11
+                                    font.pixelSize: root.chipTextSize
                                     font.bold: true
                                 }
                             }
@@ -906,7 +956,7 @@ ApplicationWindow {
                             text: modelData.body
                             color: modelData.path === root.selectedWallpaper ? mist : "#546A79"
                             wrapMode: Text.WordWrap
-                            font.pixelSize: 13
+                            font.pixelSize: root.labelSize
                         }
                     }
                 }
@@ -918,15 +968,15 @@ ApplicationWindow {
         id: layoutComponent
 
         ColumnLayout {
-            spacing: 12
+            spacing: root.optionSpacing
 
             Repeater {
                 model: root.layoutChoices
 
                 Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: 88
-                    radius: 20
+                    implicitHeight: Math.max(root.compact ? 108 : 88, layoutChoiceContent.implicitHeight + 32)
+                    radius: Math.max(18, Math.round(20 * root.uiScale))
                     color: modelData.id === root.selectedLayout ? "#142D6C8A" : "#CCFFFFFF"
                     border.color: modelData.id === root.selectedLayout ? "#2D6C8A" : "#1209131A"
                     border.width: modelData.id === root.selectedLayout ? 2 : 1
@@ -938,8 +988,9 @@ ApplicationWindow {
                     }
 
                     ColumnLayout {
+                        id: layoutChoiceContent
                         anchors.fill: parent
-                        anchors.margins: 16
+                        anchors.margins: Math.max(14, Math.round(16 * root.uiScale))
                         spacing: 6
 
                         RowLayout {
@@ -948,7 +999,7 @@ ApplicationWindow {
                             Label {
                                 text: modelData.label
                                 color: modelData.id === root.selectedLayout ? ivory : ink
-                                font.pixelSize: 18
+                                font.pixelSize: root.choiceTitleSize
                                 font.bold: true
                             }
 
@@ -967,7 +1018,7 @@ ApplicationWindow {
                                     anchors.centerIn: parent
                                     text: qsTr("Recommended")
                                     color: modelData.id === root.selectedLayout ? ivory : brand
-                                    font.pixelSize: 11
+                                    font.pixelSize: root.chipTextSize
                                     font.bold: true
                                 }
                             }
@@ -977,7 +1028,7 @@ ApplicationWindow {
                             text: modelData.body
                             color: modelData.id === root.selectedLayout ? mist : "#546A79"
                             wrapMode: Text.WordWrap
-                            font.pixelSize: 13
+                            font.pixelSize: root.labelSize
                         }
 
                         Rectangle {
@@ -1005,15 +1056,15 @@ ApplicationWindow {
         id: channelComponent
 
         ColumnLayout {
-            spacing: 12
+            spacing: root.optionSpacing
 
             Repeater {
                 model: root.channelChoices
 
                 Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: 84
-                    radius: 20
+                    implicitHeight: Math.max(root.compact ? 100 : 84, channelChoiceContent.implicitHeight + 32)
+                    radius: Math.max(18, Math.round(20 * root.uiScale))
                     color: modelData.id === root.selectedChannel ? "#163F8F95" : "#CCFFFFFF"
                     border.color: modelData.id === root.selectedChannel ? "#203F8F95" : "#1209131A"
                     border.width: modelData.id === root.selectedChannel ? 2 : 1
@@ -1025,8 +1076,9 @@ ApplicationWindow {
                     }
 
                     ColumnLayout {
+                        id: channelChoiceContent
                         anchors.fill: parent
-                        anchors.margins: 16
+                        anchors.margins: Math.max(14, Math.round(16 * root.uiScale))
                         spacing: 6
 
                         RowLayout {
@@ -1035,7 +1087,7 @@ ApplicationWindow {
                             Label {
                                 text: modelData.label
                                 color: modelData.id === root.selectedChannel ? ivory : ink
-                                font.pixelSize: 17
+                                font.pixelSize: root.choiceTitleSize
                                 font.bold: true
                             }
 
@@ -1054,7 +1106,7 @@ ApplicationWindow {
                                     anchors.centerIn: parent
                                     text: qsTr("Recommended")
                                     color: ivory
-                                    font.pixelSize: 11
+                                    font.pixelSize: root.chipTextSize
                                     font.bold: true
                                 }
                             }
@@ -1064,7 +1116,7 @@ ApplicationWindow {
                             text: modelData.body
                             color: modelData.id === root.selectedChannel ? mist : "#546A79"
                             wrapMode: Text.WordWrap
-                            font.pixelSize: 13
+                            font.pixelSize: root.labelSize
                         }
                     }
                 }
@@ -1076,22 +1128,23 @@ ApplicationWindow {
         id: readyComponent
 
         ColumnLayout {
-            spacing: 12
+            spacing: root.optionSpacing
 
             Repeater {
                 model: pages[5].items
 
                 Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: 58
-                    radius: 18
+                    implicitHeight: Math.max(root.compact ? 64 : 58, readyRow.implicitHeight + 28)
+                    radius: Math.max(16, Math.round(18 * root.uiScale))
                     color: "#CCFFFFFF"
                     border.color: "#1209131A"
 
                     RowLayout {
+                        id: readyRow
                         anchors.fill: parent
-                        anchors.margins: 14
-                        spacing: 12
+                        anchors.margins: Math.max(12, Math.round(14 * root.uiScale))
+                        spacing: Math.max(10, Math.round(12 * root.uiScale))
 
                         Rectangle {
                             width: 12
@@ -1105,7 +1158,7 @@ ApplicationWindow {
                             text: modelData
                             color: ink
                             wrapMode: Text.WordWrap
-                            font.pixelSize: 14
+                            font.pixelSize: root.compact ? 13 : 14
                         }
                     }
                 }

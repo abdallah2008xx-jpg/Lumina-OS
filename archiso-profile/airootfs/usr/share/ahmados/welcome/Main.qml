@@ -24,6 +24,7 @@ ApplicationWindow {
     readonly property int labelSize: narrow ? 12 : 13
     readonly property int choiceTitleSize: narrow ? 16 : 18
     readonly property int chipTextSize: 11
+    readonly property int previewCardPadding: Math.max(14, Math.round(18 * uiScale))
     width: availableScreenWidth > 0 ? Math.min(1280, Math.max(920, availableScreenWidth - 40)) : 1280
     height: availableScreenHeight > 0 ? Math.min(820, Math.max(680, availableScreenHeight - 56)) : 820
     visible: true
@@ -542,6 +543,7 @@ ApplicationWindow {
                         spacing: Math.max(12, Math.round(16 * uiScale))
 
                         Label {
+                            Layout.fillWidth: true
                             text: qsTr("Session Preview")
                             color: ivory
                             font.pixelSize: headingSize
@@ -549,6 +551,7 @@ ApplicationWindow {
                         }
 
                         Label {
+                            Layout.fillWidth: true
                             text: qsTr("These choices are now written to Lumina-OS config so the session can reuse them after Welcome closes.")
                             color: mist
                             wrapMode: Text.WordWrap
@@ -557,16 +560,19 @@ ApplicationWindow {
 
                         Rectangle {
                             Layout.fillWidth: true
+                            implicitHeight: currentSelectionCard.implicitHeight + (previewCardPadding * 2)
                             radius: Math.max(18, Math.round(22 * uiScale))
                             color: "#142D6C8A"
                             border.color: "#222D6C8A"
 
                             ColumnLayout {
+                                id: currentSelectionCard
                                 anchors.fill: parent
-                                anchors.margins: Math.max(14, Math.round(18 * uiScale))
+                                anchors.margins: previewCardPadding
                                 spacing: Math.max(8, Math.round(10 * uiScale))
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: qsTr("Current selection")
                                     color: ivory
                                     font.pixelSize: cardTitleSize
@@ -574,6 +580,7 @@ ApplicationWindow {
                                 }
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: qsTr("Language") + ": " + root.choiceLabel(root.languageChoices, root.selectedLanguage, qsTr("Arabic"))
                                     color: mist
                                     font.pixelSize: labelSize
@@ -581,6 +588,7 @@ ApplicationWindow {
                                 }
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: qsTr("Appearance") + ": " + root.choiceLabel(root.appearanceChoices, root.selectedAppearance, qsTr("Light"))
                                     color: mist
                                     font.pixelSize: labelSize
@@ -588,6 +596,7 @@ ApplicationWindow {
                                 }
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: qsTr("Color scheme") + ": " + root.resolvedColorSchemeLabel()
                                     color: mist
                                     font.pixelSize: labelSize
@@ -595,6 +604,7 @@ ApplicationWindow {
                                 }
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: qsTr("Layout") + ": " + root.choiceLabel(root.layoutChoices, root.selectedLayout, qsTr("Balanced"))
                                     color: mist
                                     font.pixelSize: labelSize
@@ -602,6 +612,7 @@ ApplicationWindow {
                                 }
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: qsTr("Panel style") + ": " + root.resolvedLookAndFeelLabel()
                                     color: mist
                                     font.pixelSize: labelSize
@@ -609,6 +620,7 @@ ApplicationWindow {
                                 }
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: qsTr("Wallpaper") + ": " + root.choiceLabel(root.wallpaperChoices, root.selectedWallpaper, qsTr("Lagoon"))
                                     color: mist
                                     font.pixelSize: labelSize
@@ -616,6 +628,7 @@ ApplicationWindow {
                                 }
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: qsTr("Release channel") + ": " + root.choiceLabel(root.channelChoices, root.selectedChannel, qsTr("Stable"))
                                     color: mist
                                     font.pixelSize: labelSize
@@ -626,16 +639,19 @@ ApplicationWindow {
 
                         Rectangle {
                             Layout.fillWidth: true
+                            implicitHeight: applyCard.implicitHeight + (previewCardPadding * 2)
                             radius: Math.max(18, Math.round(22 * uiScale))
                             color: "#14C9895B"
                             border.color: "#22C9895B"
 
                             ColumnLayout {
+                                id: applyCard
                                 anchors.fill: parent
-                                anchors.margins: Math.max(14, Math.round(18 * uiScale))
+                                anchors.margins: previewCardPadding
                                 spacing: Math.max(8, Math.round(10 * uiScale))
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: qsTr("What will apply")
                                     color: ivory
                                     font.pixelSize: cardTitleSize
@@ -643,6 +659,7 @@ ApplicationWindow {
                                 }
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: root.resolvedColorSchemeLabel() + qsTr(" with ") + root.choiceLabel(root.wallpaperChoices, root.selectedWallpaper, qsTr("Lagoon"))
                                     color: mist
                                     wrapMode: Text.WordWrap
@@ -650,6 +667,7 @@ ApplicationWindow {
                                 }
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: root.resolvedLookAndFeelLabel() + qsTr(" for the Plasma shell")
                                     color: mist
                                     wrapMode: Text.WordWrap
@@ -657,6 +675,7 @@ ApplicationWindow {
                                 }
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: qsTr("Update Center will foreground the %1 track").arg(root.choiceLabel(root.channelChoices, root.selectedChannel, qsTr("Stable")))
                                     color: mist
                                     wrapMode: Text.WordWrap
@@ -667,16 +686,19 @@ ApplicationWindow {
 
                         Rectangle {
                             Layout.fillWidth: true
+                            implicitHeight: noteCard.implicitHeight + (previewCardPadding * 2)
                             radius: Math.max(18, Math.round(22 * uiScale))
                             color: "#163F8F95"
                             border.color: "#203F8F95"
 
                             ColumnLayout {
+                                id: noteCard
                                 anchors.fill: parent
-                                anchors.margins: Math.max(14, Math.round(18 * uiScale))
+                                anchors.margins: previewCardPadding
                                 spacing: Math.max(8, Math.round(10 * uiScale))
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: qsTr("Live note")
                                     color: ivory
                                     font.pixelSize: cardTitleSize
@@ -684,6 +706,7 @@ ApplicationWindow {
                                 }
 
                                 Label {
+                                    Layout.fillWidth: true
                                     text: root.currentNotice()
                                     color: mist
                                     wrapMode: Text.WordWrap

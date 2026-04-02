@@ -272,6 +272,19 @@ $expectedExecMappings = @{
     "archiso-profile\airootfs\usr\share\applications\ahmados-welcome.desktop" = "Exec=/usr/local/bin/lumina-welcome"
 }
 
+$customizeAirootfsPath = Join-Path $RepoRoot "archiso-profile\airootfs\root\customize_airootfs.sh"
+if (Test-Path $customizeAirootfsPath) {
+    $customizeContent = Get-Content -Raw $customizeAirootfsPath
+    foreach ($requiredChmodTarget in @(
+        "/usr/local/bin/ahmados-capture-screenshot",
+        "/usr/local/bin/lumina-capture-screenshot"
+    )) {
+        if ($customizeContent -notmatch [regex]::Escape("chmod 755 $requiredChmodTarget")) {
+            Add-Error "customize_airootfs.sh does not enforce executable permissions for $requiredChmodTarget"
+        }
+    }
+}
+
 foreach ($desktopPath in $expectedExecMappings.Keys) {
     $fullPath = Join-Path $RepoRoot $desktopPath
     if (-not (Test-Path $fullPath)) {

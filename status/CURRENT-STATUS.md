@@ -80,11 +80,14 @@
 - the first real `stable` VM validation cycle completed on run label `gha-stable-8-1` and is currently blocked by three runtime findings
 - source-side fixes are now in place for the three recorded `stable` blockers: deferred firstboot refresh, stronger session detection for diagnostics/smoke checks, and a VirtualBox guest-side screenshot fallback helper for black host captures
 - the `login-test` handoff from GitHub Actions run `#8` has now been imported into this workspace and its first local VM evidence chain has been initialized on run label `gha-login-test-8-1`
+- the newer `stable` handoff from GitHub Actions run `#18` has now been imported into this workspace and completed as a real local VM cycle on run label `gha-stable-18-1`
+- the current `stable` reference cycle now has a complete evidence chain, a passing audit, clear blockers, and `ready-for-next-stage` readiness
+- source-side follow-up fixes are now in place for the latest `stable` observations: stronger screenshot helper fallback, executable screenshot helper permissions in the live image, smarter session environment discovery, and a compact-screen Welcome preview layout fix for 1024x768 VirtualBox guests
 
 ## Active Focus
-- validate the new direct GitHub Actions download helper against the first real VM cycle path
-- validate the new GitHub Actions cycle-finish wrapper against the first real diagnostics-import path
-- rerun the `stable` VM cycle against the new firstboot, smoke-check, and screenshot-fallback fixes
+- validate the new direct GitHub Actions download helper against the completed `stable` reference cycle
+- validate the new GitHub Actions cycle-finish wrapper against the completed `stable` diagnostics-import path
+- run the next `stable` build so the new screenshot/runtime/Welcome fixes are validated on a fresh ISO
 - boot and validate the `login-test` ISO so SDDM/manual-login evidence moves beyond `needs-audit`
 - validate the new Welcome and Update Center behavior inside a built ISO
 - validate the firstboot runtime report and cache generation inside a built ISO
@@ -123,10 +126,10 @@
 - keep the new direct GitHub Actions download helper aligned with the same bridge so run-id-based fetches stay reproducible
 - keep the new GitHub Actions cycle-finish wrapper aligned with diagnostics import so remote-build validation stays symmetrical from start to finish
 - keep the new GitHub ISO build workflow aligned with the local handoff and evidence chain so successful remote builds feed the same process
-- keep the first real `stable` VM findings visible at the top level so future fixes can be verified against them deliberately
+- keep the first real `stable` reference cycle visible at the top level while the next ISO validates the latest UI/runtime fixes
 
 ## Next
-- rebuild or rerun `stable`, verify the three recorded blockers are gone, then refresh blockers/readiness/validation
+- build a fresh `stable` ISO that includes the latest screenshot/runtime/Welcome fixes and validate it in VirtualBox
 - boot `login-test`, validate SDDM/manual login, and finish its first real VM cycle
 - finish the first GitHub Actions-backed VM cycle through the new diagnostics-bundle wrapper so the end of the evidence chain is just as automated as the start
 - test the real Welcome choice application inside a built ISO

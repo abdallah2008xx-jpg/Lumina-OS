@@ -1,5 +1,52 @@
 #!/usr/bin/env bash
 
+session_env_process_patterns=(
+    'qmlscene6 /usr/share/ahmados/welcome/Main.qml'
+    'plasmashell'
+    'kwin_x11'
+    'startplasma-x11'
+    'kwin_wayland'
+    'startplasma-wayland'
+    'Xorg'
+)
+
+resolve_process_env_value() {
+    local variable_name="$1"
+    local existing_path_only="${2:-false}"
+    local current_uid pattern pid env_file value
+
+    current_uid="$(id -u)"
+
+    for pattern in "${session_env_process_patterns[@]}"; do
+        while IFS= read -r pid; do
+            [[ -n "${pid}" ]] || continue
+            env_file="/proc/${pid}/environ"
+
+            if [[ ! -r "${env_file}" ]]; then
+                continue
+            fi
+
+            value="$(
+                tr '\0' '\n' < "${env_file}" 2>/dev/null |
+                    awk -F= -v target="${variable_name}" '$1 == target { sub($1 "=", ""); print; exit }'
+            )"
+
+            if [[ -z "${value}" ]]; then
+                continue
+            fi
+
+            if [[ "${existing_path_only}" == "true" && ! -e "${value}" ]]; then
+                continue
+            fi
+
+            printf '%s\n' "${value}"
+            return 0
+        done < <(pgrep -u "${current_uid}" -f "${pattern}" 2>/dev/null || true)
+    done
+
+    return 1
+}
+
 resolve_hostname_value() {
     local host_value=""
 
@@ -105,6 +152,10 @@ resolve_display_value() {
     local display_value="${DISPLAY:-}"
 
     if [[ -z "${display_value}" || "${display_value}" == "unknown" ]]; then
+        display_value="$(resolve_process_env_value DISPLAY 2>/dev/null || true)"
+    fi
+
+    if [[ -z "${display_value}" || "${display_value}" == "unknown" ]]; then
         display_value=":0"
     fi
 
@@ -114,6 +165,12 @@ resolve_display_value() {
 resolve_xauthority_path() {
     local xauthority_path="${XAUTHORITY:-}"
 
+    if [[ -n "${xauthority_path}" && -f "${xauthority_path}" ]]; then
+        printf '%s\n' "${xauthority_path}"
+        return
+    fi
+
+    xauthority_path="$(resolve_process_env_value XAUTHORITY true 2>/dev/null || true)"
     if [[ -n "${xauthority_path}" && -f "${xauthority_path}" ]]; then
         printf '%s\n' "${xauthority_path}"
         return
@@ -130,12 +187,24 @@ resolve_xauthority_path() {
 
 resolve_dbus_address() {
     local dbus_address="${DBUS_SESSION_BUS_ADDRESS:-}"
-    local runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+    local runtime_dir="${XDG_RUNTIME_DIR:-}"
 
     if [[ -n "${dbus_address}" ]]; then
         printf '%s\n' "${dbus_address}"
         return
     fi
+
+    dbus_address="$(resolve_process_env_value DBUS_SESSION_BUS_ADDRESS 2>/dev/null || true)"
+    if [[ -n "${dbus_address}" ]]; then
+        printf '%s\n' "${dbus_address}"
+        return
+    fi
+
+    if [[ -z "${runtime_dir}" ]]; then
+        runtime_dir="$(resolve_process_env_value XDG_RUNTIME_DIR 2>/dev/null || true)"
+    fi
+
+    runtime_dir="${runtime_dir:-/run/user/$(id -u)}"
 
     if [[ -S "${runtime_dir}/bus" ]]; then
         printf '%s\n' "unix:path=${runtime_dir}/bus"

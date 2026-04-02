@@ -40,6 +40,9 @@ This file gives one fast answer to two questions:
 - the first real `stable` VM validation cycle has now completed and confirmed that the guest reaches a live Plasma X11 session
 - source-side follow-up fixes are now in place for firstboot timing, smoke-check session detection, and VirtualBox guest-side screenshot fallback before the next `stable` rerun
 - the `login-test` handoff from run `#8` has now also been imported locally, and its first local VM evidence chain was initialized on `gha-login-test-8-1`
+- the newer `stable` handoff from run `#18` has now completed as the current reference VM cycle on `gha-stable-18-1`
+- the current `stable` reference cycle now has a passing audit, imported diagnostics, clear blockers, and `ready-for-next-stage` readiness
+- source-side fixes are now in place for the latest UI/runtime issues discovered during VirtualBox validation, including a stronger screenshot helper path and a compact-screen Welcome preview fix
 - generated cycle handoffs now exist for one-file execution of a real run
 - generated cycle handoffs now adapt to `stable` and `login-test` instead of using one generic checklist
 - cycle-chain audits now verify that the recorded build/test evidence still points at the same run before release prep
@@ -61,9 +64,9 @@ This file gives one fast answer to two questions:
 ## What Is Still Remaining
 
 ### Real Execution Work
-- rerun `stable` after the new firstboot, smoke-check, and screenshot-fallback fixes
-- validate the new direct GitHub Actions artifact-download path during the first local VM cycle
-- validate the new GitHub Actions cycle-finish wrapper during the first local diagnostics import
+- build a fresh `stable` ISO so the latest screenshot/runtime/Welcome fixes are verified on a new artifact
+- validate the new direct GitHub Actions artifact-download path against the completed `stable` reference cycle
+- validate the new GitHub Actions cycle-finish wrapper against the completed `stable` diagnostics import
 - run the first real VM validation cycle for `login-test`
 
 ### Runtime Verification
@@ -88,13 +91,13 @@ This file gives one fast answer to two questions:
 - deepen release/update automation after the first stable evidence-backed build
 
 ## Current State Right Now
-- Readiness: `blocked`
-- Validation Matrix: `blocked`
-- Biggest blocker: `stable` has now been booted and audited, and source-side fixes are in place, but the cycle remains blocked until a rerun proves the firstboot, smoke-check, and VirtualBox screenshot issues are gone
+- Readiness: `ready-for-next-stage`
+- Validation Matrix: `in-progress`
+- Biggest blocker: `login-test` still needs its first fully audited VM cycle, while the latest Welcome/screenshot polish is waiting for the next fresh `stable` ISO
 
 ## Recommended Next Order
-1. Rerun the labeled `stable` VM cycle against the new fixes and confirm the blockers are gone
-2. Refresh blockers, readiness, validation matrix, and shareable status from the rerun
-3. Run a full labeled VM cycle for `login-test`
-4. Review readiness, blockers, and validation matrix
-5. Prepare and publish the first GitHub Release
+1. Build the next labeled `stable` ISO and verify the new Welcome/screenshot fixes on a fresh VirtualBox run
+2. Run a full labeled VM cycle for `login-test`
+3. Review readiness, blockers, and validation matrix
+4. Prepare the first real release candidate
+5. Publish the first GitHub Release

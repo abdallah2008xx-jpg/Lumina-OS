@@ -50,8 +50,24 @@ function Test-IsUsefulPng {
     return ((Get-Item $Path).Length -gt 6000)
 }
 
+function Get-GuestCredentialArgs {
+    param(
+        [string]$UserName,
+        [string]$Password
+    )
+
+    $credentialArgs = @("--username", $UserName)
+
+    if (-not [string]::IsNullOrWhiteSpace($Password)) {
+        $credentialArgs += @("--password", $Password)
+    }
+
+    return $credentialArgs
+}
+
 $resolvedVBoxManagePath = Resolve-VBoxManagePath -RequestedPath $VBoxManagePath
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$guestCredentialArgs = Get-GuestCredentialArgs -UserName $GuestUser -Password $GuestPassword
 
 if ([string]::IsNullOrWhiteSpace($OutputPath)) {
     $shotsDir = Join-Path $RepoRoot ("build\virtualbox-shots\" + $VmName)
@@ -67,56 +83,65 @@ else {
 
 $hostAttemptPath = Join-Path ([System.IO.Path]::GetTempPath()) ("lumina-vbox-host-shot-" + $timestamp + ".png")
 $captureSource = "guest-fallback"
+$hostScreenshotReady = $false
 
 try {
     & $resolvedVBoxManagePath controlvm $VmName screenshotpng $hostAttemptPath | Out-Null
+    $hostScreenshotReady = Test-IsUsefulPng -Path $hostAttemptPath
 }
 catch {
     Remove-Item -Force -LiteralPath $hostAttemptPath -ErrorAction SilentlyContinue
-    throw
+    $hostScreenshotReady = $false
 }
 
-if (-not $ForceGuestCapture.IsPresent -and (Test-IsUsefulPng -Path $hostAttemptPath)) {
-    Copy-Item -Force -LiteralPath $hostAttemptPath -Destination $OutputPath
-    $captureSource = "host-screenshotpng"
-}
-else {
+$guestCaptureSucceeded = $false
+$guestCaptureFailure = ""
+
+try {
     $remotePath = "/tmp/lumina-vbox-capture-$timestamp.png"
 
-    $guestRunOutput = & $resolvedVBoxManagePath guestcontrol $VmName run `
-        --exe /usr/local/bin/lumina-capture-screenshot `
-        --username $GuestUser `
-        --password $GuestPassword `
-        --wait-stdout `
-        --wait-stderr `
-        -- `
-        /usr/local/bin/lumina-capture-screenshot `
-        --output $remotePath 2>&1
+    $guestRunArgs = @("guestcontrol", $VmName, "run", "--exe", "/bin/sh") +
+        $guestCredentialArgs +
+        @("--wait-stdout", "--wait-stderr", "--", "/bin/sh", "/usr/local/bin/lumina-capture-screenshot", "--output", $remotePath)
+
+    $guestRunOutput = & $resolvedVBoxManagePath @guestRunArgs 2>&1
 
     if ($LASTEXITCODE -ne 0) {
         throw "Guest screenshot helper failed: $guestRunOutput"
     }
 
-    $copyOutput = & $resolvedVBoxManagePath guestcontrol $VmName copyfrom `
-        --username $GuestUser `
-        --password $GuestPassword `
-        $remotePath `
-        $OutputPath 2>&1
+    $copyArgs = @("guestcontrol", $VmName, "copyfrom") + $guestCredentialArgs + @($remotePath, $OutputPath)
+    $copyOutput = & $resolvedVBoxManagePath @copyArgs 2>&1
 
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path $OutputPath)) {
         throw "Unable to copy the guest screenshot back to the host: $copyOutput"
     }
 
-    & $resolvedVBoxManagePath guestcontrol $VmName run `
-        --exe /usr/bin/rm `
-        --username $GuestUser `
-        --password $GuestPassword `
-        --wait-stdout `
-        --wait-stderr `
-        -- `
-        /usr/bin/rm `
-        -f `
-        $remotePath | Out-Null
+    $cleanupArgs = @("guestcontrol", $VmName, "run", "--exe", "/usr/bin/rm") +
+        $guestCredentialArgs +
+        @("--wait-stdout", "--wait-stderr", "--", "/usr/bin/rm", "-f", $remotePath)
+
+    & $resolvedVBoxManagePath @cleanupArgs | Out-Null
+    $guestCaptureSucceeded = $true
+    $captureSource = "guest-fallback"
+}
+catch {
+    $guestCaptureFailure = $_.Exception.Message
+}
+
+if (-not $guestCaptureSucceeded) {
+    if (-not $ForceGuestCapture.IsPresent -and $hostScreenshotReady) {
+        Copy-Item -Force -LiteralPath $hostAttemptPath -Destination $OutputPath
+        $captureSource = "host-screenshotpng"
+    }
+    else {
+        Remove-Item -Force -LiteralPath $hostAttemptPath -ErrorAction SilentlyContinue
+        if ([string]::IsNullOrWhiteSpace($guestCaptureFailure)) {
+            throw "Unable to capture a VirtualBox guest screenshot."
+        }
+
+        throw $guestCaptureFailure
+    }
 }
 
 Remove-Item -Force -LiteralPath $hostAttemptPath -ErrorAction SilentlyContinue

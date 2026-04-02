@@ -242,6 +242,17 @@ if [[ -f "${smoke_checks}" ]] && ! grep -qi "Smoke Check Report" "${smoke_checks
     add_warning "ahmados-run-smoke-checks may not be writing the expected report."
 fi
 
+customize_airootfs="${profile_path}/airootfs/root/customize_airootfs.sh"
+if [[ -f "${customize_airootfs}" ]]; then
+    for required_chmod_target in \
+        /usr/local/bin/ahmados-capture-screenshot \
+        /usr/local/bin/lumina-capture-screenshot; do
+        if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
+            add_error "customize_airootfs.sh does not enforce executable permissions for ${required_chmod_target}"
+        fi
+    done
+fi
+
 while IFS='|' read -r desktop_path expected_exec; do
     [[ -n "${desktop_path}" ]] || continue
 

@@ -8,6 +8,7 @@ if [[ -f "${session_context_lib}" ]]; then
 fi
 
 output_path=""
+capture_success="false"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -32,24 +33,79 @@ fi
 
 mkdir -p "${output_dir}"
 
-if ! command -v spectacle >/dev/null 2>&1; then
-    echo "spectacle is not available inside this Lumina-OS session." >&2
-    exit 1
-fi
-
 display_value="$(resolve_display_value 2>/dev/null || printf '%s' ':0')"
 xauthority_path="$(resolve_xauthority_path 2>/dev/null || printf '%s' "${HOME}/.Xauthority")"
 dbus_address="$(resolve_dbus_address 2>/dev/null || printf '%s' '')"
 runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
-env \
-    DISPLAY="${display_value}" \
-    XAUTHORITY="${xauthority_path}" \
-    XDG_RUNTIME_DIR="${runtime_dir}" \
-    DBUS_SESSION_BUS_ADDRESS="${dbus_address}" \
-    spectacle --background --nonotify --fullscreen --output "${output_path}"
+build_capture_env() {
+    CAPTURE_ENV=(
+        DISPLAY="${display_value}"
+        XAUTHORITY="${xauthority_path}"
+        XDG_RUNTIME_DIR="${runtime_dir}"
+    )
 
-if [[ ! -f "${output_path}" ]]; then
+    if [[ -n "${dbus_address}" ]]; then
+        CAPTURE_ENV+=("DBUS_SESSION_BUS_ADDRESS=${dbus_address}")
+    fi
+}
+
+wait_for_capture_file() {
+    local attempt
+
+    for attempt in {1..15}; do
+        if [[ -s "${output_path}" ]]; then
+            return 0
+        fi
+
+        sleep 0.3
+    done
+
+    return 1
+}
+
+resolve_capture_size() {
+    local capture_size=""
+
+    if command -v xrandr >/dev/null 2>&1; then
+        capture_size="$(
+            env "${CAPTURE_ENV[@]}" xrandr --current 2>/dev/null |
+                awk '/\*/ { print $1; exit }'
+        )"
+    fi
+
+    if [[ -n "${capture_size}" ]]; then
+        printf '%s\n' "${capture_size}"
+    else
+        printf '%s\n' "1024x768"
+    fi
+}
+
+build_capture_env
+rm -f "${output_path}"
+
+if command -v spectacle >/dev/null 2>&1; then
+    env "${CAPTURE_ENV[@]}" \
+        spectacle --background --nonotify --fullscreen --output "${output_path}" >/dev/null 2>&1 || true
+
+    if wait_for_capture_file; then
+        capture_success="true"
+    fi
+fi
+
+if [[ "${capture_success}" != "true" ]] && command -v ffmpeg >/dev/null 2>&1; then
+    capture_size="$(resolve_capture_size)"
+
+    rm -f "${output_path}"
+    env "${CAPTURE_ENV[@]}" \
+        ffmpeg -y -v error -f x11grab -video_size "${capture_size}" -i "${display_value}" -frames:v 1 "${output_path}" >/dev/null 2>&1 || true
+
+    if wait_for_capture_file; then
+        capture_success="true"
+    fi
+fi
+
+if [[ "${capture_success}" != "true" || ! -s "${output_path}" ]]; then
     echo "Lumina-OS screenshot capture did not produce an output file." >&2
     exit 1
 fi

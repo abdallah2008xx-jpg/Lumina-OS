@@ -1,0 +1,107 @@
+live (1000)
+   Since: Thu 2026-04-02 13:08:08 UTC; 12min ago
+   State: active
+Sessions: c1 2 *1
+  Linger: no
+    Unit: user-1000.slice
+          ├─session-1.scope
+          │ ├─561 /usr/lib/sddm/sddm-helper --socket /tmp/sddm-auth-6d20986a-1b96-4a13-a165-f0411ec00e0e --id 1 --start /usr/bin/startplasma-x11 --user live --autologin
+          │ └─586 /usr/bin/startplasma-x11
+          ├─session-c1.scope
+          │ ├─ 529 /usr/bin/VBoxService
+          │ ├─2005 /usr/bin/VBoxService --utf8-argv guestsession --session-id=1 --session-proto=2 --user live
+          │ ├─2220 /usr/bin/VBoxService --utf8-argv guestsession --session-id=2 --session-proto=2 --user live
+          │ ├─2225 /bin/sh -lc "rm -f /tmp/export.log; /bin/sh /usr/local/bin/ahmados-export-diagnostics >/tmp/export.log 2>&1; rc=\$?; echo RC:\$rc; sed -n 1,160p /tmp/export.log"
+          │ ├─2233 /bin/sh /usr/local/bin/ahmados-export-diagnostics
+          │ └─2436 loginctl --no-pager user-status 1000
+          └─user@1000.service
+            ├─app.slice
+            │ ├─app-ahmados\x2dwelcome@autostart.service
+            │ │ ├─915 bash /usr/local/bin/ahmados-welcome --once
+            │ │ └─970 qmlscene6 /usr/share/ahmados/welcome/Main.qml
+            │ ├─app-dbus\x2d:1.2\x2dorg.freedesktop.impl.portal.desktop.kwallet.slice
+            │ │ └─dbus-:1.2-org.freedesktop.impl.portal.desktop.kwallet@0.service
+            │ │   └─908 /usr/bin/ksecretd
+            │ ├─app-vboxclient@autostart.service
+            │ │ ├─922 /usr/bin/VBoxClient --clipboard
+            │ │ ├─923 /usr/bin/VBoxClient --clipboard
+            │ │ ├─931 /usr/bin/VBoxClient --seamless
+            │ │ ├─932 /usr/bin/VBoxClient --seamless
+            │ │ ├─949 /usr/bin/VBoxClient --draganddrop
+            │ │ ├─953 /usr/bin/VBoxClient --draganddrop
+            │ │ ├─982 /usr/bin/VBoxClient --vmsvga
+            │ │ └─983 /usr/bin/VBoxClient --vmsvga
+            │ └─dconf.service
+            │   └─807 /usr/lib/dconf-service
+            ├─background.slice
+            │ ├─kde-baloo.service
+            │ │ ├─ 627 /usr/lib/kf6/baloo_file
+            │ │ └─2437 /usr/lib/kf6/baloo_file_extractor
+            │ ├─plasma-gmenudbusmenuproxy.service
+            │ │ └─751 /usr/bin/gmenudbusmenuproxy
+            │ ├─plasma-kaccess.service
+            │ │ └─752 /usr/bin/kaccess
+            │ ├─plasma-kactivitymanagerd.service
+            │ │ └─748 /usr/lib/kactivitymanagerd
+            │ ├─plasma-kglobalaccel.service
+            │ │ └─617 /usr/lib/kglobalacceld
+            │ ├─plasma-kscreen.service
+            │ │ └─853 /usr/lib/kf6/kscreen_backend_launcher
+            │ ├─plasma-polkit-agent.service
+            │ │ └─753 /usr/lib/polkit-kde-authentication-agent-1
+            │ ├─plasma-powerdevil.service
+            │ │ └─754 /usr/lib/org_kde_powerdevil
+            │ └─plasma-xembedsniproxy.service
+            │   └─756 /usr/bin/xembedsniproxy
+            ├─init.scope
+            │ ├─577 /usr/lib/systemd/systemd --user
+            │ └─579 "(sd-pam)"
+            └─session.slice
+              ├─dbus-broker.service
+              │ ├─600 /usr/bin/dbus-broker-launch --scope user
+              │ └─601 dbus-broker --log 11 --controller 10 --machine-id c65ae9c5768e4a89a797f02b3c9027e5 --max-bytes 100000000000000 --max-fds 25000000000000 --max-matches 5000000000
+              ├─pipewire-pulse.service
+              │ └─723 /usr/bin/pipewire-pulse
+              ├─pipewire.service
+              │ └─720 /usr/bin/pipewire
+              ├─plasma-kded6.service
+              │ └─644 /usr/bin/kded6
+              ├─plasma-ksmserver.service
+              │ ├─ 645 /usr/bin/ksmserver
+              │ └─1874 /usr/lib/kscreenlocker_greet --graceTime 5000 --ksldfd 27
+              ├─plasma-kwin_x11.service
+              │ └─646 /usr/bin/kwin_x11 --replace
+              ├─plasma-plasmashell.service
+              │ ├─ 716 /usr/bin/plasmashell --no-respawn
+              │ └─2374 /usr/lib/kf6/kioworker /usr/lib/qt6/plugins/kf6/kio/desktop.so desktop "" local:/run/user/1000/plasmashellmunRhG.7.kioworker.socket
+              ├─plasma-xdg-desktop-portal-kde.service
+              │ └─755 /usr/lib/xdg-desktop-portal-kde
+              ├─wireplumber.service
+              │ └─722 /usr/bin/wireplumber
+              ├─xdg-desktop-portal.service
+              │ └─625 /usr/lib/xdg-desktop-portal
+              ├─xdg-document-portal.service
+              │ ├─647 /usr/lib/xdg-document-portal
+              │ └─685 fusermount3 -o rw,nosuid,nodev,fsname=portal,auto_unmount,subtype=portal -- /run/user/1000/doc
+              └─xdg-permission-store.service
+                └─635 /usr/lib/xdg-permission-store
+
+Apr 02 13:20:54 lumina-os VBoxService[529]: pam_loginuid(login:session): set_loginuid failed
+Apr 02 13:20:54 lumina-os VBoxService[529]: pam_unix(login:session): session opened for user live(uid=1000) by (uid=0)
+Apr 02 13:20:54 lumina-os VBoxService[529]: pam_unix(login:session): session closed for user live
+Apr 02 13:20:56 lumina-os baloo_file_extractor[2312]: Detected locale "C" with character encoding "ANSI_X3.4-1968", which is not UTF-8.
+                                                      Qt depends on a UTF-8 locale, and has switched to "C.UTF-8" instead.
+                                                      If this causes problems, reconfigure your locale. See the locale(1) manual
+                                                      for more information.
+Apr 02 13:20:56 lumina-os baloo_file_extractor[2312]: Not busy, fast indexing
+Apr 02 13:20:56 lumina-os baloo_file_extractor[2312]: Failed to register with host portal QDBusError("org.freedesktop.portal.Error.Failed", "Could not register app ID: App info not found for 'org.kde.baloo'")
+Apr 02 13:20:56 lumina-os kioworker[2374]: Detected locale "C" with character encoding "ANSI_X3.4-1968", which is not UTF-8.
+                                           Qt depends on a UTF-8 locale, and has switched to "C.UTF-8" instead.
+                                           If this causes problems, reconfigure your locale. See the locale(1) manual
+                                           for more information.
+Apr 02 13:20:57 lumina-os baloo_file_extractor[2376]: Detected locale "C" with character encoding "ANSI_X3.4-1968", which is not UTF-8.
+                                                      Qt depends on a UTF-8 locale, and has switched to "C.UTF-8" instead.
+                                                      If this causes problems, reconfigure your locale. See the locale(1) manual
+                                                      for more information.
+Apr 02 13:20:57 lumina-os baloo_file_extractor[2376]: Failed to register with host portal QDBusError("org.freedesktop.portal.Error.Failed", "Could not register app ID: App info not found for 'org.kde.baloo'")
+Apr 02 13:20:57 lumina-os baloo_file_extractor[2376]: Not busy, fast indexing

@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-exec /usr/local/bin/ahmados-capture-screenshot "$@"
+exec /bin/sh /usr/local/bin/ahmados-capture-screenshot "$@"

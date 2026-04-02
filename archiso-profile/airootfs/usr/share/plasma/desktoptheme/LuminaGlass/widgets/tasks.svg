@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="420" viewBox="0 0 260 420">
+  <defs>
+    <linearGradient id="taskIdle" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22FFFFFF"/>
+      <stop offset="100%" stop-color="#08FFFFFF"/>
+    </linearGradient>
+    <linearGradient id="taskHover" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#50FFFFFF"/>
+      <stop offset="100%" stop-color="#24BFE6FF"/>
+    </linearGradient>
+    <linearGradient id="taskFocus" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7854A2F8"/>
+      <stop offset="100%" stop-color="#5465D8D6"/>
+    </linearGradient>
+    <linearGradient id="taskAttention" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#78F0B48A"/>
+      <stop offset="100%" stop-color="#56D57466"/>
+    </linearGradient>
+    <linearGradient id="taskMinimized" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38111B28"/>
+      <stop offset="100%" stop-color="#20101A24"/>
+    </linearGradient>
+  </defs>
+
+  <g id="normal-topleft" transform="translate(0 0)">
+    <path d="M16 0 L16 16 L0 16 A16 16 0 0 1 16 0 Z" fill="url(#taskIdle)"/>
+  </g>
+  <g id="normal-top" transform="translate(20 0)">
+    <rect width="48" height="16" fill="url(#taskIdle)"/>
+  </g>
+  <g id="normal-topright" transform="translate(72 0)">
+    <path d="M0 0 L0 16 L16 16 A16 16 0 0 0 0 0 Z" fill="url(#taskIdle)"/>
+  </g>
+  <g id="normal-left" transform="translate(0 20)">
+    <rect width="16" height="16" fill="url(#taskIdle)"/>
+  </g>
+  <g id="normal-center" transform="translate(20 20)">
+    <rect width="48" height="16" fill="url(#taskIdle)"/>
+  </g>
+  <g id="normal-right" transform="translate(72 20)">
+    <rect width="16" height="16" fill="url(#taskIdle)"/>
+  </g>
+  <g id="normal-bottomleft" transform="translate(0 40)">
+    <path d="M0 0 L16 0 L16 16 A16 16 0 0 1 0 0 Z" fill="url(#taskIdle)"/>
+  </g>
+  <g id="normal-bottom" transform="translate(20 40)">
+    <rect width="48" height="16" fill="url(#taskIdle)"/>
+  </g>
+  <g id="normal-bottomright" transform="translate(72 40)">
+    <path d="M0 16 L0 0 L16 0 A16 16 0 0 1 0 16 Z" fill="url(#taskIdle)"/>
+  </g>
+
+  <g id="hover-topleft" transform="translate(0 84)">
+    <path d="M16 0 L16 16 L0 16 A16 16 0 0 1 16 0 Z" fill="url(#taskHover)"/>
+  </g>
+  <g id="hover-top" transform="translate(20 84)">
+    <rect width="48" height="16" fill="url(#taskHover)"/>
+  </g>
+  <g id="hover-topright" transform="translate(72 84)">
+    <path d="M0 0 L0 16 L16 16 A16 16 0 0 0 0 0 Z" fill="url(#taskHover)"/>
+  </g>
+  <g id="hover-left" transform="translate(0 104)">
+    <rect width="16" height="16" fill="url(#taskHover)"/>
+  </g>
+  <g id="hover-center" transform="translate(20 104)">
+    <rect width="48" height="16" fill="url(#taskHover)"/>
+  </g>
+  <g id="hover-right" transform="translate(72 104)">
+    <rect width="16" height="16" fill="url(#taskHover)"/>
+  </g>
+  <g id="hover-bottomleft" transform="translate(0 124)">
+    <path d="M0 0 L16 0 L16 16 A16 16 0 0 1 0 0 Z" fill="url(#taskHover)"/>
+  </g>
+  <g id="hover-bottom" transform="translate(20 124)">
+    <rect width="48" height="16" fill="url(#taskHover)"/>
+  </g>
+  <g id="hover-bottomright" transform="translate(72 124)">
+    <path d="M0 16 L0 0 L16 0 A16 16 0 0 1 0 16 Z" fill="url(#taskHover)"/>
+  </g>
+
+  <g id="focus-topleft" transform="translate(0 168)">
+    <path d="M16 0 L16 16 L0 16 A16 16 0 0 1 16 0 Z" fill="url(#taskFocus)"/>
+  </g>
+  <g id="focus-top" transform="translate(20 168)">
+    <rect width="48" height="16" fill="url(#taskFocus)"/>
+  </g>
+  <g id="focus-topright" transform="translate(72 168)">
+    <path d="M0 0 L0 16 L16 16 A16 16 0 0 0 0 0 Z" fill="url(#taskFocus)"/>
+  </g>
+  <g id="focus-left" transform="translate(0 188)">
+    <rect width="16" height="16" fill="url(#taskFocus)"/>
+  </g>
+  <g id="focus-center" transform="translate(20 188)">
+    <rect width="48" height="16" fill="url(#taskFocus)"/>
+  </g>
+  <g id="focus-right" transform="translate(72 188)">
+    <rect width="16" height="16" fill="url(#taskFocus)"/>
+  </g>
+  <g id="focus-bottomleft" transform="translate(0 208)">
+    <path d="M0 0 L16 0 L16 16 A16 16 0 0 1 0 0 Z" fill="url(#taskFocus)"/>
+  </g>
+  <g id="focus-bottom" transform="translate(20 208)">
+    <rect width="48" height="16" fill="url(#taskFocus)"/>
+  </g>
+  <g id="focus-bottomright" transform="translate(72 208)">
+    <path d="M0 16 L0 0 L16 0 A16 16 0 0 1 0 16 Z" fill="url(#taskFocus)"/>
+  </g>
+
+  <g id="attention-topleft" transform="translate(0 252)">
+    <path d="M16 0 L16 16 L0 16 A16 16 0 0 1 16 0 Z" fill="url(#taskAttention)"/>
+  </g>
+  <g id="attention-top" transform="translate(20 252)">
+    <rect width="48" height="16" fill="url(#taskAttention)"/>
+  </g>
+  <g id="attention-topright" transform="translate(72 252)">
+    <path d="M0 0 L0 16 L16 16 A16 16 0 0 0 0 0 Z" fill="url(#taskAttention)"/>
+  </g>
+  <g id="attention-left" transform="translate(0 272)">
+    <rect width="16" height="16" fill="url(#taskAttention)"/>
+  </g>
+  <g id="attention-center" transform="translate(20 272)">
+    <rect width="48" height="16" fill="url(#taskAttention)"/>
+  </g>
+  <g id="attention-right" transform="translate(72 272)">
+    <rect width="16" height="16" fill="url(#taskAttention)"/>
+  </g>
+  <g id="attention-bottomleft" transform="translate(0 292)">
+    <path d="M0 0 L16 0 L16 16 A16 16 0 0 1 0 0 Z" fill="url(#taskAttention)"/>
+  </g>
+  <g id="attention-bottom" transform="translate(20 292)">
+    <rect width="48" height="16" fill="url(#taskAttention)"/>
+  </g>
+  <g id="attention-bottomright" transform="translate(72 292)">
+    <path d="M0 16 L0 0 L16 0 A16 16 0 0 1 0 16 Z" fill="url(#taskAttention)"/>
+  </g>
+
+  <g id="minimized-topleft" transform="translate(0 336)">
+    <path d="M16 0 L16 16 L0 16 A16 16 0 0 1 16 0 Z" fill="url(#taskMinimized)"/>
+  </g>
+  <g id="minimized-top" transform="translate(20 336)">
+    <rect width="48" height="16" fill="url(#taskMinimized)"/>
+  </g>
+  <g id="minimized-topright" transform="translate(72 336)">
+    <path d="M0 0 L0 16 L16 16 A16 16 0 0 0 0 0 Z" fill="url(#taskMinimized)"/>
+  </g>
+  <g id="minimized-left" transform="translate(0 356)">
+    <rect width="16" height="16" fill="url(#taskMinimized)"/>
+  </g>
+  <g id="minimized-center" transform="translate(20 356)">
+    <rect width="48" height="16" fill="url(#taskMinimized)"/>
+  </g>
+  <g id="minimized-right" transform="translate(72 356)">
+    <rect width="16" height="16" fill="url(#taskMinimized)"/>
+  </g>
+  <g id="minimized-bottomleft" transform="translate(0 376)">
+    <path d="M0 0 L16 0 L16 16 A16 16 0 0 1 0 0 Z" fill="url(#taskMinimized)"/>
+  </g>
+  <g id="minimized-bottom" transform="translate(20 376)">
+    <rect width="48" height="16" fill="url(#taskMinimized)"/>
+  </g>
+  <g id="minimized-bottomright" transform="translate(72 376)">
+    <path d="M0 16 L0 0 L16 0 A16 16 0 0 1 0 16 Z" fill="url(#taskMinimized)"/>
+  </g>
+
+  <rect id="normal-hint-top-margin" x="120" y="10" width="1" height="10" fill="#000000"/>
+  <rect id="normal-hint-right-margin" x="126" y="26" width="10" height="1" fill="#000000"/>
+  <rect id="normal-hint-bottom-margin" x="120" y="52" width="1" height="10" fill="#000000"/>
+  <rect id="normal-hint-left-margin" x="104" y="26" width="10" height="1" fill="#000000"/>
+  <rect id="hint-stretch-borders" x="150" y="20" width="4" height="4" fill="#000000"/>
+</svg>

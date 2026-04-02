@@ -14,6 +14,7 @@ This file gives one fast answer to two questions:
 - the former Abdullah/Mohammad split has been collapsed into one execution plan so UI and build work stay aligned
 - Welcome, Update Center, and SDDM have received a clearer user-facing polish pass for real ISO validation
 - Welcome, Update Center, and SDDM now also share a richer glassmorphism design pass with frosted panels, stronger ambient lighting, and more premium control styling
+- Plasma now includes a dedicated `LuminaGlass` desktop theme for the dock-like taskbar, and that floating panel direction has already been tested live inside VirtualBox
 
 ### Live-System Implementation
 - the archiso profile is structured and prepared for a real Arch-side build
@@ -67,6 +68,7 @@ This file gives one fast answer to two questions:
 ### Real Execution Work
 - build a fresh `stable` ISO so the latest screenshot/runtime/Welcome fixes are verified on a new artifact
 - verify the new glass-style Welcome, Update Center, and SDDM surfaces inside a fresh ISO instead of relying only on source-side review
+- rebuild and verify the new floating `LuminaGlass` taskbar in a fresh ISO so the current live VM patch becomes the default shipped experience
 - validate the new direct GitHub Actions artifact-download path against the completed `stable` reference cycle
 - validate the new GitHub Actions cycle-finish wrapper against the completed `stable` diagnostics import
 - run the first real VM validation cycle for `login-test`

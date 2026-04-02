@@ -84,6 +84,7 @@
 - the current `stable` reference cycle now has a complete evidence chain, a passing audit, clear blockers, and `ready-for-next-stage` readiness
 - source-side follow-up fixes are now in place for the latest `stable` observations: stronger screenshot helper fallback, executable screenshot helper permissions in the live image, smarter session environment discovery, and a compact-screen Welcome preview layout fix for 1024x768 VirtualBox guests
 - Welcome, Update Center, and SDDM now share a stronger glassmorphism design pass with brighter frosted panels, layered ambient gradients, and more premium control styling aimed at a more iPhone-like visual tone
+- Plasma now has a dedicated `LuminaGlass` desktop theme for the floating panel and task backgrounds, and the dock-style panel direction has been live-validated inside VirtualBox on the current check VM
 
 ## Active Focus
 - validate the new direct GitHub Actions download helper against the completed `stable` reference cycle
@@ -92,6 +93,7 @@
 - boot and validate the `login-test` ISO so SDDM/manual-login evidence moves beyond `needs-audit`
 - validate the new Welcome and Update Center behavior inside a built ISO
 - validate the new glassmorphism UI pass inside a freshly built ISO so the new frosted surfaces and button styling are confirmed in the live runtime
+- validate the refreshed floating `LuminaGlass` taskbar on a fresh ISO so the current live patch becomes part of the normal booted experience without manual injection
 - validate the firstboot runtime report and cache generation inside a built ISO
 - capture the first real build and VM evidence trail
 - capture the first exported diagnostics bundle from a built ISO

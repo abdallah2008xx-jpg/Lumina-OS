@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="180" viewBox="0 0 360 180">
+  <defs>
+    <linearGradient id="dialogFill" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EA162434"/>
+      <stop offset="56%" stop-color="#DA12202E"/>
+      <stop offset="100%" stop-color="#E0101B29"/>
+    </linearGradient>
+    <linearGradient id="dialogGloss" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#6EFFFFFF"/>
+      <stop offset="100%" stop-color="#00FFFFFF"/>
+    </linearGradient>
+    <linearGradient id="dialogStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#94FFFFFF"/>
+      <stop offset="100%" stop-color="#4EADE7FF"/>
+    </linearGradient>
+  </defs>
+
+  <g id="topleft" transform="translate(0 0)">
+    <path d="M24 0 L24 24 L0 24 A24 24 0 0 1 24 0 Z" fill="url(#dialogFill)"/>
+  </g>
+  <g id="top" transform="translate(32 0)">
+    <rect width="88" height="24" fill="url(#dialogFill)"/>
+  </g>
+  <g id="topright" transform="translate(128 0)">
+    <path d="M0 0 L0 24 L24 24 A24 24 0 0 0 0 0 Z" fill="url(#dialogFill)"/>
+  </g>
+  <g id="left" transform="translate(0 32)">
+    <rect width="24" height="32" fill="url(#dialogFill)"/>
+  </g>
+  <g id="center" transform="translate(32 32)">
+    <rect width="88" height="32" fill="url(#dialogFill)"/>
+  </g>
+  <g id="right" transform="translate(128 32)">
+    <rect width="24" height="32" fill="url(#dialogFill)"/>
+  </g>
+  <g id="bottomleft" transform="translate(0 72)">
+    <path d="M0 0 L24 0 L24 24 A24 24 0 0 1 0 0 Z" fill="url(#dialogFill)"/>
+  </g>
+  <g id="bottom" transform="translate(32 72)">
+    <rect width="88" height="24" fill="url(#dialogFill)"/>
+  </g>
+  <g id="bottomright" transform="translate(128 72)">
+    <path d="M0 24 L0 0 L24 0 A24 24 0 0 1 0 24 Z" fill="url(#dialogFill)"/>
+  </g>
+
+  <g transform="translate(0 0)">
+    <rect x="0.5" y="0.5" width="152" height="96" rx="24" fill="none" stroke="url(#dialogStroke)" stroke-width="1"/>
+    <path d="M20 1 H132 C144 1 151 8 151 20 V30 H1 V20 C1 8 8 1 20 1 Z" fill="url(#dialogGloss)"/>
+  </g>
+
+  <rect id="hint-top-margin" x="174" y="14" width="1" height="18" fill="#000000"/>
+  <rect id="hint-right-margin" x="182" y="46" width="18" height="1" fill="#000000"/>
+  <rect id="hint-bottom-margin" x="174" y="86" width="1" height="18" fill="#000000"/>
+  <rect id="hint-left-margin" x="150" y="46" width="18" height="1" fill="#000000"/>
+</svg>

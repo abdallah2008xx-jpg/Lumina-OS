@@ -69,6 +69,11 @@ required_paths=(
     "${profile_path}/airootfs/usr/share/plasma/look-and-feel/com.ahmados.desktop/manifest.json"
     "${profile_path}/airootfs/usr/share/plasma/look-and-feel/com.ahmados.desktop.classic/manifest.json"
     "${profile_path}/airootfs/usr/share/plasma/look-and-feel/com.ahmados.desktop.minimal/manifest.json"
+    "${profile_path}/airootfs/usr/share/plasma/desktoptheme/LuminaGlass/metadata.json"
+    "${profile_path}/airootfs/usr/share/plasma/desktoptheme/LuminaGlass/plasmarc"
+    "${profile_path}/airootfs/usr/share/plasma/desktoptheme/LuminaGlass/widgets/panel-background.svg"
+    "${profile_path}/airootfs/usr/share/plasma/desktoptheme/LuminaGlass/widgets/tasks.svg"
+    "${profile_path}/airootfs/usr/share/plasma/desktoptheme/LuminaGlass/dialogs/background.svg"
     "${profile_path}/airootfs/usr/share/color-schemes/AhmadOS.colors"
     "${profile_path}/airootfs/usr/share/color-schemes/AhmadOSNight.colors"
     "${profile_path}/airootfs/usr/share/ahmados/welcome/Main.qml"
@@ -92,6 +97,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-welcome"
     "${profile_path}/airootfs/home/live/.local/bin/ahmados-apply-session-defaults"
     "${profile_path}/airootfs/home/live/.local/bin/lumina-apply-session-defaults"
+    "${profile_path}/airootfs/home/live/.config/plasmarc"
     "${profile_path}/airootfs/usr/local/lib/ahmados-session-context.sh"
     "${profile_path}/airootfs/home/live/.config/autostart/ahmados-firstboot.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-export-diagnostics.desktop"
@@ -181,6 +187,11 @@ else
     add_error "Missing wallpaper directory: ${wallpaper_dir#${repo_root}/}"
 fi
 
+plasma_theme_config="${profile_path}/airootfs/home/live/.config/plasmarc"
+if [[ -f "${plasma_theme_config}" ]] && ! grep -q 'name=LuminaGlass' "${plasma_theme_config}"; then
+    add_error "home/live/.config/plasmarc does not point to the LuminaGlass desktop theme."
+fi
+
 theme_conf="${profile_path}/airootfs/etc/sddm.conf.d/theme.conf"
 if [[ -f "${theme_conf}" ]]; then
     current_theme="$(awk -F= '/^Current=/{print $2; exit}' "${theme_conf}")"
@@ -215,6 +226,11 @@ if [[ -f "${release_config}" ]]; then
             add_error "Missing expected release variable in etc/ahmados-release.conf: ${required_variable}"
         fi
     done
+fi
+
+session_defaults="${profile_path}/airootfs/home/live/.local/bin/ahmados-apply-session-defaults"
+if [[ -f "${session_defaults}" ]] && ! grep -q 'desktop_theme_name="LuminaGlass"' "${session_defaults}"; then
+    add_error "ahmados-apply-session-defaults does not set the LuminaGlass desktop theme."
 fi
 
 firstboot="${profile_path}/airootfs/usr/local/bin/ahmados-firstboot"
@@ -274,7 +290,8 @@ for json_candidate in \
     "${profile_path}/airootfs/usr/share/ahmados/update-center/releases.json" \
     "${profile_path}/airootfs/usr/share/plasma/look-and-feel/com.ahmados.desktop/manifest.json" \
     "${profile_path}/airootfs/usr/share/plasma/look-and-feel/com.ahmados.desktop.classic/manifest.json" \
-    "${profile_path}/airootfs/usr/share/plasma/look-and-feel/com.ahmados.desktop.minimal/manifest.json"; do
+    "${profile_path}/airootfs/usr/share/plasma/look-and-feel/com.ahmados.desktop.minimal/manifest.json" \
+    "${profile_path}/airootfs/usr/share/plasma/desktoptheme/LuminaGlass/metadata.json"; do
     if command -v python3 >/dev/null 2>&1; then
         if ! python3 -m json.tool "${json_candidate}" >/dev/null 2>&1; then
             add_error "Invalid JSON in: ${json_candidate#${repo_root}/}"

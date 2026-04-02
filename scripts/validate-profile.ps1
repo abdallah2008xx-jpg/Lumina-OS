@@ -57,6 +57,11 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\share\plasma\look-and-feel\com.ahmados.desktop\manifest.json",
     "archiso-profile\airootfs\usr\share\plasma\look-and-feel\com.ahmados.desktop.classic\manifest.json",
     "archiso-profile\airootfs\usr\share\plasma\look-and-feel\com.ahmados.desktop.minimal\manifest.json",
+    "archiso-profile\airootfs\usr\share\plasma\desktoptheme\LuminaGlass\metadata.json",
+    "archiso-profile\airootfs\usr\share\plasma\desktoptheme\LuminaGlass\plasmarc",
+    "archiso-profile\airootfs\usr\share\plasma\desktoptheme\LuminaGlass\widgets\panel-background.svg",
+    "archiso-profile\airootfs\usr\share\plasma\desktoptheme\LuminaGlass\widgets\tasks.svg",
+    "archiso-profile\airootfs\usr\share\plasma\desktoptheme\LuminaGlass\dialogs\background.svg",
     "archiso-profile\airootfs\usr\share\color-schemes\AhmadOS.colors",
     "archiso-profile\airootfs\usr\share\color-schemes\AhmadOSNight.colors",
     "archiso-profile\airootfs\usr\share\ahmados\welcome\Main.qml",
@@ -80,6 +85,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-welcome",
     "archiso-profile\airootfs\home\live\.local\bin\ahmados-apply-session-defaults",
     "archiso-profile\airootfs\home\live\.local\bin\lumina-apply-session-defaults",
+    "archiso-profile\airootfs\home\live\.config\plasmarc",
     "archiso-profile\airootfs\usr\local\lib\ahmados-session-context.sh",
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-firstboot.desktop",
     "archiso-profile\airootfs\usr\share\applications\ahmados-export-diagnostics.desktop",
@@ -153,7 +159,8 @@ $jsonFiles = @(
     "archiso-profile\airootfs\usr\share\ahmados\update-center\releases.json",
     "archiso-profile\airootfs\usr\share\plasma\look-and-feel\com.ahmados.desktop\manifest.json",
     "archiso-profile\airootfs\usr\share\plasma\look-and-feel\com.ahmados.desktop.classic\manifest.json",
-    "archiso-profile\airootfs\usr\share\plasma\look-and-feel\com.ahmados.desktop.minimal\manifest.json"
+    "archiso-profile\airootfs\usr\share\plasma\look-and-feel\com.ahmados.desktop.minimal\manifest.json",
+    "archiso-profile\airootfs\usr\share\plasma\desktoptheme\LuminaGlass\metadata.json"
 )
 
 foreach ($jsonFile in $jsonFiles) {
@@ -178,6 +185,14 @@ if (Test-Path $wallpaperPath) {
     $wallpapers = Get-ChildItem $wallpaperPath -Filter *.svg -ErrorAction SilentlyContinue
     if ($wallpapers.Count -lt 3) {
         Add-Error "Expected at least three Lumina-OS wallpapers, found $($wallpapers.Count)."
+    }
+}
+
+$plasmaThemeConfigPath = Join-Path $RepoRoot "archiso-profile\airootfs\home\live\.config\plasmarc"
+if (Test-Path $plasmaThemeConfigPath) {
+    $plasmaThemeConfig = Get-Content -Raw $plasmaThemeConfigPath
+    if ($plasmaThemeConfig -notmatch 'name=LuminaGlass') {
+        Add-Error "home/live/.config/plasmarc does not point to the LuminaGlass desktop theme."
     }
 }
 else {
@@ -228,6 +243,14 @@ if (Test-Path $releaseConfigPath) {
         if ($releaseConfig -notmatch [regex]::Escape($requiredVariable)) {
             Add-Error "Missing expected release variable in etc/ahmados-release.conf: $requiredVariable"
         }
+    }
+}
+
+$sessionDefaultsPath = Join-Path $RepoRoot "archiso-profile\airootfs\home\live\.local\bin\ahmados-apply-session-defaults"
+if (Test-Path $sessionDefaultsPath) {
+    $sessionDefaultsContent = Get-Content -Raw $sessionDefaultsPath
+    if ($sessionDefaultsContent -notmatch 'desktop_theme_name="LuminaGlass"') {
+        Add-Error "ahmados-apply-session-defaults does not set the LuminaGlass desktop theme."
     }
 }
 

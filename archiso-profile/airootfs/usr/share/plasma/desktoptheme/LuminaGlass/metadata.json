@@ -1,0 +1,18 @@
+{
+  "KPlugin": {
+    "Authors": [
+      {
+        "Name": "OpenAI Codex"
+      }
+    ],
+    "Name": "Lumina Glass",
+    "Description": "Floating frosted-glass Plasma surfaces for Lumina-OS",
+    "Id": "LuminaGlass",
+    "Version": "0.1.0",
+    "Category": "Lumina-OS",
+    "EnabledByDefault": true,
+    "License": "GPL-3.0-or-later",
+    "Website": "https://github.com/abdallah2008xx-jpg/Lumina-OS"
+  },
+  "X-Plasma-API": "5.0"
+}

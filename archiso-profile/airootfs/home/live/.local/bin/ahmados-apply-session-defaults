@@ -5,6 +5,7 @@ stamp_dir="${HOME}/.config/ahmados"
 stamp_file="${stamp_dir}/session-defaults-applied"
 config_file="${stamp_dir}/welcome.conf"
 kdeglobals_file="${HOME}/.config/kdeglobals"
+plasmarc_file="${HOME}/.config/plasmarc"
 
 force_apply=0
 
@@ -76,6 +77,7 @@ appearance_choice="$(read_config_value "appearance" "light")"
 wallpaper_choice="$(read_config_value "wallpaper" "/usr/share/ahmados/wallpapers/ahmados-lagoon.svg")"
 lookandfeel_package="$(resolve_lookandfeel "${layout_choice}")"
 colorscheme_name="$(resolve_colorscheme "${appearance_choice}")"
+desktop_theme_name="LuminaGlass"
 
 sleep 4
 
@@ -97,6 +99,7 @@ if command -v kwriteconfig6 >/dev/null 2>&1; then
     kwriteconfig6 --file "${kdeglobals_file}" --group KDE --key LookAndFeelPackage "${lookandfeel_package}" || true
     kwriteconfig6 --file "${kdeglobals_file}" --group General --key ColorScheme "${colorscheme_name}" || true
     kwriteconfig6 --file "${kdeglobals_file}" --group General --key Name "Lumina-OS" || true
+    kwriteconfig6 --file "${plasmarc_file}" --group Theme --key name "${desktop_theme_name}" || true
 fi
 
 touch "${stamp_file}"

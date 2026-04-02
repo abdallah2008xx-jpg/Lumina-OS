@@ -1,6 +1,6 @@
 ﻿# Lumina-OS Shareable Update
 
-- Generated At: 2026-04-02T07:42:13
+- Generated At: 2026-04-02T08:03:48
 - Readiness State: ready-for-next-stage
 - Validation Matrix State: in-progress
 - Release Candidate State: not-recorded-yet
@@ -15,11 +15,11 @@
 - Current tracked run label: gha-stable-18-1
 
 ## Recent Progress
-- the `login-test` handoff from GitHub Actions run `#8` has now been imported into this workspace and its first local VM evidence chain has been initialized on run label `gha-login-test-8-1`
 - the newer `stable` handoff from GitHub Actions run `#18` has now been imported into this workspace and completed as a real local VM cycle on run label `gha-stable-18-1`
 - the current `stable` reference cycle now has a complete evidence chain, a passing audit, clear blockers, and `ready-for-next-stage` readiness
 - source-side follow-up fixes are now in place for the latest `stable` observations: stronger screenshot helper fallback, executable screenshot helper permissions in the live image, smarter session environment discovery, and a compact-screen Welcome preview layout fix for 1024x768 VirtualBox guests
 - Welcome, Update Center, and SDDM now share a stronger glassmorphism design pass with brighter frosted panels, layered ambient gradients, and more premium control styling aimed at a more iPhone-like visual tone
+- Plasma now has a dedicated `LuminaGlass` desktop theme for the floating panel and task backgrounds, and the dock-style panel direction has been live-validated inside VirtualBox on the current check VM
 
 ## What Is Ready
 - The core build/test/release workflow is scaffolded and validated locally.

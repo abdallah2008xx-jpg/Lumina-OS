@@ -3,6 +3,9 @@ arch-install-scripts
 base
 linux
 linux-firmware
+amd-ucode
+intel-ucode
+sof-firmware
 mkinitcpio
 mkinitcpio-archiso
 archlinux-keyring
@@ -10,6 +13,7 @@ sudo
 nano
 vim
 networkmanager
+wireless-regdb
 curl
 
 # Boot / ISO tooling expectations
@@ -45,6 +49,16 @@ plasma-pa
 spectacle
 ark
 firefox
+
+# Real hardware diagnostics / storage friendliness
+pciutils
+usbutils
+dmidecode
+smartmontools
+hdparm
+ntfs-3g
+exfatprogs
+dosfstools
 
 # Fonts / polish baseline
 noto-fonts

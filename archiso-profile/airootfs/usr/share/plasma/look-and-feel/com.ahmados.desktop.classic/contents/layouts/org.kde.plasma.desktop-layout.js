@@ -16,7 +16,9 @@ if (panel.formFactor === "horizontal") {
 
 panel.addWidget("org.kde.plasma.kickoff")
 panel.addWidget("org.kde.plasma.marginsseparator")
-panel.addWidget("org.kde.plasma.icontasks")
+var tasks = panel.addWidget("org.kde.plasma.icontasks")
+tasks.currentConfigGroup = ["General"]
+tasks.writeConfig("launchers", "preferred://filemanager,preferred://browser")
 panel.addWidget("org.kde.plasma.panelspacer")
 panel.addWidget("org.kde.plasma.digitalclock")
 panel.addWidget("org.kde.plasma.systemtray")

@@ -750,7 +750,9 @@ ApplicationWindow {
 
                             ColumnLayout {
                                 id: currentSelectionCard
-                                anchors.fill: parent
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
                                 anchors.margins: previewCardPadding
                                 spacing: Math.max(8, Math.round(10 * uiScale))
 
@@ -835,7 +837,9 @@ ApplicationWindow {
 
                             ColumnLayout {
                                 id: applyCard
-                                anchors.fill: parent
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
                                 anchors.margins: previewCardPadding
                                 spacing: Math.max(8, Math.round(10 * uiScale))
 
@@ -888,7 +892,9 @@ ApplicationWindow {
 
                             ColumnLayout {
                                 id: noteCard
-                                anchors.fill: parent
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
                                 anchors.margins: previewCardPadding
                                 spacing: Math.max(8, Math.round(10 * uiScale))
 

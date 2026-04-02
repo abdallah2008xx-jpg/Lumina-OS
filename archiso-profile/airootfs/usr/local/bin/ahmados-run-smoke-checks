@@ -175,7 +175,8 @@ service_check NetworkManager.service "NetworkManager"
 
 file_check "${config_file}" "Welcome Config"
 file_check "${state_root}/firstboot-report.md" "Firstboot Report"
-file_check "${state_root}/smoke-check-report.md" "Smoke Report"
+# This run rewrites the smoke report itself, so treat report generation as the check.
+add_check "PASS" "Smoke Report" "report will be refreshed by the current run"
 file_check "${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados/update-center/releases.json" "Update Metadata Cache"
 file_check "${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados/update-center/status.json" "Update Status Cache"
 

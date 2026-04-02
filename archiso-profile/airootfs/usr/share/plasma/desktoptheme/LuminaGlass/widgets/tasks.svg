@@ -1,24 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="260" height="420" viewBox="0 0 260 420">
   <defs>
     <linearGradient id="taskIdle" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#22FFFFFF"/>
-      <stop offset="100%" stop-color="#08FFFFFF"/>
+      <stop offset="0%" stop-color="#5EFFFFFF"/>
+      <stop offset="100%" stop-color="#2ED0EAFF"/>
     </linearGradient>
     <linearGradient id="taskHover" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#50FFFFFF"/>
-      <stop offset="100%" stop-color="#24BFE6FF"/>
+      <stop offset="0%" stop-color="#88FFFFFF"/>
+      <stop offset="100%" stop-color="#55D3EEFF"/>
     </linearGradient>
     <linearGradient id="taskFocus" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#7854A2F8"/>
-      <stop offset="100%" stop-color="#5465D8D6"/>
+      <stop offset="0%" stop-color="#B4FFFFFF"/>
+      <stop offset="100%" stop-color="#79BEEFFF"/>
     </linearGradient>
     <linearGradient id="taskAttention" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#78F0B48A"/>
-      <stop offset="100%" stop-color="#56D57466"/>
+      <stop offset="0%" stop-color="#A4FFE5BF"/>
+      <stop offset="100%" stop-color="#72D7F5C5"/>
     </linearGradient>
     <linearGradient id="taskMinimized" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38111B28"/>
-      <stop offset="100%" stop-color="#20101A24"/>
+      <stop offset="0%" stop-color="#3EFFFFFF"/>
+      <stop offset="100%" stop-color="#18DAEFFF"/>
     </linearGradient>
   </defs>
 

@@ -1,17 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="360" height="180" viewBox="0 0 360 180">
   <defs>
     <linearGradient id="panelFill" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#D91B2B39"/>
-      <stop offset="58%" stop-color="#C6172432"/>
-      <stop offset="100%" stop-color="#CC112230"/>
+      <stop offset="0%" stop-color="#D9F4FAFF"/>
+      <stop offset="58%" stop-color="#CCE3F1FF"/>
+      <stop offset="100%" stop-color="#D0D7ECFF"/>
     </linearGradient>
     <linearGradient id="panelGloss" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#73FFFFFF"/>
+      <stop offset="0%" stop-color="#F6FFFFFF"/>
+      <stop offset="42%" stop-color="#74FFFFFF"/>
       <stop offset="100%" stop-color="#00FFFFFF"/>
     </linearGradient>
     <linearGradient id="panelStroke" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#9AFFFFFF"/>
-      <stop offset="100%" stop-color="#52C4E5FF"/>
+      <stop offset="0%" stop-color="#FFFFFFFF"/>
+      <stop offset="100%" stop-color="#B7D8F5FF"/>
     </linearGradient>
   </defs>
 
@@ -46,6 +47,7 @@
   <g id="floating-center" transform="translate(172 34)">
     <rect x="0.5" y="0.5" width="147" height="67" rx="33.5" fill="url(#panelFill)" stroke="url(#panelStroke)" stroke-width="1"/>
     <path d="M18 1 H130 C141 1 147 7 147 18 V25 H1 V18 C1 7 7 1 18 1 Z" fill="url(#panelGloss)"/>
+    <rect x="7" y="9" width="133" height="50" rx="25" fill="#48FFFFFF"/>
   </g>
 
   <rect id="hint-top-margin" x="144" y="10" width="1" height="14" fill="#000000"/>

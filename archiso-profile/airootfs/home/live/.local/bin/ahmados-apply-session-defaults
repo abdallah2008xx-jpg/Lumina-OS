@@ -77,7 +77,9 @@ appearance_choice="$(read_config_value "appearance" "light")"
 wallpaper_choice="$(read_config_value "wallpaper" "/usr/share/ahmados/wallpapers/ahmados-lagoon.svg")"
 lookandfeel_package="$(resolve_lookandfeel "${layout_choice}")"
 colorscheme_name="$(resolve_colorscheme "${appearance_choice}")"
-desktop_theme_name="LuminaGlass"
+# Keep the custom floating layout, but default to Plasma's stable desktop theme
+# until the glass theme is reworked for production use.
+desktop_theme_name="default"
 
 sleep 4
 

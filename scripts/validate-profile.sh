@@ -73,7 +73,6 @@ required_paths=(
     "${profile_path}/airootfs/usr/share/plasma/desktoptheme/LuminaGlass/plasmarc"
     "${profile_path}/airootfs/usr/share/plasma/desktoptheme/LuminaGlass/widgets/panel-background.svg"
     "${profile_path}/airootfs/usr/share/plasma/desktoptheme/LuminaGlass/widgets/tasks.svg"
-    "${profile_path}/airootfs/usr/share/plasma/desktoptheme/LuminaGlass/dialogs/background.svg"
     "${profile_path}/airootfs/usr/share/color-schemes/AhmadOS.colors"
     "${profile_path}/airootfs/usr/share/color-schemes/AhmadOSNight.colors"
     "${profile_path}/airootfs/usr/share/ahmados/welcome/Main.qml"
@@ -188,8 +187,8 @@ else
 fi
 
 plasma_theme_config="${profile_path}/airootfs/home/live/.config/plasmarc"
-if [[ -f "${plasma_theme_config}" ]] && ! grep -q 'name=LuminaGlass' "${plasma_theme_config}"; then
-    add_error "home/live/.config/plasmarc does not point to the LuminaGlass desktop theme."
+if [[ -f "${plasma_theme_config}" ]] && ! grep -q 'name=default' "${plasma_theme_config}"; then
+    add_error "home/live/.config/plasmarc does not point to the default Plasma desktop theme."
 fi
 
 theme_conf="${profile_path}/airootfs/etc/sddm.conf.d/theme.conf"
@@ -229,8 +228,8 @@ if [[ -f "${release_config}" ]]; then
 fi
 
 session_defaults="${profile_path}/airootfs/home/live/.local/bin/ahmados-apply-session-defaults"
-if [[ -f "${session_defaults}" ]] && ! grep -q 'desktop_theme_name="LuminaGlass"' "${session_defaults}"; then
-    add_error "ahmados-apply-session-defaults does not set the LuminaGlass desktop theme."
+if [[ -f "${session_defaults}" ]] && ! grep -q 'desktop_theme_name="default"' "${session_defaults}"; then
+    add_error "ahmados-apply-session-defaults does not set the default Plasma desktop theme."
 fi
 
 firstboot="${profile_path}/airootfs/usr/local/bin/ahmados-firstboot"

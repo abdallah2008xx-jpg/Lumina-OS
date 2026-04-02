@@ -61,7 +61,6 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\share\plasma\desktoptheme\LuminaGlass\plasmarc",
     "archiso-profile\airootfs\usr\share\plasma\desktoptheme\LuminaGlass\widgets\panel-background.svg",
     "archiso-profile\airootfs\usr\share\plasma\desktoptheme\LuminaGlass\widgets\tasks.svg",
-    "archiso-profile\airootfs\usr\share\plasma\desktoptheme\LuminaGlass\dialogs\background.svg",
     "archiso-profile\airootfs\usr\share\color-schemes\AhmadOS.colors",
     "archiso-profile\airootfs\usr\share\color-schemes\AhmadOSNight.colors",
     "archiso-profile\airootfs\usr\share\ahmados\welcome\Main.qml",
@@ -191,8 +190,8 @@ if (Test-Path $wallpaperPath) {
 $plasmaThemeConfigPath = Join-Path $RepoRoot "archiso-profile\airootfs\home\live\.config\plasmarc"
 if (Test-Path $plasmaThemeConfigPath) {
     $plasmaThemeConfig = Get-Content -Raw $plasmaThemeConfigPath
-    if ($plasmaThemeConfig -notmatch 'name=LuminaGlass') {
-        Add-Error "home/live/.config/plasmarc does not point to the LuminaGlass desktop theme."
+    if ($plasmaThemeConfig -notmatch 'name=default') {
+        Add-Error "home/live/.config/plasmarc does not point to the default Plasma desktop theme."
     }
 }
 else {
@@ -249,8 +248,8 @@ if (Test-Path $releaseConfigPath) {
 $sessionDefaultsPath = Join-Path $RepoRoot "archiso-profile\airootfs\home\live\.local\bin\ahmados-apply-session-defaults"
 if (Test-Path $sessionDefaultsPath) {
     $sessionDefaultsContent = Get-Content -Raw $sessionDefaultsPath
-    if ($sessionDefaultsContent -notmatch 'desktop_theme_name="LuminaGlass"') {
-        Add-Error "ahmados-apply-session-defaults does not set the LuminaGlass desktop theme."
+    if ($sessionDefaultsContent -notmatch 'desktop_theme_name="default"') {
+        Add-Error "ahmados-apply-session-defaults does not set the default Plasma desktop theme."
     }
 }
 

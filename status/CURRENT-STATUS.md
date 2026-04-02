@@ -83,6 +83,7 @@
 - the newer `stable` handoff from GitHub Actions run `#18` has now been imported into this workspace and completed as a real local VM cycle on run label `gha-stable-18-1`
 - the current `stable` reference cycle now has a complete evidence chain, a passing audit, clear blockers, and `ready-for-next-stage` readiness
 - source-side follow-up fixes are now in place for the latest `stable` observations: stronger screenshot helper fallback, executable screenshot helper permissions in the live image, smarter session environment discovery, and a compact-screen Welcome preview layout fix for 1024x768 VirtualBox guests
+- Welcome, Update Center, and SDDM now share a stronger glassmorphism design pass with brighter frosted panels, layered ambient gradients, and more premium control styling aimed at a more iPhone-like visual tone
 
 ## Active Focus
 - validate the new direct GitHub Actions download helper against the completed `stable` reference cycle
@@ -90,6 +91,7 @@
 - run the next `stable` build so the new screenshot/runtime/Welcome fixes are validated on a fresh ISO
 - boot and validate the `login-test` ISO so SDDM/manual-login evidence moves beyond `needs-audit`
 - validate the new Welcome and Update Center behavior inside a built ISO
+- validate the new glassmorphism UI pass inside a freshly built ISO so the new frosted surfaces and button styling are confirmed in the live runtime
 - validate the firstboot runtime report and cache generation inside a built ISO
 - capture the first real build and VM evidence trail
 - capture the first exported diagnostics bundle from a built ISO

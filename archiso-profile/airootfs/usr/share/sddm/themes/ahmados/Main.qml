@@ -18,6 +18,8 @@ Rectangle {
     property color accentWarm: config.accentWarm ? config.accentWarm : "#C9895B"
     property color dangerColor: config.dangerColor ? config.dangerColor : "#BC6454"
     property color infoColor: config.infoColor ? config.infoColor : "#3F8F95"
+    property color glassBorder: "#58F7F3ED"
+    property color cardHighlight: "#26FFFFFF"
     property int sessionIndex: session.index
 
     LayoutMirroring.enabled: Qt.locale().textDirection == Qt.RightToLeft
@@ -26,18 +28,38 @@ Rectangle {
     TextConstants { id: textConstants }
 
     gradient: Gradient {
-        GradientStop { position: 0.0; color: root.backgroundBase }
-        GradientStop { position: 0.55; color: root.backgroundMid }
+        GradientStop { position: 0.0; color: "#04090E" }
+        GradientStop { position: 0.24; color: root.backgroundBase }
+        GradientStop { position: 0.58; color: root.backgroundMid }
         GradientStop { position: 1.0; color: root.backgroundEdge }
     }
 
     Rectangle {
-        x: width * 0.68
-        y: height * 0.10
-        width: 260
-        height: 260
-        radius: 130
-        color: "#18F7F3ED"
+        anchors.fill: parent
+        gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "#10000000" }
+            GradientStop { position: 0.35; color: "#0409131A" }
+            GradientStop { position: 1.0; color: "#220F3B47" }
+        }
+    }
+
+    Rectangle {
+        x: width * 0.66
+        y: height * 0.06
+        width: 330
+        height: 330
+        radius: 165
+        color: "#245D8AF2"
+    }
+
+    Rectangle {
+        x: width * 0.52
+        y: height * 0.22
+        width: 360
+        height: 360
+        radius: 180
+        color: "#2650D6C9"
     }
 
     Rectangle {
@@ -46,12 +68,14 @@ Rectangle {
         width: 520
         height: 520
         radius: 260
-        color: "#143F8F95"
+        color: "#22E4A57C"
     }
 
     Rectangle {
         anchors.fill: parent
         color: "#1209131A"
+        border.color: "#14FFFFFF"
+        border.width: 1
     }
 
     Connections {
@@ -80,11 +104,15 @@ Rectangle {
         anchors.right: parent.right
         anchors.margins: 28
         height: 64
-        color: "transparent"
+        radius: 28
+        color: "#18111C29"
+        border.color: "#2CFFFFFF"
+        border.width: 1
 
         Row {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
+            anchors.leftMargin: 20
             spacing: 12
 
             Rectangle {
@@ -115,6 +143,7 @@ Rectangle {
         Clock {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
+            anchors.rightMargin: 20
             color: root.primaryText
             timeFont.pixelSize: 22
         }
@@ -127,9 +156,25 @@ Rectangle {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         radius: 28
-        color: root.cardColor
-        border.color: root.cardBorder
+        color: "transparent"
+        border.color: root.glassBorder
         border.width: 1
+
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: "#B9132437" }
+            GradientStop { position: 0.44; color: "#A5101F2F" }
+            GradientStop { position: 1.0; color: "#92162E42" }
+        }
+
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 1
+            height: parent.height * 0.26
+            radius: parent.radius
+            color: root.cardHighlight
+        }
 
         Column {
             anchors.fill: parent
@@ -153,8 +198,9 @@ Rectangle {
             Rectangle {
                 width: parent.width
                 radius: 18
-                color: "#142D6C8A"
-                border.color: "#202D6C8A"
+                color: "#325A86D8"
+                border.color: "#54C8E5FF"
+                border.width: 1
 
                 Column {
                     width: parent.width
@@ -286,9 +332,9 @@ Rectangle {
                     width: parent.width * 0.5 - 5
                     height: 44
                     text: textConstants.login
-                    color: root.accentColor
+                    color: "#4A4D8FEA"
                     textColor: root.primaryText
-                    borderColor: root.accentSecondary
+                    borderColor: "#74C8E5FF"
                     pressedColor: root.accentWarm
                     activeColor: root.accentSecondary
                     font.pixelSize: 16
@@ -304,9 +350,9 @@ Rectangle {
                     width: parent.width * 0.25 - 5
                     height: 44
                     text: textConstants.shutdown
-                    color: "#19F7F3ED"
+                    color: "#24111C29"
                     textColor: root.primaryText
-                    borderColor: "#20F7F3ED"
+                    borderColor: "#40FFFFFF"
                     pressedColor: root.dangerColor
                     activeColor: root.accentWarm
                     font.pixelSize: 14
@@ -322,9 +368,9 @@ Rectangle {
                     width: parent.width * 0.25 - 5
                     height: 44
                     text: textConstants.reboot
-                    color: "#19F7F3ED"
+                    color: "#24111C29"
                     textColor: root.primaryText
-                    borderColor: "#20F7F3ED"
+                    borderColor: "#40FFFFFF"
                     pressedColor: root.accentWarm
                     activeColor: root.accentSecondary
                     font.pixelSize: 14

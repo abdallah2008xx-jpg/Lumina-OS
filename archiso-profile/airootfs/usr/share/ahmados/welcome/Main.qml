@@ -30,7 +30,7 @@ ApplicationWindow {
     visible: true
     visibility: compact ? Window.Maximized : Window.Windowed
     title: qsTr("Welcome to Lumina-OS")
-    color: "#09131A"
+    color: "#060B10"
 
     property int currentStep: 0
     property string selectedLanguage: "ar"
@@ -194,14 +194,22 @@ ApplicationWindow {
         }
     ]
 
-    readonly property color ink: "#09131A"
-    readonly property color mist: "#C8D3DA"
-    readonly property color cloud: "#EDF2F4"
-    readonly property color ivory: "#F7F3ED"
-    readonly property color brand: "#2D6C8A"
-    readonly property color lagoon: "#3F8F95"
-    readonly property color copper: "#C9895B"
-    readonly property color lineSoft: "#22F7F3ED"
+    readonly property color ink: "#08131D"
+    readonly property color mist: "#D5E2EC"
+    readonly property color cloud: "#F1F8FB"
+    readonly property color ivory: "#FBFEFF"
+    readonly property color brand: "#4B8ED8"
+    readonly property color lagoon: "#62C8C5"
+    readonly property color copper: "#F0B48A"
+    readonly property color lineSoft: "#4AFFFFFF"
+    readonly property color glassPanel: "#C4EFF5F8"
+    readonly property color glassPanelEdge: "#72FFFFFF"
+    readonly property color glassPanelSoft: "#9EE2EDF3"
+    readonly property color darkGlass: "#78111D2A"
+    readonly property color darkGlassStrong: "#92142536"
+    readonly property color blueGlow: "#245D8AF2"
+    readonly property color aquaGlow: "#264FD8C6"
+    readonly property color warmGlow: "#22E4A57C"
 
     Settings {
         id: welcomeSettings
@@ -211,6 +219,64 @@ ApplicationWindow {
         property alias layout: root.selectedLayout
         property alias wallpaper: root.selectedWallpaper
         property alias channel: root.selectedChannel
+    }
+
+    component GlassButton: Button {
+        id: control
+        property color fillColor: "#1AFBFEFF"
+        property color edgeColor: "#4AFFFFFF"
+        property color textColor: root.ink
+        property color shineColor: "#84FFFFFF"
+        implicitHeight: Math.max(44, Math.round(48 * root.uiScale))
+        padding: 0
+        font.pixelSize: root.labelSize + 1
+        font.bold: true
+        hoverEnabled: true
+        opacity: enabled ? 1.0 : 0.48
+
+        contentItem: Label {
+            text: control.text
+            color: control.textColor
+            font.pixelSize: control.font.pixelSize
+            font.bold: control.font.bold
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+
+        background: Rectangle {
+            radius: height / 2
+            border.width: 1
+            border.color: control.edgeColor
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: control.down ? Qt.rgba(1, 1, 1, 0.08) : control.shineColor }
+                GradientStop { position: 0.16; color: control.fillColor }
+                GradientStop { position: 1.0; color: control.down ? control.fillColor : Qt.tint(control.fillColor, "#1209131A") }
+            }
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 1
+                height: parent.height * 0.45
+                radius: parent.radius
+                color: "#26FFFFFF"
+            }
+        }
+    }
+
+    component AccentButton: GlassButton {
+        fillColor: "#5B4D8FEA"
+        edgeColor: "#7CBFE6FF"
+        textColor: root.ivory
+        shineColor: "#92CFE4FF"
+    }
+
+    component DarkGlassButton: GlassButton {
+        fillColor: "#2A101C29"
+        edgeColor: "#40FFFFFF"
+        textColor: root.ivory
+        shineColor: "#30FFFFFF"
     }
 
     function choiceLabel(choices, value, fallbackText) {
@@ -311,28 +377,56 @@ ApplicationWindow {
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
-            GradientStop { position: 0.0; color: "#09131A" }
-            GradientStop { position: 0.55; color: "#10212D" }
-            GradientStop { position: 1.0; color: "#214455" }
+            GradientStop { position: 0.0; color: "#04090E" }
+            GradientStop { position: 0.26; color: "#091722" }
+            GradientStop { position: 0.62; color: "#112737" }
+            GradientStop { position: 1.0; color: "#1F4255" }
         }
     }
 
     Rectangle {
-        width: 420
-        height: 420
-        radius: 210
-        x: root.width - 340
-        y: -110
-        color: "#14F7F3ED"
+        anchors.fill: parent
+        gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "#12000000" }
+            GradientStop { position: 0.34; color: "#0609131A" }
+            GradientStop { position: 1.0; color: "#240F3B47" }
+        }
     }
 
     Rectangle {
-        width: 520
-        height: 520
-        radius: 260
-        x: -180
-        y: root.height - 300
-        color: "#163F8F95"
+        width: 560
+        height: 560
+        radius: 280
+        x: root.width - 390
+        y: -180
+        color: root.blueGlow
+    }
+
+    Rectangle {
+        width: 480
+        height: 480
+        radius: 240
+        x: root.width * 0.54
+        y: root.height * 0.18
+        color: root.aquaGlow
+    }
+
+    Rectangle {
+        width: 540
+        height: 540
+        radius: 270
+        x: -220
+        y: root.height - 320
+        color: root.warmGlow
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        color: "#0AFFFFFF"
+        border.color: "#12FFFFFF"
+        border.width: 1
+        visible: !root.compact
     }
 
     RowLayout {
@@ -345,9 +439,37 @@ ApplicationWindow {
             Layout.fillHeight: true
             Layout.preferredWidth: 3
             radius: shellRadius
-            color: "#D6F7F3ED"
-            border.color: lineSoft
+            color: "transparent"
+            border.color: glassPanelEdge
             border.width: 1
+
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: root.glassPanel }
+                GradientStop { position: 0.54; color: root.glassPanelSoft }
+                GradientStop { position: 1.0; color: "#A6F7FBFD" }
+            }
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 1
+                height: parent.height * 0.28
+                radius: shellRadius
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: "#80FFFFFF" }
+                    GradientStop { position: 1.0; color: "#00FFFFFF" }
+                }
+            }
+
+            Rectangle {
+                width: Math.max(220, parent.width * 0.42)
+                height: Math.max(220, parent.width * 0.42)
+                radius: width / 2
+                x: parent.width - width * 0.72
+                y: -width * 0.44
+                color: "#18FFFFFF"
+            }
 
             ColumnLayout {
                 anchors.fill: parent
@@ -369,7 +491,7 @@ ApplicationWindow {
 
                         Label {
                             text: qsTr("Live orientation")
-                            color: "#5B7180"
+                            color: "#567487"
                             font.pixelSize: labelSize
                         }
                     }
@@ -380,11 +502,16 @@ ApplicationWindow {
                         width: Math.max(40, Math.round(48 * uiScale))
                         height: Math.max(40, Math.round(48 * uiScale))
                         radius: width / 2
-                        color: brand
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: "#76BFE7FF" }
+                            GradientStop { position: 1.0; color: root.brand }
+                        }
+                        border.color: "#58FFFFFF"
+                        border.width: 1
 
                         Label {
                             anchors.centerIn: parent
-                            text: "A"
+                            text: "L"
                             color: ivory
                             font.pixelSize: compact ? 16 : 18
                             font.bold: true
@@ -401,9 +528,17 @@ ApplicationWindow {
 
                         Rectangle {
                             Layout.fillWidth: true
-                            height: 6
-                            radius: 3
-                            color: index <= root.currentStep ? brand : "#1809131A"
+                            height: 8
+                            radius: 4
+                            color: index <= root.currentStep ? "transparent" : "#18FFFFFF"
+                            border.color: index <= root.currentStep ? "#62FFFFFF" : "#14FFFFFF"
+                            border.width: 1
+
+                            gradient: Gradient {
+                                orientation: Gradient.Horizontal
+                                GradientStop { position: 0.0; color: index <= root.currentStep ? "#7ECFE6FF" : "#12FFFFFF" }
+                                GradientStop { position: 1.0; color: index <= root.currentStep ? root.brand : "#08FFFFFF" }
+                            }
                         }
                     }
                 }
@@ -421,17 +556,23 @@ ApplicationWindow {
                     Item { Layout.fillWidth: true }
 
                     Rectangle {
-                        radius: 12
-                        color: "#142D6C8A"
-                        border.color: "#222D6C8A"
-                        implicitHeight: 28
-                        implicitWidth: stepLabel.implicitWidth + 18
+                        radius: 14
+                        implicitHeight: 30
+                        implicitWidth: stepLabel.implicitWidth + 22
+                        color: "transparent"
+                        border.color: "#4CBFE7FF"
+                        border.width: 1
+
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: "#52CFE6FF" }
+                            GradientStop { position: 1.0; color: "#2A4D8FEA" }
+                        }
 
                         Label {
                             id: stepLabel
                             anchors.centerIn: parent
                             text: qsTr("Step %1 of %2").arg(root.currentStep + 1).arg(root.pages.length)
-                            color: brand
+                            color: ivory
                             font.pixelSize: labelSize
                             font.bold: true
                         }
@@ -460,8 +601,25 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     radius: Math.max(20, Math.round(24 * uiScale))
-                    color: "#AAEDF2F4"
-                    border.color: "#1409131A"
+                    color: "transparent"
+                    border.color: "#3EFFFFFF"
+                    border.width: 1
+
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: "#A7F9FCFE" }
+                        GradientStop { position: 0.2; color: "#96F0F6FA" }
+                        GradientStop { position: 1.0; color: "#7CE5EEF4" }
+                    }
+
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 1
+                        height: parent.height * 0.22
+                        radius: parent.radius
+                        color: "#34FFFFFF"
+                    }
 
                     ScrollView {
                         id: contentScroller
@@ -494,7 +652,7 @@ ApplicationWindow {
                 RowLayout {
                     Layout.fillWidth: true
 
-                    Button {
+                    DarkGlassButton {
                         text: qsTr("Back")
                         enabled: root.currentStep > 0
                         onClicked: root.currentStep--
@@ -502,13 +660,13 @@ ApplicationWindow {
 
                     Item { Layout.fillWidth: true }
 
-                    Button {
+                    AccentButton {
                         visible: root.currentStep < pages.length - 1
                         text: qsTr("Continue")
                         onClicked: root.currentStep++
                     }
 
-                    Button {
+                    AccentButton {
                         visible: root.currentStep === pages.length - 1
                         text: qsTr("Save and Apply")
                         onClicked: root.finishWelcome()
@@ -521,9 +679,28 @@ ApplicationWindow {
             Layout.fillHeight: true
             Layout.preferredWidth: compact ? 308 : 360
             radius: shellRadius
-            color: "#CC10212D"
-            border.color: "#22F7F3ED"
+            color: "transparent"
+            border.color: "#4EFFFFFF"
             border.width: 1
+
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: root.darkGlassStrong }
+                GradientStop { position: 0.42; color: root.darkGlass }
+                GradientStop { position: 1.0; color: "#86193248" }
+            }
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 1
+                height: parent.height * 0.25
+                radius: shellRadius
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: "#24FFFFFF" }
+                    GradientStop { position: 1.0; color: "#00FFFFFF" }
+                }
+            }
 
             ColumnLayout {
                 anchors.fill: parent
@@ -562,8 +739,14 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             implicitHeight: currentSelectionCard.implicitHeight + (previewCardPadding * 2)
                             radius: Math.max(18, Math.round(22 * uiScale))
-                            color: "#142D6C8A"
-                            border.color: "#222D6C8A"
+                            color: "transparent"
+                            border.color: "#46BFE6FF"
+                            border.width: 1
+
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: "#395A86D8" }
+                                GradientStop { position: 1.0; color: "#26345569" }
+                            }
 
                             ColumnLayout {
                                 id: currentSelectionCard
@@ -641,8 +824,14 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             implicitHeight: applyCard.implicitHeight + (previewCardPadding * 2)
                             radius: Math.max(18, Math.round(22 * uiScale))
-                            color: "#14C9895B"
-                            border.color: "#22C9895B"
+                            color: "transparent"
+                            border.color: "#52FFD0AD"
+                            border.width: 1
+
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: "#46F1B788" }
+                                GradientStop { position: 1.0; color: "#24435D7C" }
+                            }
 
                             ColumnLayout {
                                 id: applyCard
@@ -688,8 +877,14 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             implicitHeight: noteCard.implicitHeight + (previewCardPadding * 2)
                             radius: Math.max(18, Math.round(22 * uiScale))
-                            color: "#163F8F95"
-                            border.color: "#203F8F95"
+                            color: "transparent"
+                            border.color: "#50A7FFF8"
+                            border.width: 1
+
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: "#4059D2CB" }
+                                GradientStop { position: 1.0; color: "#24323F57" }
+                            }
 
                             ColumnLayout {
                                 id: noteCard
@@ -717,7 +912,7 @@ ApplicationWindow {
                     }
                 }
 
-                Button {
+                DarkGlassButton {
                     Layout.fillWidth: true
                     text: qsTr("Close Welcome")
                     onClicked: root.close()
@@ -739,8 +934,8 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     implicitHeight: Math.max(root.compact ? 64 : 58, overviewRow.implicitHeight + 28)
                     radius: Math.max(16, Math.round(18 * root.uiScale))
-                    color: "#CCFFFFFF"
-                    border.color: "#1209131A"
+                    color: "#A6F9FCFE"
+                    border.color: "#32FFFFFF"
 
                     RowLayout {
                         id: overviewRow
@@ -781,8 +976,8 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     implicitHeight: Math.max(root.compact ? 96 : 88, languageChoiceContent.implicitHeight + 32)
                     radius: Math.max(18, Math.round(20 * root.uiScale))
-                    color: modelData.id === root.selectedLanguage ? "#142D6C8A" : "#CCFFFFFF"
-                    border.color: modelData.id === root.selectedLanguage ? "#2D6C8A" : "#1209131A"
+                    color: modelData.id === root.selectedLanguage ? "#44608BDA" : "#A4F9FCFE"
+                    border.color: modelData.id === root.selectedLanguage ? "#77C8E5FF" : "#34FFFFFF"
                     border.width: modelData.id === root.selectedLanguage ? 2 : 1
 
                     MouseArea {
@@ -836,8 +1031,8 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     implicitHeight: Math.max(root.compact ? 104 : 88, appearanceChoiceContent.implicitHeight + 32)
                     radius: Math.max(18, Math.round(20 * root.uiScale))
-                    color: modelData.id === root.selectedAppearance ? "#142D6C8A" : "#CCFFFFFF"
-                    border.color: modelData.id === root.selectedAppearance ? "#2D6C8A" : "#1209131A"
+                    color: modelData.id === root.selectedAppearance ? "#4A608BDA" : "#A4F9FCFE"
+                    border.color: modelData.id === root.selectedAppearance ? "#77C8E5FF" : "#34FFFFFF"
                     border.width: modelData.id === root.selectedAppearance ? 2 : 1
 
                     MouseArea {
@@ -877,8 +1072,8 @@ ApplicationWindow {
                             Rectangle {
                                 visible: !!modelData.recommended
                                 radius: 10
-                                color: modelData.id === root.selectedAppearance ? "#26F7F3ED" : "#142D6C8A"
-                                border.color: modelData.id === root.selectedAppearance ? "#30F7F3ED" : "#202D6C8A"
+                                color: modelData.id === root.selectedAppearance ? "#36FFFFFF" : "#345A86D8"
+                                border.color: modelData.id === root.selectedAppearance ? "#48FFFFFF" : "#54C8E5FF"
                                 implicitHeight: 20
                                 implicitWidth: recommendedAppearanceText.implicitWidth + 14
 
@@ -918,8 +1113,8 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     implicitHeight: Math.max(root.compact ? 100 : 84, wallpaperChoiceContent.implicitHeight + 32)
                     radius: Math.max(18, Math.round(20 * root.uiScale))
-                    color: modelData.path === root.selectedWallpaper ? "#163F8F95" : "#CCFFFFFF"
-                    border.color: modelData.path === root.selectedWallpaper ? "#203F8F95" : "#1209131A"
+                    color: modelData.path === root.selectedWallpaper ? "#4060D2CB" : "#A4F9FCFE"
+                    border.color: modelData.path === root.selectedWallpaper ? "#6AA8FFF8" : "#34FFFFFF"
                     border.width: modelData.path === root.selectedWallpaper ? 2 : 1
 
                     MouseArea {
@@ -959,8 +1154,8 @@ ApplicationWindow {
                             Rectangle {
                                 visible: !!modelData.recommended
                                 radius: 10
-                                color: modelData.path === root.selectedWallpaper ? "#26F7F3ED" : "#163F8F95"
-                                border.color: modelData.path === root.selectedWallpaper ? "#30F7F3ED" : "#203F8F95"
+                                color: modelData.path === root.selectedWallpaper ? "#36FFFFFF" : "#3460D2CB"
+                                border.color: modelData.path === root.selectedWallpaper ? "#48FFFFFF" : "#5AA8FFF8"
                                 implicitHeight: 20
                                 implicitWidth: recommendedWallpaperText.implicitWidth + 14
 
@@ -1000,8 +1195,8 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     implicitHeight: Math.max(root.compact ? 108 : 88, layoutChoiceContent.implicitHeight + 32)
                     radius: Math.max(18, Math.round(20 * root.uiScale))
-                    color: modelData.id === root.selectedLayout ? "#142D6C8A" : "#CCFFFFFF"
-                    border.color: modelData.id === root.selectedLayout ? "#2D6C8A" : "#1209131A"
+                    color: modelData.id === root.selectedLayout ? "#44608BDA" : "#A4F9FCFE"
+                    border.color: modelData.id === root.selectedLayout ? "#77C8E5FF" : "#34FFFFFF"
                     border.width: modelData.id === root.selectedLayout ? 2 : 1
 
                     MouseArea {
@@ -1031,8 +1226,8 @@ ApplicationWindow {
                             Rectangle {
                                 visible: !!modelData.recommended
                                 radius: 10
-                                color: modelData.id === root.selectedLayout ? "#26F7F3ED" : "#142D6C8A"
-                                border.color: modelData.id === root.selectedLayout ? "#30F7F3ED" : "#202D6C8A"
+                                color: modelData.id === root.selectedLayout ? "#36FFFFFF" : "#345A86D8"
+                                border.color: modelData.id === root.selectedLayout ? "#48FFFFFF" : "#54C8E5FF"
                                 implicitHeight: 20
                                 implicitWidth: recommendedLayoutText.implicitWidth + 14
 
@@ -1088,8 +1283,8 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     implicitHeight: Math.max(root.compact ? 100 : 84, channelChoiceContent.implicitHeight + 32)
                     radius: Math.max(18, Math.round(20 * root.uiScale))
-                    color: modelData.id === root.selectedChannel ? "#163F8F95" : "#CCFFFFFF"
-                    border.color: modelData.id === root.selectedChannel ? "#203F8F95" : "#1209131A"
+                    color: modelData.id === root.selectedChannel ? "#4060D2CB" : "#A4F9FCFE"
+                    border.color: modelData.id === root.selectedChannel ? "#6AA8FFF8" : "#34FFFFFF"
                     border.width: modelData.id === root.selectedChannel ? 2 : 1
 
                     MouseArea {
@@ -1119,8 +1314,8 @@ ApplicationWindow {
                             Rectangle {
                                 visible: !!modelData.recommended
                                 radius: 10
-                                color: modelData.id === root.selectedChannel ? "#26F7F3ED" : "#163F8F95"
-                                border.color: modelData.id === root.selectedChannel ? "#30F7F3ED" : "#203F8F95"
+                                color: modelData.id === root.selectedChannel ? "#36FFFFFF" : "#3460D2CB"
+                                border.color: modelData.id === root.selectedChannel ? "#48FFFFFF" : "#5AA8FFF8"
                                 implicitHeight: 20
                                 implicitWidth: recommendedChannelText.implicitWidth + 14
 
@@ -1160,8 +1355,8 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     implicitHeight: Math.max(root.compact ? 64 : 58, readyRow.implicitHeight + 28)
                     radius: Math.max(16, Math.round(18 * root.uiScale))
-                    color: "#CCFFFFFF"
-                    border.color: "#1209131A"
+                    color: "#A6F9FCFE"
+                    border.color: "#34FFFFFF"
 
                     RowLayout {
                         id: readyRow

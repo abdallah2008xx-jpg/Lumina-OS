@@ -13,6 +13,7 @@ This file gives one fast answer to two questions:
 - wallpapers, color schemes, Plasma defaults, and SDDM theme assets exist inside the live image
 - the former Abdullah/Mohammad split has been collapsed into one execution plan so UI and build work stay aligned
 - Welcome, Update Center, and SDDM have received a clearer user-facing polish pass for real ISO validation
+- Welcome, Update Center, and SDDM now also share a richer glassmorphism design pass with frosted panels, stronger ambient lighting, and more premium control styling
 
 ### Live-System Implementation
 - the archiso profile is structured and prepared for a real Arch-side build
@@ -65,6 +66,7 @@ This file gives one fast answer to two questions:
 
 ### Real Execution Work
 - build a fresh `stable` ISO so the latest screenshot/runtime/Welcome fixes are verified on a new artifact
+- verify the new glass-style Welcome, Update Center, and SDDM surfaces inside a fresh ISO instead of relying only on source-side review
 - validate the new direct GitHub Actions artifact-download path against the completed `stable` reference cycle
 - validate the new GitHub Actions cycle-finish wrapper against the completed `stable` diagnostics import
 - run the first real VM validation cycle for `login-test`

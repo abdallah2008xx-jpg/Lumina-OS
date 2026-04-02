@@ -11,7 +11,7 @@ ApplicationWindow {
     height: 860
     visible: true
     title: qsTr("Lumina-OS Update Center")
-    color: "#09131A"
+    color: "#060B10"
 
     property var releases: []
     property string metadataStateKind: "loading"
@@ -27,14 +27,19 @@ ApplicationWindow {
     property string releaseCacheUrl: StandardPaths.writableLocation(StandardPaths.HomeLocation) + "/.cache/ahmados/update-center/releases.json"
     property string statusCacheUrl: StandardPaths.writableLocation(StandardPaths.HomeLocation) + "/.cache/ahmados/update-center/status.json"
 
-    readonly property color ink: "#09131A"
-    readonly property color mist: "#C8D3DA"
-    readonly property color cloud: "#EDF2F4"
-    readonly property color ivory: "#F7F3ED"
-    readonly property color brand: "#2D6C8A"
-    readonly property color lagoon: "#3F8F95"
-    readonly property color copper: "#C9895B"
+    readonly property color ink: "#08131D"
+    readonly property color mist: "#D5E2EC"
+    readonly property color cloud: "#F1F8FB"
+    readonly property color ivory: "#FBFEFF"
+    readonly property color brand: "#4B8ED8"
+    readonly property color lagoon: "#62C8C5"
+    readonly property color copper: "#F0B48A"
     readonly property color danger: "#BC6454"
+    readonly property color glassPanel: "#C4EFF5F8"
+    readonly property color glassPanelSoft: "#A0E5EEF4"
+    readonly property color glassEdge: "#70FFFFFF"
+    readonly property color darkGlass: "#78111D2A"
+    readonly property color darkGlassStrong: "#8F132437"
 
     readonly property var channels: [
         { "id": "stable", "name": qsTr("Stable"), "text": qsTr("Recommended for normal users and the default Lumina-OS channel."), "recommended": true },
@@ -47,6 +52,63 @@ ApplicationWindow {
         id: welcomeSettings
         location: StandardPaths.writableLocation(StandardPaths.HomeLocation) + "/.config/ahmados/welcome.conf"
         property string channel: "stable"
+    }
+
+    component GlassButton: Button {
+        id: control
+        property color fillColor: "#20FBFEFF"
+        property color edgeColor: "#48FFFFFF"
+        property color textColor: root.ink
+        property color shineColor: "#7CFFFFFF"
+        implicitHeight: 46
+        padding: 0
+        font.pixelSize: 14
+        font.bold: true
+        hoverEnabled: true
+
+        contentItem: Label {
+            text: control.text
+            color: control.textColor
+            font.pixelSize: control.font.pixelSize
+            font.bold: control.font.bold
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+
+        background: Rectangle {
+            radius: height / 2
+            border.width: 1
+            border.color: control.edgeColor
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: control.down ? Qt.tint(control.fillColor, "#18000000") : control.shineColor }
+                GradientStop { position: 0.18; color: control.fillColor }
+                GradientStop { position: 1.0; color: Qt.tint(control.fillColor, "#1809131A") }
+            }
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 1
+                height: parent.height * 0.45
+                radius: parent.radius
+                color: "#24FFFFFF"
+            }
+        }
+    }
+
+    component AccentButton: GlassButton {
+        fillColor: "#5B4D8FEA"
+        edgeColor: "#7CBFE6FF"
+        textColor: root.ivory
+        shineColor: "#92CFE4FF"
+    }
+
+    component DarkGlassButton: GlassButton {
+        fillColor: "#28101C29"
+        edgeColor: "#42FFFFFF"
+        textColor: root.ivory
+        shineColor: "#30FFFFFF"
     }
 
     function channelLabel(channelId) {
@@ -83,34 +145,34 @@ ApplicationWindow {
 
     function metadataFill() {
         if (metadataStateKind === "ready") {
-            return "#142D6C8A"
+            return "#3C5A86D8"
         }
 
         if (metadataStateKind === "empty") {
-            return "#143F8F95"
+            return "#4060D2CB"
         }
 
         if (metadataStateKind === "error") {
-            return "#14BC6454"
+            return "#4ABF725F"
         }
 
-        return "#19F7F3ED"
+        return "#26FBFEFF"
     }
 
     function metadataBorder() {
         if (metadataStateKind === "ready") {
-            return "#222D6C8A"
+            return "#64C8E5FF"
         }
 
         if (metadataStateKind === "empty") {
-            return "#203F8F95"
+            return "#62A8FFF8"
         }
 
         if (metadataStateKind === "error") {
-            return "#22BC6454"
+            return "#6EE7C0A8"
         }
 
-        return "#16F7F3ED"
+        return "#3EFFFFFF"
     }
 
     function releaseChannelHint(release) {
@@ -327,28 +389,55 @@ ApplicationWindow {
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
-            GradientStop { position: 0.0; color: "#09131A" }
-            GradientStop { position: 0.52; color: "#10212D" }
-            GradientStop { position: 1.0; color: "#214455" }
+            GradientStop { position: 0.0; color: "#04090E" }
+            GradientStop { position: 0.22; color: "#091722" }
+            GradientStop { position: 0.58; color: "#112737" }
+            GradientStop { position: 1.0; color: "#1F4255" }
         }
     }
 
     Rectangle {
-        width: 420
-        height: 420
-        radius: 210
-        x: root.width - 280
-        y: -120
-        color: "#123F8F95"
+        anchors.fill: parent
+        gradient: Gradient {
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "#10000000" }
+            GradientStop { position: 0.36; color: "#0409131A" }
+            GradientStop { position: 1.0; color: "#220F3B47" }
+        }
     }
 
     Rectangle {
-        width: 520
-        height: 520
-        radius: 260
-        x: -180
-        y: root.height - 310
-        color: "#142D6C8A"
+        width: 560
+        height: 560
+        radius: 280
+        x: root.width - 360
+        y: -180
+        color: "#245D8AF2"
+    }
+
+    Rectangle {
+        width: 470
+        height: 470
+        radius: 235
+        x: root.width * 0.52
+        y: root.height * 0.16
+        color: "#2650D6C9"
+    }
+
+    Rectangle {
+        width: 540
+        height: 540
+        radius: 270
+        x: -190
+        y: root.height - 320
+        color: "#22E4A57C"
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        color: "#08FFFFFF"
+        border.color: "#12FFFFFF"
+        border.width: 1
     }
 
     ColumnLayout {
@@ -360,8 +449,25 @@ ApplicationWindow {
             Layout.fillWidth: true
             implicitHeight: 128
             radius: 30
-            color: "#D6F7F3ED"
-            border.color: "#1AF7F3ED"
+            color: "transparent"
+            border.color: root.glassEdge
+            border.width: 1
+
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: root.glassPanel }
+                GradientStop { position: 0.44; color: root.glassPanelSoft }
+                GradientStop { position: 1.0; color: "#A6F7FBFD" }
+            }
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 1
+                height: parent.height * 0.35
+                radius: parent.radius
+                color: "#32FFFFFF"
+            }
 
             RowLayout {
                 anchors.fill: parent
@@ -448,11 +554,17 @@ ApplicationWindow {
                 Item { Layout.fillWidth: true }
 
                 Rectangle {
-                    radius: 18
-                    color: "#172D6C8A"
-                    border.color: "#242D6C8A"
+                    radius: 22
+                    color: "transparent"
+                    border.color: "#58C8E5FF"
+                    border.width: 1
                     implicitWidth: 220
                     implicitHeight: 72
+
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: "#42608BDA" }
+                        GradientStop { position: 1.0; color: "#28415C84" }
+                    }
 
                     Column {
                         anchors.centerIn: parent
@@ -479,7 +591,7 @@ ApplicationWindow {
                     }
                 }
 
-                Button {
+                AccentButton {
                     text: qsTr("Reload metadata")
                     onClicked: root.reloadMetadata()
                 }
@@ -496,8 +608,25 @@ ApplicationWindow {
                 Layout.fillHeight: true
                 Layout.preferredWidth: 2.3
                 radius: 30
-                color: "#D6F7F3ED"
-                border.color: "#1AF7F3ED"
+                color: "transparent"
+                border.color: root.glassEdge
+                border.width: 1
+
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: root.glassPanel }
+                    GradientStop { position: 0.52; color: root.glassPanelSoft }
+                    GradientStop { position: 1.0; color: "#A4F7FBFD" }
+                }
+
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 1
+                    height: parent.height * 0.22
+                    radius: parent.radius
+                    color: "#30FFFFFF"
+                }
 
                 ColumnLayout {
                     anchors.fill: parent
@@ -518,8 +647,9 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             implicitHeight: 154
                             radius: 24
-                            color: index === 0 ? "#1A2D6C8A" : "#CCFFFFFF"
-                            border.color: index === 0 ? "#262D6C8A" : "#1209131A"
+                            color: index === 0 ? "#46608BDA" : "#A4F9FCFE"
+                            border.color: index === 0 ? "#74C8E5FF" : "#34FFFFFF"
+                            border.width: 1
 
                             ColumnLayout {
                                 anchors.fill: parent
@@ -540,8 +670,9 @@ ApplicationWindow {
 
                                     Rectangle {
                                         radius: 14
-                                        color: index === 0 ? "#163F8F95" : "#142D6C8A"
-                                        border.color: index === 0 ? "#1F3F8F95" : "#1C2D6C8A"
+                                        color: index === 0 ? "#3860D2CB" : "#345A86D8"
+                                        border.color: index === 0 ? "#5AA8FFF8" : "#54C8E5FF"
+                                        border.width: 1
                                         implicitHeight: 28
                                         implicitWidth: channelLabelText.implicitWidth + 20
 
@@ -601,13 +732,14 @@ ApplicationWindow {
                         }
                     }
 
-                    Rectangle {
-                        visible: root.releases.length === 0
-                        Layout.fillWidth: true
-                        implicitHeight: 164
-                        radius: 24
-                        color: "#CCFFFFFF"
-                        border.color: "#1209131A"
+                        Rectangle {
+                            visible: root.releases.length === 0
+                            Layout.fillWidth: true
+                            implicitHeight: 164
+                            radius: 24
+                            color: "#A4F9FCFE"
+                            border.color: "#34FFFFFF"
+                            border.width: 1
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -643,8 +775,9 @@ ApplicationWindow {
                         Layout.fillWidth: true
                         implicitHeight: 132
                         radius: 24
-                        color: "#CCFFFFFF"
-                        border.color: "#1209131A"
+                        color: "#A4F9FCFE"
+                        border.color: "#34FFFFFF"
+                        border.width: 1
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -719,9 +852,25 @@ ApplicationWindow {
                 Layout.fillHeight: true
                 Layout.preferredWidth: 360
                 radius: 30
-                color: "#CC10212D"
-                border.color: "#22F7F3ED"
+                color: "transparent"
+                border.color: "#4EFFFFFF"
                 border.width: 1
+
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: root.darkGlassStrong }
+                    GradientStop { position: 0.4; color: root.darkGlass }
+                    GradientStop { position: 1.0; color: "#86193248" }
+                }
+
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 1
+                    height: parent.height * 0.25
+                    radius: parent.radius
+                    color: "#24FFFFFF"
+                }
 
                 ColumnLayout {
                     anchors.fill: parent
@@ -742,8 +891,9 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             implicitHeight: 88
                             radius: 22
-                            color: modelData.id === welcomeSettings.channel ? "#163F8F95" : "#19F7F3ED"
-                            border.color: modelData.id === welcomeSettings.channel ? "#203F8F95" : "#16F7F3ED"
+                            color: modelData.id === welcomeSettings.channel ? "#4060D2CB" : "#22FBFEFF"
+                            border.color: modelData.id === welcomeSettings.channel ? "#66A8FFF8" : "#38FFFFFF"
+                            border.width: 1
 
                             ColumnLayout {
                                 anchors.fill: parent
@@ -760,8 +910,9 @@ ApplicationWindow {
                                 Rectangle {
                                     visible: modelData.id === welcomeSettings.channel || !!modelData.recommended
                                     radius: 10
-                                    color: modelData.id === welcomeSettings.channel ? "#26F7F3ED" : "#142D6C8A"
-                                    border.color: modelData.id === welcomeSettings.channel ? "#30F7F3ED" : "#202D6C8A"
+                                    color: modelData.id === welcomeSettings.channel ? "#36FFFFFF" : "#345A86D8"
+                                    border.color: modelData.id === welcomeSettings.channel ? "#48FFFFFF" : "#54C8E5FF"
+                                    border.width: 1
                                     implicitHeight: 20
                                     implicitWidth: channelBadgeLabel.implicitWidth + 14
 
@@ -814,7 +965,7 @@ ApplicationWindow {
 
                     Item { Layout.fillHeight: true }
 
-                    Button {
+                    DarkGlassButton {
                         Layout.fillWidth: true
                         text: qsTr("Close Update Center")
                         onClicked: root.close()

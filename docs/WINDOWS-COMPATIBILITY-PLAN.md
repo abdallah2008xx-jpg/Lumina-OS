@@ -19,10 +19,11 @@ Make Lumina-OS excellent at running Windows software without pretending that eve
 - `virt-manager`
 - `edk2-ovmf`
 - `dnsmasq`
-- `bridge-utils`
 - `swtpm`
 - `iptables-nft`
 - a live-session compatibility checker through `lumina-windows-compat-check`
+
+Bridge management comes from the standard `iproute2` tooling that already ships through the Arch base layer, so Lumina-OS does not depend on a separate `bridge-utils` package.
 
 ## Machine Tiers
 - `basic-proton-only`

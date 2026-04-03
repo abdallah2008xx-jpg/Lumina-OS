@@ -185,7 +185,7 @@ for required_path in "${required_paths[@]}"; do
 done
 
 if [[ -f "${profile_path}/packages.x86_64" ]]; then
-    for required_package in archinstall curl qt6-declarative qt6-svg systemsettings plasma-x11-session spectacle qemu-full libvirt virt-manager edk2-ovmf dnsmasq bridge-utils swtpm iptables-nft; do
+    for required_package in archinstall curl qt6-declarative qt6-svg systemsettings plasma-x11-session spectacle qemu-full libvirt virt-manager edk2-ovmf dnsmasq swtpm iptables-nft; do
         if ! grep -qx "${required_package}" "${profile_path}/packages.x86_64"; then
             add_error "Missing expected package in packages.x86_64: ${required_package}"
         fi

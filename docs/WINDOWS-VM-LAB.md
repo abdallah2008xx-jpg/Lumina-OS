@@ -13,7 +13,7 @@ Lumina-OS now exposes a first user-facing Windows VM path inside the live system
   - `edk2-ovmf`
   - `swtpm`
   - `dnsmasq`
-  - `bridge-utils`
+  - bridge support through the standard `iproute2` tooling from the Arch base layer
 
 ## Supported User Story
 
@@ -43,4 +43,3 @@ This gives Lumina-OS a real Windows software bridge without lying about universa
 ## Next Engineering Step
 
 The next step after this lab launcher is a guided VM creation assistant that pre-fills a recommended OVMF + TPM + storage template for Lumina-OS.
-

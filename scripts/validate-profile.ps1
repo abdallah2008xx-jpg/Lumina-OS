@@ -191,7 +191,7 @@ if (Test-Path $packageFile) {
         Where-Object { $_.Trim() -and -not $_.Trim().StartsWith("#") } |
         ForEach-Object { $_.Trim() }
 
-    foreach ($requiredPackage in @("archinstall", "curl", "qt6-declarative", "qt6-svg", "systemsettings", "plasma-x11-session", "spectacle", "qemu-full", "libvirt", "virt-manager", "edk2-ovmf", "dnsmasq", "bridge-utils", "swtpm", "iptables-nft")) {
+    foreach ($requiredPackage in @("archinstall", "curl", "qt6-declarative", "qt6-svg", "systemsettings", "plasma-x11-session", "spectacle", "qemu-full", "libvirt", "virt-manager", "edk2-ovmf", "dnsmasq", "swtpm", "iptables-nft")) {
         if ($packages -notcontains $requiredPackage) {
             Add-Error "Missing expected package in packages.x86_64: $requiredPackage"
         }

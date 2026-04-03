@@ -82,7 +82,6 @@ virtualbox-guest-utils
 open-vm-tools
 
 # Windows compatibility / virtualization baseline
-bridge-utils
 dnsmasq
 edk2-ovmf
 iptables-nft

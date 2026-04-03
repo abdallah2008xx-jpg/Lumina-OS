@@ -72,6 +72,7 @@ $buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
 $buildHandoffImportScript = Join-Path $PSScriptRoot "import-build-handoff.ps1"
 $githubArtifactImportScript = Join-Path $PSScriptRoot "import-github-actions-artifact.ps1"
 $githubArtifactDownloadScript = Join-Path $PSScriptRoot "download-github-actions-artifact.ps1"
+$githubArtifactInstallScript = Join-Path $PSScriptRoot "start-github-actions-install-test.ps1"
 $isoImportScript = Join-Path $PSScriptRoot "import-iso-artifact.ps1"
 $githubArtifactCycleScript = Join-Path $PSScriptRoot "start-github-actions-vm-cycle.ps1"
 $githubArtifactCycleFinishScript = Join-Path $PSScriptRoot "finish-github-actions-vm-cycle.ps1"
@@ -110,6 +111,10 @@ if (-not (Test-Path $githubArtifactImportScript)) {
 
 if (-not (Test-Path $githubArtifactDownloadScript)) {
     throw "Missing smoke-test target: $githubArtifactDownloadScript"
+}
+
+if (-not (Test-Path $githubArtifactInstallScript)) {
+    throw "Missing smoke-test target: $githubArtifactInstallScript"
 }
 
 if (-not (Test-Path $isoImportScript)) {
@@ -342,6 +347,23 @@ try {
     $artifactImportContent = Get-Content -Raw $artifactImportSummary
     Assert-Condition -Condition ($artifactImportContent -match [regex]::Escape("- GitHub Run Id: 23863815968")) -Message "GitHub Actions artifact import did not record the expected run id."
     Assert-Condition -Condition ($artifactImportContent -match [regex]::Escape("- Imported Handoff Count: 1")) -Message "GitHub Actions artifact import did not record the expected handoff count."
+
+    & $githubArtifactInstallScript `
+        -ArtifactPath $artifactZipPath `
+        -Mode stable `
+        -VmType VirtualBox `
+        -Firmware UEFI `
+        -RunId "23863815968" `
+        -ArtifactName "lumina-os-stable-gha-stable-8-1" `
+        -RepoRoot $tempRoot | Out-Null
+
+    $ghaInstallReportFile = Get-ChildItem -Path (Join-Path $tempRoot "status\install-tests") -Filter "*.md" -Recurse |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+    Assert-Condition -Condition ($null -ne $ghaInstallReportFile) -Message "GitHub Actions installer start did not create an install report."
+    $ghaInstallReportContent = Get-Content -Raw $ghaInstallReportFile.FullName
+    Assert-Condition -Condition ($ghaInstallReportContent -match [regex]::Escape("- Run Label: $handoffRunLabel")) -Message "GitHub Actions installer start did not reuse the reported run label."
+    Assert-Condition -Condition ($ghaInstallReportContent -match [regex]::Escape("- Installer Command: /usr/local/bin/lumina-installer")) -Message "GitHub Actions installer start did not record the expected installer command."
 
     [void][scriptblock]::Create((Get-Content -Raw $githubArtifactDownloadScript))
 

@@ -18,8 +18,9 @@ Use this checklist when validating the first full installation path, not just th
 ## Before Starting
 1. Confirm the latest `stable` ISO build exists.
 2. Create a dedicated installer report with `scripts/new-install-test-report.ps1`.
-3. Attach the ISO to a VM that has no preinstalled operating system on the target disk.
-4. Keep the run label consistent with the matching build and VM evidence if possible.
+3. If the build came from GitHub Actions, initialize the same report directly with `scripts/start-github-actions-install-test.ps1`.
+4. Attach the ISO to a VM that has no preinstalled operating system on the target disk.
+5. Keep the run label consistent with the matching build and VM evidence if possible.
 
 ## Live Session Entry
 1. Boot the ISO.

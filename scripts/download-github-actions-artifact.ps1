@@ -69,6 +69,52 @@ function Find-ExistingDownloadedArtifact {
         Select-Object -First 1
 }
 
+function Find-PartialDownloadedArtifact {
+    param(
+        [string]$SearchRoot,
+        [string]$ArtifactName,
+        [long]$ExpectedSizeBytes
+    )
+
+    if (-not (Test-Path $SearchRoot)) {
+        return $null
+    }
+
+    return Get-ChildItem -Path $SearchRoot -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Name -eq (Get-SafeSegment $ArtifactName) + ".zip" -or
+            $_.Name -like ("*" + (Get-SafeSegment $ArtifactName) + ".zip")
+        } |
+        Where-Object {
+            if ($ExpectedSizeBytes -le 0) {
+                return $_.Length -gt 0
+            }
+
+            return $_.Length -gt 0 -and $_.Length -lt $ExpectedSizeBytes
+        } |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+}
+
+function Remove-ZeroByteDownloadedArtifacts {
+    param(
+        [string]$SearchRoot,
+        [string]$ArtifactName
+    )
+
+    if (-not (Test-Path $SearchRoot)) {
+        return
+    }
+
+    Get-ChildItem -Path $SearchRoot -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object {
+            ($_.Name -eq (Get-SafeSegment $ArtifactName) + ".zip" -or
+            $_.Name -like ("*" + (Get-SafeSegment $ArtifactName) + ".zip")) -and
+            $_.Length -eq 0
+        } |
+        Remove-Item -Force -ErrorAction SilentlyContinue
+}
+
 function Get-GitCredentialPassword {
     param(
         [string]$GitHost,
@@ -191,16 +237,61 @@ $downloadState = "downloaded-new"
 New-Item -ItemType Directory -Force -Path $downloadDir | Out-Null
 New-Item -ItemType Directory -Force -Path $summaryDir | Out-Null
 
+Remove-ZeroByteDownloadedArtifacts -SearchRoot (Join-Path $RepoRoot "build\downloaded-artifacts") -ArtifactName $artifact.name
 $existingArtifact = Find-ExistingDownloadedArtifact -SearchRoot (Join-Path $RepoRoot "build\downloaded-artifacts") -ArtifactName $artifact.name -ExpectedSizeBytes $artifact.size_in_bytes
 if ($existingArtifact) {
     $downloadPath = $existingArtifact.FullName
     $downloadState = "reused-existing"
 }
 else {
-    Invoke-WebRequest -Headers $headers -Uri $artifact.archive_download_url -OutFile $downloadPath
+    $partialArtifact = Find-PartialDownloadedArtifact -SearchRoot (Join-Path $RepoRoot "build\downloaded-artifacts") -ArtifactName $artifact.name -ExpectedSizeBytes $artifact.size_in_bytes
+    if ($partialArtifact) {
+        $downloadPath = $partialArtifact.FullName
+        $downloadState = "resumed-partial"
+    }
+
+    $curlCommand = Get-Command curl.exe -ErrorAction SilentlyContinue
+    if ($null -ne $curlCommand) {
+        $curlArgs = @(
+            "--fail",
+            "--silent",
+            "--show-error",
+            "--location",
+            "--header", "Accept: application/vnd.github+json",
+            "--header", "Authorization: Bearer $resolvedToken",
+            "--header", "X-GitHub-Api-Version: 2026-03-10",
+            "--header", "User-Agent: Lumina-OS Artifact Downloader"
+        )
+
+        if ((Test-Path $downloadPath) -and ((Get-Item $downloadPath).Length -gt 0)) {
+            $curlArgs += @("-C", "-")
+        }
+
+        $curlArgs += @(
+            "--output", $downloadPath,
+            $artifact.archive_download_url
+        )
+
+        & $curlCommand.Source @curlArgs
+        if ($LASTEXITCODE -ne 0) {
+            throw "curl.exe failed while downloading artifact '$($artifact.name)'."
+        }
+    }
+    else {
+        if (Test-Path $downloadPath) {
+            Remove-Item -LiteralPath $downloadPath -Force
+        }
+
+        Invoke-WebRequest -Headers $headers -Uri $artifact.archive_download_url -OutFile $downloadPath
+    }
 }
 
 $downloadedItem = Get-Item $downloadPath
+$expectedSizeBytes = [int64]$artifact.size_in_bytes
+if ($expectedSizeBytes -gt 0 -and $downloadedItem.Length -lt $expectedSizeBytes) {
+    throw "Artifact download is incomplete. Expected at least $expectedSizeBytes bytes but found $($downloadedItem.Length). Re-run the command to resume."
+}
+
 $summaryContent = @"
 # Lumina-OS GitHub Actions Artifact Download
 

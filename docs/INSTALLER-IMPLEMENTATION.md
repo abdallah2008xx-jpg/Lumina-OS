@@ -25,5 +25,6 @@
 
 ## Installer Validation Workflow
 - create installer-focused reports with `scripts/new-install-test-report.ps1`
+- for GitHub Actions builds, initialize the same report path with `scripts/start-github-actions-install-test.ps1`
 - follow the detailed runbook in `docs/INSTALLER-VM-TEST-CHECKLIST.md`
 - store installer validation evidence under `status/install-tests/`

@@ -38,23 +38,25 @@ Keep reporting lightweight.
 5. Keep build manifests and VM test reports once real ISO runs begin
 6. If the Arch environment exported one folder containing both the build manifest and ISO, import that handoff folder first
 7. If the build came from GitHub Actions, either import the downloaded artifact zip or fetch it directly from the run with `scripts/download-github-actions-artifact.ps1`
-8. Or use the one-command GitHub Actions -> VM-cycle bridge when you want download/import + VM-session initialization together
-9. When the VM run finishes, prefer `scripts/finish-github-actions-vm-cycle.ps1` if the run started from GitHub Actions and you want the same run context reapplied automatically during diagnostics import
-10. Import any build manifest that was produced outside this repo clone before starting the VM cycle
-11. Import any ISO file that was produced outside this repo clone before starting release preparation
-12. Generate a cycle handoff before a serious run if you want one shared command sheet
-13. Create an installer-focused report with `scripts/new-install-test-report.ps1` before the first blank-disk install attempt
-14. Import diagnostics bundles and connect them to a session summary after VM runs
-15. Audit the completed session summary before treating it as the current reference run
-16. Sync blockers so the current run has a central blocker state
-17. Sync readiness so the current run has a single high-level go/no-go status
-18. Sync the validation matrix so both build modes are tracked side by side
-19. Review the cycle-chain audit before treating a run as the clean release candidate
-20. Prepare a release candidate so publish readiness has one current summary file
-21. Refresh the same release candidate after publish so the current summary reflects the published state
-22. Keep the GitHub release context report with the release package so publish intent stays auditable
-23. Refresh `SHAREABLE-UPDATE.md` when the public-facing project state changes
-24. Refresh the short shareable briefs when you want a copy-paste-ready update for chat or social posting
+8. Large GitHub Actions artifact downloads can be resumed by rerunning the same download command if a partial zip already exists
+9. Or use the one-command GitHub Actions -> VM-cycle bridge when you want download/import + VM-session initialization together
+10. When the VM run finishes, prefer `scripts/finish-github-actions-vm-cycle.ps1` if the run started from GitHub Actions and you want the same run context reapplied automatically during diagnostics import
+11. Import any build manifest that was produced outside this repo clone before starting the VM cycle
+12. Import any ISO file that was produced outside this repo clone before starting release preparation
+13. Generate a cycle handoff before a serious run if you want one shared command sheet
+14. Create an installer-focused report with `scripts/new-install-test-report.ps1` before the first blank-disk install attempt
+15. If the ISO came from GitHub Actions, initialize that installer report directly with `scripts/start-github-actions-install-test.ps1`
+16. Import diagnostics bundles and connect them to a session summary after VM runs
+17. Audit the completed session summary before treating it as the current reference run
+18. Sync blockers so the current run has a central blocker state
+19. Sync readiness so the current run has a single high-level go/no-go status
+20. Sync the validation matrix so both build modes are tracked side by side
+21. Review the cycle-chain audit before treating a run as the clean release candidate
+22. Prepare a release candidate so publish readiness has one current summary file
+23. Refresh the same release candidate after publish so the current summary reflects the published state
+24. Keep the GitHub release context report with the release package so publish intent stays auditable
+25. Refresh `SHAREABLE-UPDATE.md` when the public-facing project state changes
+26. Refresh the short shareable briefs when you want a copy-paste-ready update for chat or social posting
 
 ## What to Record
 - What was finished

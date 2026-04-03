@@ -72,6 +72,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-compat-check",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-vm-lab",
     "archiso-profile\airootfs\usr\local\bin\ahmados-firstboot",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
     "archiso-profile\airootfs\usr\local\bin\ahmados-open-firstboot-report",
     "archiso-profile\airootfs\usr\local\bin\ahmados-refresh-release-metadata",
@@ -84,6 +85,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-compat-check",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-vm-lab",
     "archiso-profile\airootfs\usr\local\bin\lumina-firstboot",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
     "archiso-profile\airootfs\usr\local\bin\lumina-refresh-release-metadata",
     "archiso-profile\airootfs\usr\local\bin\lumina-update-center",
@@ -98,6 +100,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\share\applications\ahmados-firstboot-report.desktop",
     "archiso-profile\airootfs\usr\share\applications\ahmados-run-smoke-checks.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop",
+    "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-vm-lab.desktop",
     "scripts\build-iso-arch.sh",
@@ -306,6 +309,7 @@ $expectedExecMappings = @{
     "archiso-profile\airootfs\usr\share\applications\ahmados-update-center.desktop" = "Exec=/usr/local/bin/lumina-update-center"
     "archiso-profile\airootfs\usr\share\applications\ahmados-welcome.desktop" = "Exec=/usr/local/bin/lumina-welcome"
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop" = "Exec=/usr/local/bin/lumina-installer"
+    "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop" = "Exec=/usr/local/bin/lumina-windows-apps"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop" = "Exec=/usr/local/bin/lumina-windows-compat-check"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-vm-lab.desktop" = "Exec=/usr/local/bin/lumina-windows-vm-lab"
     "archiso-profile\airootfs\home\live\Desktop\Install Lumina-OS.desktop" = "Exec=/usr/local/bin/lumina-installer"

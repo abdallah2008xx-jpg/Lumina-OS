@@ -24,6 +24,7 @@ This file gives one fast answer to two questions:
 - installer-specific reporting now exists through `scripts/new-install-test-report.ps1` and `status/install-tests/`
 - a Windows compatibility baseline now exists through KVM/libvirt packages and a live hardware checker for VM/passthrough readiness
 - a Windows VM Lab launcher now converts that compatibility result into a real quickstart path for Adobe and Windows app workflows
+- a user-facing `Lumina Windows Apps` launcher now gives this feature a cleaner one-system product surface
 - live-session defaults, firstboot reporting, smoke checks, and diagnostics export are implemented
 - compatibility-preserving `lumina-*` runtime aliases now front the main live-session commands while older `ahmados-*` command names stay available underneath
 
@@ -85,6 +86,7 @@ This file gives one fast answer to two questions:
 - capture the first installer-focused validation record under `status/install-tests/`
 - validate the new Windows compatibility checker inside a built ISO
 - validate the new Windows VM Lab launcher inside a built ISO
+- validate the new `Lumina Windows Apps` launcher inside a built ISO
 - verify at least one real-hardware install path before calling the project ready for daily-driver use
 - verify SDDM in `login-test`
 - verify Plasma session entry and stability

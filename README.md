@@ -43,6 +43,7 @@ Current project outputs include:
 - an `archinstall`-based installer launcher path under `archiso-profile/airootfs/usr/local/bin/lumina-installer`
 - a Windows compatibility baseline for KVM/libvirt now exists, including a live hardware checker under `archiso-profile/airootfs/usr/local/bin/lumina-windows-compat-check`
 - a Windows VM Lab launcher now turns that compatibility result into a quickstart path and opens `virt-manager` on compatible machines
+- a user-facing `Lumina Windows Apps` launcher now frames the same stack as one Lumina experience instead of raw VM language
 
 ## Collaboration
 
@@ -53,6 +54,7 @@ Current project outputs include:
 - Installer implementation notes: `docs/INSTALLER-IMPLEMENTATION.md`
 - Windows compatibility direction: `docs/WINDOWS-COMPATIBILITY-PLAN.md`
 - Windows VM lab flow: `docs/WINDOWS-VM-LAB.md`
+- Windows app bridge product direction: `docs/WINDOWS-APPS-BRIDGE.md`
 - GitHub issue and PR templates live under `.github/`
 - Installer VM test checklist: `docs/INSTALLER-VM-TEST-CHECKLIST.md`
 

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Lumina Windows Apps
+Comment=Open the Lumina Windows app bridge experience
+Exec=/usr/local/bin/lumina-windows-apps
+Icon=applications-other
+Terminal=false
+Categories=Qt;KDE;System;Utility;
+StartupNotify=true
+

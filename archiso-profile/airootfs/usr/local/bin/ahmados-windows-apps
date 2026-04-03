@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+open_reports=1
+launch_advanced_lab=0
+
+for arg in "$@"; do
+    case "$arg" in
+        --no-open)
+            open_reports=0
+            ;;
+        --advanced)
+            launch_advanced_lab=1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+mkdir -p "${state_root}"
+
+compat_report="${state_root}/windows-compat-report.md"
+lab_report="${state_root}/windows-vm-lab.md"
+bridge_report="${state_root}/windows-apps-bridge.md"
+
+/usr/local/bin/ahmados-windows-vm-lab --no-open --no-launch >/dev/null
+
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+compatibility_summary="$(awk -F': ' '/^- Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+iommu_state="$(awk -F': ' '/^- IOMMU Boot Params:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+gpu_count="$(awk -F': ' '/^- GPU Count:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+
+experience_mode="Windows Apps Mode"
+experience_summary="Lumina should stay focused on Linux-native apps plus Proton and Wine on this machine."
+surface_goal="Windows apps should feel like Lumina apps, not like a second desktop."
+next_step="Use Proton and Wine first. Move into the advanced VM path only when the hardware path improves."
+
+case "${compatibility_tier}" in
+    windows-vm-ready)
+        experience_mode="Windows Creator Mode"
+        experience_summary="This machine can support a strong background Windows workspace for Adobe, launchers, and Windows-only tools."
+        next_step="Open the advanced lab and create a normal Windows VM with OVMF and TPM support."
+        ;;
+    single-gpu-experimental)
+        experience_mode="Windows Performance Mode"
+        experience_summary="This machine can explore a stronger hidden Windows workspace, but single-GPU passthrough must stay experimental."
+        next_step="Start with a normal Windows VM, then evaluate single-GPU passthrough carefully."
+        ;;
+    full-passthrough-candidate)
+        experience_mode="Windows Studio Mode"
+        experience_summary="This machine is a strong candidate for a near-native Windows workspace with future passthrough upgrades."
+        next_step="Start with a normal Windows VM now, then move toward GPU passthrough when the guided setup lands."
+        ;;
+esac
+
+{
+    printf '# Lumina Windows Apps\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Experience Mode: %s\n' "${experience_mode}"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Hardware Summary: %s\n' "${compatibility_summary:-not-available}"
+    printf -- '- Surface Goal: %s\n' "${surface_goal}"
+    printf -- '- Experience Summary: %s\n' "${experience_summary}"
+    printf -- '- IOMMU Boot Params: %s\n' "${iommu_state:-unknown}"
+    printf -- '- GPU Count: %s\n' "${gpu_count:-unknown}"
+    printf '\n## User Experience Direction\n'
+    printf -- '- The visible product should feel like one Lumina desktop, not two separate systems.\n'
+    printf -- '- Creator apps should eventually launch from Lumina surfaces with the heavy Windows layer hidden in the background.\n'
+    printf -- '- Gaming should eventually use a dedicated performance path instead of exposing raw VM plumbing.\n'
+    printf '\n## What Exists Today\n'
+    printf -- '- A live hardware checker is already present.\n'
+    printf -- '- The virtualization baseline is already bundled in the ISO.\n'
+    printf -- '- The advanced Windows VM Lab path is already available for engineering and validation work.\n'
+    printf '\n## Next Step For This Machine\n'
+    printf -- '- %s\n' "${next_step}"
+    printf '\n## Reports\n'
+    printf -- '- Windows Apps Report: %s\n' "${bridge_report}"
+    printf -- '- Compatibility Report: %s\n' "${compat_report}"
+    printf -- '- Advanced Lab Report: %s\n' "${lab_report}"
+} > "${bridge_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '         Lumina Windows Apps'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Experience mode: %s\n' "${experience_mode}"
+printf 'Summary: %s\n' "${experience_summary}"
+printf 'Report: %s\n' "${bridge_report}"
+printf '\n'
+
+if [[ ${open_reports} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${bridge_report}" >/dev/null 2>&1 || true
+fi
+
+if [[ ${launch_advanced_lab} -eq 1 ]]; then
+    /usr/local/bin/ahmados-windows-vm-lab >/dev/null 2>&1 &
+fi
+

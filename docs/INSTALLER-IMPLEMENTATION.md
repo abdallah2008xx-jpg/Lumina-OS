@@ -22,3 +22,8 @@
 - validate at least one full install on real hardware
 - add Lumina-OS-specific post-install defaults if needed
 - decide later whether to keep `archinstall` as the primary installer or replace it with a more branded GUI flow
+
+## Installer Validation Workflow
+- create installer-focused reports with `scripts/new-install-test-report.ps1`
+- follow the detailed runbook in `docs/INSTALLER-VM-TEST-CHECKLIST.md`
+- store installer validation evidence under `status/install-tests/`

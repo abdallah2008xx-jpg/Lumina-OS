@@ -19,6 +19,7 @@ Keep reporting lightweight.
 - `cycle-handoffs/` -> generated runbooks for full build/VM/release cycles
 - `cycle-chain-audits/` -> run-label evidence-link audits across build, VM, session, blockers, and readiness
 - `vm-tests/` -> VM test reports grouped by date
+- `install-tests/` -> blank-disk installer validation reports grouped by date
 - `diagnostics/` -> imported diagnostics bundles from live-session exports
 - `release-candidates/` -> current release-candidate summaries and publish readiness
 - `shareable-updates/` -> dated generated snapshots for external progress sharing
@@ -42,17 +43,18 @@ Keep reporting lightweight.
 10. Import any build manifest that was produced outside this repo clone before starting the VM cycle
 11. Import any ISO file that was produced outside this repo clone before starting release preparation
 12. Generate a cycle handoff before a serious run if you want one shared command sheet
-13. Import diagnostics bundles and connect them to a session summary after VM runs
-14. Audit the completed session summary before treating it as the current reference run
-15. Sync blockers so the current run has a central blocker state
-16. Sync readiness so the current run has a single high-level go/no-go status
-17. Sync the validation matrix so both build modes are tracked side by side
-18. Review the cycle-chain audit before treating a run as the clean release candidate
-19. Prepare a release candidate so publish readiness has one current summary file
-20. Refresh the same release candidate after publish so the current summary reflects the published state
-21. Keep the GitHub release context report with the release package so publish intent stays auditable
-22. Refresh `SHAREABLE-UPDATE.md` when the public-facing project state changes
-23. Refresh the short shareable briefs when you want a copy-paste-ready update for chat or social posting
+13. Create an installer-focused report with `scripts/new-install-test-report.ps1` before the first blank-disk install attempt
+14. Import diagnostics bundles and connect them to a session summary after VM runs
+15. Audit the completed session summary before treating it as the current reference run
+16. Sync blockers so the current run has a central blocker state
+17. Sync readiness so the current run has a single high-level go/no-go status
+18. Sync the validation matrix so both build modes are tracked side by side
+19. Review the cycle-chain audit before treating a run as the clean release candidate
+20. Prepare a release candidate so publish readiness has one current summary file
+21. Refresh the same release candidate after publish so the current summary reflects the published state
+22. Keep the GitHub release context report with the release package so publish intent stays auditable
+23. Refresh `SHAREABLE-UPDATE.md` when the public-facing project state changes
+24. Refresh the short shareable briefs when you want a copy-paste-ready update for chat or social posting
 
 ## What to Record
 - What was finished

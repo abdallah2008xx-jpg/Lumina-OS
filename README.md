@@ -50,6 +50,7 @@ Current project outputs include:
 - First release gate: `docs/FIRST-RELEASE-CHECKLIST.md`
 - Installer implementation notes: `docs/INSTALLER-IMPLEMENTATION.md`
 - GitHub issue and PR templates live under `.github/`
+- Installer VM test checklist: `docs/INSTALLER-VM-TEST-CHECKLIST.md`
 
 ## Project Snapshot
 
@@ -58,3 +59,4 @@ Current project outputs include:
 - Short shareable briefs: `status/SHAREABLE-BRIEF.md` and `status/SHAREABLE-BRIEF-AR.md`
 - Current release-candidate state: `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md`
 - Release package records: `status/releases/README.md`
+- Installer validation records: `status/install-tests/README.md`

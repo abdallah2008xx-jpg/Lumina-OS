@@ -29,6 +29,8 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Review blockers, readiness, validation matrix, and cycle-chain audit
 
 ## Install Path
+- [ ] Create an installer validation report with `.\scripts\new-install-test-report.ps1`
+- [ ] Follow `docs/INSTALLER-VM-TEST-CHECKLIST.md`
 - [ ] Boot the ISO on a blank VM disk
 - [ ] Launch `Install Lumina-OS`
 - [ ] Complete one end-to-end install path without installer errors

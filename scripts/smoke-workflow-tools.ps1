@@ -67,6 +67,7 @@ function Test-SessionHasExpectedBuildManifest {
 
 $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
 $startCycleScript = Join-Path $PSScriptRoot "start-vm-test-cycle.ps1"
+$installTestScript = Join-Path $PSScriptRoot "new-install-test-report.ps1"
 $buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
 $buildHandoffImportScript = Join-Path $PSScriptRoot "import-build-handoff.ps1"
 $githubArtifactImportScript = Join-Path $PSScriptRoot "import-github-actions-artifact.ps1"
@@ -89,6 +90,10 @@ if (-not (Test-Path $handoffScript)) {
 
 if (-not (Test-Path $startCycleScript)) {
     throw "Missing smoke-test target: $startCycleScript"
+}
+
+if (-not (Test-Path $installTestScript)) {
+    throw "Missing smoke-test target: $installTestScript"
 }
 
 if (-not (Test-Path $buildManifestImportScript)) {
@@ -185,6 +190,27 @@ foreach ($handoffCase in @(
     if ((Test-Path $handoffDir) -and -not (Get-ChildItem -Path $handoffDir -Force | Select-Object -First 1)) {
         Remove-Item -LiteralPath $handoffDir -Force
     }
+}
+
+$installReportPath = & $installTestScript `
+    -Mode stable `
+    -VmType VirtualBox `
+    -Firmware UEFI `
+    -RunLabel "ci-install-smoke" `
+    -IsoPath "C:\temp\lumina-smoke.iso" `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
+
+Assert-Condition -Condition (Test-Path $installReportPath) -Message "Install test report was not created."
+$installReportContent = Get-Content -Raw $installReportPath
+Assert-Condition -Condition ($installReportContent -match [regex]::Escape("- Run Label: ci-install-smoke")) -Message "Install test report does not contain the expected run label."
+Assert-Condition -Condition ($installReportContent -match [regex]::Escape("- Installer Command: /usr/local/bin/lumina-installer")) -Message "Install test report does not contain the expected installer command."
+Assert-Condition -Condition ($installReportContent -match [regex]::Escape("- [ ] VM reboots from the installed disk instead of the ISO")) -Message "Install test report does not contain the expected post-install checklist."
+
+Remove-Item -LiteralPath $installReportPath -Force
+$installReportDir = Split-Path -Parent $installReportPath
+if ((Test-Path $installReportDir) -and -not (Get-ChildItem -Path $installReportDir -Force | Select-Object -First 1)) {
+    Remove-Item -LiteralPath $installReportDir -Force
 }
 
 $tempRoot = Join-Path $env:TEMP ("lumina-workflow-smoke-" + [guid]::NewGuid().ToString("N"))

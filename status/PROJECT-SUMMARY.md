@@ -25,6 +25,7 @@ This file gives one fast answer to two questions:
 - a Windows compatibility baseline now exists through KVM/libvirt packages and a live hardware checker for VM/passthrough readiness
 - a Windows VM Lab launcher now converts that compatibility result into a real quickstart path for Adobe and Windows app workflows
 - a user-facing `Lumina Windows Apps` launcher now gives this feature a cleaner one-system product surface
+- a hidden session-start prep step now warms the Windows Apps path automatically after login
 - live-session defaults, firstboot reporting, smoke checks, and diagnostics export are implemented
 - compatibility-preserving `lumina-*` runtime aliases now front the main live-session commands while older `ahmados-*` command names stay available underneath
 

@@ -28,6 +28,7 @@
 - a Windows compatibility baseline now exists in the live image through KVM/libvirt packages and a dedicated hardware-check launcher
 - a Windows VM Lab launcher now turns that compatibility result into a real quickstart path and opens `virt-manager` on compatible machines
 - a user-facing `Lumina Windows Apps` launcher now gives the same stack a cleaner product surface focused on one Lumina desktop experience
+- a hidden Windows Apps prep step now runs on session start so the bridge path is warmed automatically without opening extra windows
 - real Welcome persistence added for appearance, wallpaper, layout, and release-channel choices
 - additional Plasma layout variants added: Classic and Minimal
 - Lumina-OS Night color scheme added for a real dark-session option
@@ -106,6 +107,7 @@
 - validate the new Windows compatibility checker on real hardware-friendly and VM-only machines
 - validate the new Windows VM Lab launcher and confirm `virt-manager` behavior inside the ISO
 - validate the new `Lumina Windows Apps` launcher and confirm the reports open cleanly inside the ISO
+- validate the hidden Windows Apps prep step and confirm it writes warmup reports quietly after login
 - capture the first real build and VM evidence trail
 - capture the first exported diagnostics bundle from a built ISO
 - capture the first linked build/test session summary
@@ -150,6 +152,7 @@
 - review the first Windows compatibility report from inside the ISO
 - review the first Windows VM Lab report from inside the ISO
 - review the first Windows Apps bridge report from inside the ISO
+- review the first Windows Apps background-prep report from inside the ISO
 - file the first installer validation report under `status/install-tests/`
 - finish the first GitHub Actions-backed VM cycle through the new diagnostics-bundle wrapper so the end of the evidence chain is just as automated as the start
 - test the real Welcome choice application inside a built ISO

@@ -43,6 +43,7 @@ The current phase adds:
 - a hardware compatibility checker
 - a Windows VM Lab for advanced setup work
 - a user-facing `Lumina Windows Apps` entry point that frames the experience in product language instead of engineering language
+- a hidden session-start prep step that warms the Windows Apps path without opening an extra desktop
 
 ## Future Target
 
@@ -53,4 +54,3 @@ The long-term target is a hidden background Windows workspace for creator apps, 
 - anti-cheat bypass
 - VM hiding to evade software policy
 - false claims that every Windows app will work on every machine with zero latency
-

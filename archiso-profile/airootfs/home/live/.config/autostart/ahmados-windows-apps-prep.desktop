@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Lumina Windows Apps Prep
+Exec=/usr/local/bin/lumina-windows-apps-prep
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=4
+

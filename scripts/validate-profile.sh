@@ -85,6 +85,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-vm-lab"
     "${profile_path}/airootfs/usr/local/bin/ahmados-firstboot"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
     "${profile_path}/airootfs/usr/local/bin/ahmados-open-firstboot-report"
     "${profile_path}/airootfs/usr/local/bin/ahmados-refresh-release-metadata"
@@ -98,6 +99,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-vm-lab"
     "${profile_path}/airootfs/usr/local/bin/lumina-firstboot"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
     "${profile_path}/airootfs/usr/local/bin/lumina-refresh-release-metadata"
     "${profile_path}/airootfs/usr/local/bin/lumina-update-center"
@@ -107,6 +109,7 @@ required_paths=(
     "${profile_path}/airootfs/home/live/.config/plasmarc"
     "${profile_path}/airootfs/usr/local/lib/ahmados-session-context.sh"
     "${profile_path}/airootfs/home/live/.config/autostart/ahmados-firstboot.desktop"
+    "${profile_path}/airootfs/home/live/.config/autostart/ahmados-windows-apps-prep.desktop"
     "${profile_path}/airootfs/home/live/Desktop/Install Lumina-OS.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-export-diagnostics.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-firstboot-report.desktop"
@@ -292,6 +295,7 @@ while IFS='|' read -r desktop_path expected_exec; do
     fi
 done <<EOF
 ${profile_path}/airootfs/home/live/.config/autostart/ahmados-firstboot.desktop|Exec=/usr/local/bin/lumina-firstboot
+${profile_path}/airootfs/home/live/.config/autostart/ahmados-windows-apps-prep.desktop|Exec=/usr/local/bin/lumina-windows-apps-prep
 ${profile_path}/airootfs/home/live/.config/autostart/ahmados-session-defaults.desktop|Exec=/home/live/.local/bin/lumina-apply-session-defaults
 ${profile_path}/airootfs/home/live/.config/autostart/ahmados-welcome.desktop|Exec=/usr/local/bin/lumina-welcome --once
 ${profile_path}/airootfs/usr/share/applications/ahmados-export-diagnostics.desktop|Exec=/usr/local/bin/lumina-export-diagnostics

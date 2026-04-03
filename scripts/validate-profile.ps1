@@ -73,6 +73,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-vm-lab",
     "archiso-profile\airootfs\usr\local\bin\ahmados-firstboot",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
     "archiso-profile\airootfs\usr\local\bin\ahmados-open-firstboot-report",
     "archiso-profile\airootfs\usr\local\bin\ahmados-refresh-release-metadata",
@@ -86,6 +87,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-vm-lab",
     "archiso-profile\airootfs\usr\local\bin\lumina-firstboot",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
     "archiso-profile\airootfs\usr\local\bin\lumina-refresh-release-metadata",
     "archiso-profile\airootfs\usr\local\bin\lumina-update-center",
@@ -95,6 +97,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\home\live\.config\plasmarc",
     "archiso-profile\airootfs\usr\local\lib\ahmados-session-context.sh",
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-firstboot.desktop",
+    "archiso-profile\airootfs\home\live\.config\autostart\ahmados-windows-apps-prep.desktop",
     "archiso-profile\airootfs\home\live\Desktop\Install Lumina-OS.desktop",
     "archiso-profile\airootfs\usr\share\applications\ahmados-export-diagnostics.desktop",
     "archiso-profile\airootfs\usr\share\applications\ahmados-firstboot-report.desktop",
@@ -301,6 +304,7 @@ if (Test-Path $smokeCheckPath) {
 
 $expectedExecMappings = @{
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-firstboot.desktop" = "Exec=/usr/local/bin/lumina-firstboot"
+    "archiso-profile\airootfs\home\live\.config\autostart\ahmados-windows-apps-prep.desktop" = "Exec=/usr/local/bin/lumina-windows-apps-prep"
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-session-defaults.desktop" = "Exec=/home/live/.local/bin/lumina-apply-session-defaults"
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-welcome.desktop" = "Exec=/usr/local/bin/lumina-welcome --once"
     "archiso-profile\airootfs\usr\share\applications\ahmados-export-diagnostics.desktop" = "Exec=/usr/local/bin/lumina-export-diagnostics"

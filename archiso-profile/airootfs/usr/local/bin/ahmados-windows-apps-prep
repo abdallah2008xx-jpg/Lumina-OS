@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+mkdir -p "${state_root}"
+
+lock_dir="${state_root}/windows-apps-prep.lock"
+if ! mkdir "${lock_dir}" 2>/dev/null; then
+    exit 0
+fi
+trap 'rmdir "${lock_dir}" >/dev/null 2>&1 || true' EXIT
+
+prep_report="${state_root}/windows-apps-ready.md"
+compat_report="${state_root}/windows-compat-report.md"
+bridge_report="${state_root}/windows-apps-bridge.md"
+lab_report="${state_root}/windows-vm-lab.md"
+
+/usr/local/bin/ahmados-windows-compat-check >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-vm-lab --no-open --no-launch >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-apps --no-open >/dev/null 2>&1 || true
+
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+experience_mode="$(awk -F': ' '/^- Experience Mode:/ {print $2; exit}' "${bridge_report}" 2>/dev/null || true)"
+
+libvirt_probe="not-attempted"
+if command -v virsh >/dev/null 2>&1; then
+    if virsh -c qemu:///system list --all >/dev/null 2>&1; then
+        libvirt_probe="ready"
+    else
+        libvirt_probe="attention"
+    fi
+fi
+
+{
+    printf '# Lumina Windows Apps Background Prep\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Experience Mode: %s\n' "${experience_mode:-unknown}"
+    printf -- '- libvirt Probe: %s\n' "${libvirt_probe}"
+    printf -- '- Goal: Keep the Windows Apps path warm in the background without opening extra windows.\n'
+    printf '\n## Prepared Artifacts\n'
+    printf -- '- Compatibility Report: %s\n' "${compat_report}"
+    printf -- '- Windows Apps Report: %s\n' "${bridge_report}"
+    printf -- '- Advanced Lab Report: %s\n' "${lab_report}"
+    printf '\n## Behavior\n'
+    printf -- '- This prep step does not open a VM or a second desktop by itself.\n'
+    printf -- '- It only prepares the Windows Apps path so the visible experience can feel faster and more integrated later.\n'
+} > "${prep_report}"
+

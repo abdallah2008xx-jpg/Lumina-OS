@@ -8,6 +8,11 @@ cat > "${run_script}" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
+wait_for_enter() {
+    printf '\n'
+    read -r -p "Press Enter to close this window..." _
+}
+
 clear
 printf '%s\n' '========================================'
 printf '%s\n' '        Install Lumina-OS'
@@ -21,6 +26,35 @@ printf '%s\n' '  - stay connected to power on laptops'
 printf '\n'
 printf '%s\n' 'Installer logs will be written under /var/log/archinstall.'
 printf '%s\n' 'Close this terminal only after the installer finishes.'
+printf '\n'
+
+if command -v nm-online >/dev/null 2>&1; then
+    printf '%s\n' 'Checking network readiness...'
+    if ! nm-online -q --timeout=20; then
+        printf '\n'
+        printf '%s\n' 'Network is not ready yet.'
+        printf '%s\n' 'Connect the VM or device to the internet, then retry the installer.'
+        printf '%s\n' 'You can confirm connectivity from a terminal with: ping -c 1 archlinux.org'
+        wait_for_enter
+        exit 1
+    fi
+    printf '%s\n' 'Network looks ready.'
+    printf '\n'
+fi
+
+printf '%s\n' 'Refreshing the Arch package database before opening the installer...'
+if ! sudo pacman -Sy --noconfirm > /tmp/lumina-installer-pacman.log 2>&1; then
+    printf '\n'
+    printf '%s\n' 'Failed to sync the Arch Linux package database.'
+    printf '%s\n' 'This usually means the live session has no internet access yet or the mirror request failed.'
+    printf '%s\n' 'Try again after network access is working, or inspect: /tmp/lumina-installer-pacman.log'
+    printf '\n'
+    tail -n 20 /tmp/lumina-installer-pacman.log || true
+    wait_for_enter
+    exit 1
+fi
+
+printf '%s\n' 'Package database refreshed successfully.'
 printf '\n'
 
 exec sudo archinstall

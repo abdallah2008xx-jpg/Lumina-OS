@@ -10,6 +10,8 @@
 
 ## Runtime Behavior
 - The launcher opens a terminal and starts `sudo archinstall`.
+- Before `archinstall` opens, the launcher now checks that the network is ready and performs a package-database sync preflight.
+- If the sync fails, the launcher stops early and shows a clearer connectivity error instead of dropping the user into a partial installer failure.
 - The live user already has passwordless sudo through the existing live-session setup.
 - Installer logs are written by `archinstall` under `/var/log/archinstall`.
 

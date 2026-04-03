@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+launch_manager=1
+open_artifacts=1
+
+for arg in "$@"; do
+    case "$arg" in
+        --no-launch)
+            launch_manager=0
+            ;;
+        --no-open)
+            open_artifacts=0
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+mkdir -p "${state_root}"
+
+compat_report="${state_root}/windows-compat-report.md"
+quickstart_report="${state_root}/windows-vm-lab.md"
+
+/usr/local/bin/ahmados-windows-compat-check >/dev/null
+
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+compatibility_summary="$(awk -F': ' '/^- Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+virt_manager_state="$(awk -F': ' '/^- virt-manager:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+libvirtd_state="$(awk -F': ' '/^- libvirtd:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+iommu_state="$(awk -F': ' '/^- IOMMU Boot Params:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+gpu_count="$(awk -F': ' '/^- GPU Count:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+
+recommended_path="Keep Lumina focused on Linux-native apps plus Proton and Wine for now."
+launch_hint="virt-manager will stay closed until the machine is ready for a stronger Windows VM path."
+
+case "${compatibility_tier}" in
+    full-passthrough-candidate)
+        recommended_path="This machine is a strong candidate for a Windows VM with GPU passthrough once VFIO guidance lands."
+        launch_hint="virt-manager can open now for a normal Windows VM, then later be upgraded into a passthrough setup."
+        ;;
+    single-gpu-experimental)
+        recommended_path="This machine can attempt a single-GPU Windows VM lab, but it needs careful expectations and staged testing."
+        launch_hint="virt-manager can open now for a normal Windows VM. Keep passthrough work experimental."
+        ;;
+    windows-vm-ready)
+        recommended_path="This machine is ready for a strong Windows VM workflow for Adobe, launchers, office tools, and hard-to-port apps."
+        launch_hint="virt-manager can open now so you can create a standard Windows VM with OVMF and TPM support."
+        ;;
+esac
+
+{
+    printf '# Lumina Windows VM Lab\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Summary: %s\n' "${compatibility_summary:-not-available}"
+    printf -- '- Recommended Path: %s\n' "${recommended_path}"
+    printf -- '- libvirtd State: %s\n' "${libvirtd_state:-unknown}"
+    printf -- '- virt-manager State: %s\n' "${virt_manager_state:-unknown}"
+    printf -- '- IOMMU Boot Params: %s\n' "${iommu_state:-unknown}"
+    printf -- '- GPU Count: %s\n' "${gpu_count:-unknown}"
+    printf '\n## What Lumina Can Do\n'
+    printf -- '- Run many Windows apps through Wine or Proton with low friction.\n'
+    printf -- '- Run a full Windows VM through KVM, libvirt, OVMF, and swtpm for Adobe and tougher workflows.\n'
+    printf -- '- Grow into GPU passthrough on the right hardware, especially on iGPU+dGPU or dual-GPU machines.\n'
+    printf '\n## What Lumina Will Not Do\n'
+    printf -- '- No anti-cheat bypass promises.\n'
+    printf -- '- No VM hiding or stealth claims.\n'
+    printf -- '- No fake promise that every Windows app will work on every device.\n'
+    printf '\n## Recommended Next Step\n'
+    printf -- '- %s\n' "${recommended_path}"
+    printf '\n## Virt Manager Launch Hint\n'
+    printf -- '- %s\n' "${launch_hint}"
+    printf '\n## First Windows VM Checklist\n'
+    printf -- '- Use a clean Windows 11 or Windows 10 ISO that you trust.\n'
+    printf -- '- Keep storage on a fast SSD if possible.\n'
+    printf -- '- Use OVMF firmware, TPM, and virtio storage/network once you reach the install stage.\n'
+    printf -- '- Test Adobe or launcher workflows in a normal VM before attempting passthrough.\n'
+    printf '\n## Reports\n'
+    printf -- '- Compatibility Report: %s\n' "${compat_report}"
+    printf -- '- Lab Report: %s\n' "${quickstart_report}"
+} > "${quickstart_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '        Lumina Windows VM Lab'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Compatibility tier: %s\n' "${compatibility_tier:-unknown}"
+printf 'Recommendation: %s\n' "${recommended_path}"
+printf 'Compatibility report: %s\n' "${compat_report}"
+printf 'Lab report: %s\n' "${quickstart_report}"
+printf '\n'
+
+can_launch_manager=0
+if [[ ${launch_manager} -eq 1 ]] && command -v virt-manager >/dev/null 2>&1; then
+    if [[ "${compatibility_tier}" == "windows-vm-ready" || "${compatibility_tier}" == "single-gpu-experimental" || "${compatibility_tier}" == "full-passthrough-candidate" ]]; then
+        can_launch_manager=1
+    fi
+fi
+
+if [[ ${open_artifacts} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${compat_report}" >/dev/null 2>&1 || true
+    xdg-open "${quickstart_report}" >/dev/null 2>&1 || true
+fi
+
+if [[ ${can_launch_manager} -eq 1 ]]; then
+    virt-manager >/dev/null 2>&1 &
+fi
+

@@ -23,6 +23,7 @@ This file gives one fast answer to two questions:
 - a real `archinstall`-based Lumina-OS installer launcher now exists inside the live image and on the live desktop
 - installer-specific reporting now exists through `scripts/new-install-test-report.ps1` and `status/install-tests/`
 - a Windows compatibility baseline now exists through KVM/libvirt packages and a live hardware checker for VM/passthrough readiness
+- a Windows VM Lab launcher now converts that compatibility result into a real quickstart path for Adobe and Windows app workflows
 - live-session defaults, firstboot reporting, smoke checks, and diagnostics export are implemented
 - compatibility-preserving `lumina-*` runtime aliases now front the main live-session commands while older `ahmados-*` command names stay available underneath
 
@@ -83,6 +84,7 @@ This file gives one fast answer to two questions:
 - verify the new installer launcher can complete a full install path on a blank VM disk
 - capture the first installer-focused validation record under `status/install-tests/`
 - validate the new Windows compatibility checker inside a built ISO
+- validate the new Windows VM Lab launcher inside a built ISO
 - verify at least one real-hardware install path before calling the project ready for daily-driver use
 - verify SDDM in `login-test`
 - verify Plasma session entry and stability

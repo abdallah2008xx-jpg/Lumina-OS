@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Lumina Windows VM Lab
+Comment=Check compatibility and open the Lumina Windows VM workspace
+Exec=/usr/local/bin/lumina-windows-vm-lab
+Icon=computer
+Terminal=false
+Categories=Qt;KDE;System;Utility;
+StartupNotify=true
+

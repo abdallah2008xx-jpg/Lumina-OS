@@ -42,6 +42,7 @@ Current project outputs include:
 - real Lumina-OS Update Center shell under `archiso-profile/airootfs/usr/share/ahmados/update-center/`
 - an `archinstall`-based installer launcher path under `archiso-profile/airootfs/usr/local/bin/lumina-installer`
 - a Windows compatibility baseline for KVM/libvirt now exists, including a live hardware checker under `archiso-profile/airootfs/usr/local/bin/lumina-windows-compat-check`
+- a Windows VM Lab launcher now turns that compatibility result into a quickstart path and opens `virt-manager` on compatible machines
 
 ## Collaboration
 
@@ -51,6 +52,7 @@ Current project outputs include:
 - First release gate: `docs/FIRST-RELEASE-CHECKLIST.md`
 - Installer implementation notes: `docs/INSTALLER-IMPLEMENTATION.md`
 - Windows compatibility direction: `docs/WINDOWS-COMPATIBILITY-PLAN.md`
+- Windows VM lab flow: `docs/WINDOWS-VM-LAB.md`
 - GitHub issue and PR templates live under `.github/`
 - Installer VM test checklist: `docs/INSTALLER-VM-TEST-CHECKLIST.md`
 

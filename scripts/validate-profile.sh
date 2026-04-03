@@ -82,6 +82,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-installer"
     "${profile_path}/airootfs/usr/local/bin/ahmados-run-smoke-checks"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-compat-check"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-vm-lab"
     "${profile_path}/airootfs/usr/local/bin/ahmados-firstboot"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
     "${profile_path}/airootfs/usr/local/bin/ahmados-open-firstboot-report"
@@ -93,6 +94,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-installer"
     "${profile_path}/airootfs/usr/local/bin/lumina-run-smoke-checks"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-compat-check"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-vm-lab"
     "${profile_path}/airootfs/usr/local/bin/lumina-firstboot"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
     "${profile_path}/airootfs/usr/local/bin/lumina-refresh-release-metadata"
@@ -109,6 +111,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/share/applications/ahmados-run-smoke-checks.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-windows-compat-check.desktop"
+    "${profile_path}/airootfs/usr/share/applications/lumina-windows-vm-lab.desktop"
     "${repo_root}/scripts/build-iso-arch.sh"
     "${repo_root}/scripts/build-iso.ps1"
     "${repo_root}/scripts/bootstrap-arch-build-env.sh"
@@ -295,6 +298,7 @@ ${profile_path}/airootfs/usr/share/applications/ahmados-update-center.desktop|Ex
 ${profile_path}/airootfs/usr/share/applications/ahmados-welcome.desktop|Exec=/usr/local/bin/lumina-welcome
 ${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop|Exec=/usr/local/bin/lumina-installer
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-compat-check.desktop|Exec=/usr/local/bin/lumina-windows-compat-check
+${profile_path}/airootfs/usr/share/applications/lumina-windows-vm-lab.desktop|Exec=/usr/local/bin/lumina-windows-vm-lab
 ${profile_path}/airootfs/home/live/Desktop/Install Lumina-OS.desktop|Exec=/usr/local/bin/lumina-installer
 EOF
 

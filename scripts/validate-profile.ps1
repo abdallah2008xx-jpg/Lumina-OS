@@ -69,6 +69,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-export-diagnostics",
     "archiso-profile\airootfs\usr\local\bin\ahmados-installer",
     "archiso-profile\airootfs\usr\local\bin\ahmados-run-smoke-checks",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-compat-check",
     "archiso-profile\airootfs\usr\local\bin\ahmados-firstboot",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
     "archiso-profile\airootfs\usr\local\bin\ahmados-open-firstboot-report",
@@ -79,6 +80,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-export-diagnostics",
     "archiso-profile\airootfs\usr\local\bin\lumina-installer",
     "archiso-profile\airootfs\usr\local\bin\lumina-run-smoke-checks",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-compat-check",
     "archiso-profile\airootfs\usr\local\bin\lumina-firstboot",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
     "archiso-profile\airootfs\usr\local\bin\lumina-refresh-release-metadata",
@@ -94,6 +96,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\share\applications\ahmados-firstboot-report.desktop",
     "archiso-profile\airootfs\usr\share\applications\ahmados-run-smoke-checks.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop",
+    "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop",
     "scripts\build-iso-arch.sh",
     "scripts\build-iso.ps1",
     "scripts\bootstrap-arch-build-env.sh",
@@ -179,7 +182,7 @@ if (Test-Path $packageFile) {
         Where-Object { $_.Trim() -and -not $_.Trim().StartsWith("#") } |
         ForEach-Object { $_.Trim() }
 
-    foreach ($requiredPackage in @("archinstall", "curl", "qt6-declarative", "qt6-svg", "systemsettings", "plasma-x11-session", "spectacle")) {
+    foreach ($requiredPackage in @("archinstall", "curl", "qt6-declarative", "qt6-svg", "systemsettings", "plasma-x11-session", "spectacle", "qemu-full", "libvirt", "virt-manager", "edk2-ovmf", "dnsmasq", "bridge-utils", "swtpm", "iptables-nft")) {
         if ($packages -notcontains $requiredPackage) {
             Add-Error "Missing expected package in packages.x86_64: $requiredPackage"
         }
@@ -300,6 +303,7 @@ $expectedExecMappings = @{
     "archiso-profile\airootfs\usr\share\applications\ahmados-update-center.desktop" = "Exec=/usr/local/bin/lumina-update-center"
     "archiso-profile\airootfs\usr\share\applications\ahmados-welcome.desktop" = "Exec=/usr/local/bin/lumina-welcome"
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop" = "Exec=/usr/local/bin/lumina-installer"
+    "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop" = "Exec=/usr/local/bin/lumina-windows-compat-check"
     "archiso-profile\airootfs\home\live\Desktop\Install Lumina-OS.desktop" = "Exec=/usr/local/bin/lumina-installer"
 }
 

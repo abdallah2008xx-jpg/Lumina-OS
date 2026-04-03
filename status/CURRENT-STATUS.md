@@ -25,6 +25,7 @@
 - real Lumina-OS Update Center app shell added to the live image
 - a real `archinstall`-based Lumina-OS installer launcher is now included in the live image, application menu, and live desktop
 - installer-specific validation scaffolding now exists through a dedicated blank-disk report helper and checklist
+- a Windows compatibility baseline now exists in the live image through KVM/libvirt packages and a dedicated hardware-check launcher
 - real Welcome persistence added for appearance, wallpaper, layout, and release-channel choices
 - additional Plasma layout variants added: Classic and Minimal
 - Lumina-OS Night color scheme added for a real dark-session option
@@ -100,6 +101,7 @@
 - validate the refreshed floating `LuminaGlass` taskbar on a fresh ISO so the current live patch becomes part of the normal booted experience without manual injection
 - validate the firstboot runtime report and cache generation inside a built ISO
 - validate the first installer report path on a blank VM disk so install evidence is tracked like live VM evidence
+- validate the new Windows compatibility checker on real hardware-friendly and VM-only machines
 - capture the first real build and VM evidence trail
 - capture the first exported diagnostics bundle from a built ISO
 - capture the first linked build/test session summary
@@ -141,6 +143,7 @@
 - build a fresh `stable` ISO that includes the latest screenshot/runtime/Welcome fixes and validate it in VirtualBox
 - boot `login-test`, validate SDDM/manual login, and finish its first real VM cycle
 - validate the new installer path on a blank VM disk before treating Lumina-OS as install-ready for daily-driver use
+- review the first Windows compatibility report from inside the ISO
 - file the first installer validation report under `status/install-tests/`
 - finish the first GitHub Actions-backed VM cycle through the new diagnostics-bundle wrapper so the end of the evidence chain is just as automated as the start
 - test the real Welcome choice application inside a built ISO

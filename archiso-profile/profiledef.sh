@@ -36,5 +36,7 @@ file_permissions=(
   ["/usr/local/bin/lumina-update-center"]="0:0:755"
   ["/usr/local/bin/lumina-welcome"]="0:0:755"
   ["/usr/local/bin/lumina-firstboot"]="0:0:755"
+  ["/usr/local/bin/ahmados-windows-compat-check"]="0:0:755"
+  ["/usr/local/bin/lumina-windows-compat-check"]="0:0:755"
   ["/home/live/Desktop/Install Lumina-OS.desktop"]="0:0:755"
 )

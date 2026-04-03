@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+terminal_bin="$(command -v konsole || true)"
+run_script="$(mktemp /tmp/lumina-windows-compat.XXXXXX.sh)"
+
+cat > "${run_script}" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec /usr/local/bin/ahmados-windows-compat-check --open
+EOF
+
+chmod 755 "${run_script}"
+
+if [[ -n "${terminal_bin}" ]]; then
+    exec "${terminal_bin}" --hold -p tabtitle="Windows Compatibility" -e "${run_script}"
+fi
+
+exec "${run_script}"

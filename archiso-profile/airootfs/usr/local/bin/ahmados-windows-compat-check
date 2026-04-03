@@ -1,0 +1,158 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+open_report=0
+
+for arg in "$@"; do
+    case "$arg" in
+        --open)
+            open_report=1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+mkdir -p "${state_root}"
+report_path="${state_root}/windows-compat-report.md"
+
+cpu_virtualization="$(LC_ALL=C lscpu 2>/dev/null | awk -F: '/^Virtualization:/ {gsub(/^[ \t]+/, "", $2); print $2; exit}')"
+if [[ -z "${cpu_virtualization}" ]]; then
+    if grep -Eq 'vmx|svm' /proc/cpuinfo 2>/dev/null; then
+        cpu_virtualization="extensions-detected"
+    else
+        cpu_virtualization="not-detected"
+    fi
+fi
+
+kvm_device_state="missing"
+if [[ -e /dev/kvm ]]; then
+    kvm_device_state="present"
+fi
+
+kernel_cmdline="$(tr -d '\n' < /proc/cmdline 2>/dev/null || true)"
+iommu_cmdline_state="disabled-or-not-detected"
+if grep -Eq '(^| )intel_iommu=on( |$)|(^| )amd_iommu=on( |$)' <<<"${kernel_cmdline}"; then
+    iommu_cmdline_state="enabled"
+fi
+
+iommu_groups_count=0
+if [[ -d /sys/kernel/iommu_groups ]]; then
+    iommu_groups_count="$(find /sys/kernel/iommu_groups -mindepth 1 -maxdepth 1 2>/dev/null | wc -l | tr -d ' ')"
+fi
+
+gpu_lines="$(lspci 2>/dev/null | grep -Ei 'VGA compatible controller|3D controller|Display controller' || true)"
+gpu_count=0
+if [[ -n "${gpu_lines}" ]]; then
+    gpu_count="$(printf '%s\n' "${gpu_lines}" | sed '/^[[:space:]]*$/d' | wc -l | tr -d ' ')"
+fi
+
+qemu_state="missing"
+if command -v qemu-system-x86_64 >/dev/null 2>&1; then
+    qemu_state="present"
+fi
+
+virsh_state="missing"
+if command -v virsh >/dev/null 2>&1; then
+    virsh_state="present"
+fi
+
+virt_manager_state="missing"
+if command -v virt-manager >/dev/null 2>&1; then
+    virt_manager_state="present"
+fi
+
+swtpm_state="missing"
+if command -v swtpm >/dev/null 2>&1; then
+    swtpm_state="present"
+fi
+
+libvirtd_state="unknown"
+if command -v systemctl >/dev/null 2>&1; then
+    if systemctl is-active --quiet libvirtd.service; then
+        libvirtd_state="active"
+    elif systemctl is-enabled --quiet libvirtd.service 2>/dev/null; then
+        libvirtd_state="enabled-not-running"
+    else
+        libvirtd_state="inactive"
+    fi
+fi
+
+compatibility_tier="basic-proton-only"
+compatibility_summary="Use Wine/Proton first. Windows VM passthrough is not ready on this machine yet."
+
+if [[ "${kvm_device_state}" == "present" && "${qemu_state}" == "present" && "${virsh_state}" == "present" ]]; then
+    compatibility_tier="windows-vm-ready"
+    compatibility_summary="Windows VMs are available. This is good for Adobe, tools, and non-game workflows."
+fi
+
+if [[ "${kvm_device_state}" == "present" && "${qemu_state}" == "present" && "${virsh_state}" == "present" && "${iommu_groups_count}" -gt 0 ]]; then
+    compatibility_tier="single-gpu-experimental"
+    compatibility_summary="VFIO groundwork is present, but single-GPU passthrough is still an advanced path."
+fi
+
+if [[ "${kvm_device_state}" == "present" && "${qemu_state}" == "present" && "${virsh_state}" == "present" && "${iommu_groups_count}" -gt 0 && "${gpu_count}" -ge 2 ]]; then
+    compatibility_tier="full-passthrough-candidate"
+    compatibility_summary="This machine looks like a strong candidate for a Windows gaming or Adobe VM with passthrough."
+fi
+
+virt_validate_state="not-run"
+if command -v virt-host-validate >/dev/null 2>&1; then
+    if virt-host-validate qemu >/dev/null 2>&1; then
+        virt_validate_state="pass"
+    else
+        virt_validate_state="attention"
+    fi
+fi
+
+{
+    printf '# Lumina-OS Windows Compatibility Report\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier}"
+    printf -- '- Summary: %s\n' "${compatibility_summary}"
+    printf -- '- CPU Virtualization: %s\n' "${cpu_virtualization}"
+    printf -- '- /dev/kvm: %s\n' "${kvm_device_state}"
+    printf -- '- IOMMU Boot Params: %s\n' "${iommu_cmdline_state}"
+    printf -- '- IOMMU Groups Count: %s\n' "${iommu_groups_count}"
+    printf -- '- GPU Count: %s\n' "${gpu_count}"
+    printf -- '- QEMU: %s\n' "${qemu_state}"
+    printf -- '- libvirt / virsh: %s\n' "${virsh_state}"
+    printf -- '- virt-manager: %s\n' "${virt_manager_state}"
+    printf -- '- swtpm: %s\n' "${swtpm_state}"
+    printf -- '- libvirtd: %s\n' "${libvirtd_state}"
+    printf -- '- virt-host-validate: %s\n' "${virt_validate_state}"
+    printf '\n## GPUs\n'
+    if [[ -n "${gpu_lines}" ]]; then
+        printf '%s\n' "${gpu_lines}"
+    else
+        printf 'no GPU entries detected via lspci\n'
+    fi
+    printf '\n## What This Means\n'
+    printf -- '- Wine/Proton remains the first path for normal Windows apps and many games.\n'
+    printf -- '- Windows VM mode is the right path for Adobe, launchers, and hard-to-port software.\n'
+    printf -- '- GPU passthrough needs IOMMU plus friendly hardware. Two GPUs or iGPU+dGPU is the easiest route.\n'
+    printf -- '- Single-GPU passthrough can work, but it is a more advanced and less universal path.\n'
+    printf -- '- Anti-cheat bypass or VM hiding is intentionally out of scope for Lumina-OS.\n'
+    printf '\n## Next Step\n'
+    if [[ "${compatibility_tier}" == "full-passthrough-candidate" ]]; then
+        printf -- '- Start with a Windows VM plan using KVM, libvirt, OVMF, and VFIO.\n'
+    elif [[ "${compatibility_tier}" == "single-gpu-experimental" ]]; then
+        printf -- '- Start with a careful single-GPU passthrough lab setup before promising daily-driver support.\n'
+    elif [[ "${compatibility_tier}" == "windows-vm-ready" ]]; then
+        printf -- '- Start with a normal Windows VM for Adobe and tooling before attempting passthrough.\n'
+    else
+        printf -- '- Keep the main experience focused on Wine/Proton until the hardware path improves.\n'
+    fi
+} > "${report_path}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '  Lumina Windows Compatibility Check'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Compatibility tier: %s\n' "${compatibility_tier}"
+printf 'Summary: %s\n' "${compatibility_summary}"
+printf 'Report: %s\n' "${report_path}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${report_path}" >/dev/null 2>&1 || true
+fi

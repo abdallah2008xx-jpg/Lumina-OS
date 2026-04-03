@@ -80,3 +80,13 @@ qqc2-breeze-style
 # VM friendliness
 virtualbox-guest-utils
 open-vm-tools
+
+# Windows compatibility / virtualization baseline
+bridge-utils
+dnsmasq
+edk2-ovmf
+iptables-nft
+libvirt
+qemu-full
+swtpm
+virt-manager

@@ -81,6 +81,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-export-diagnostics"
     "${profile_path}/airootfs/usr/local/bin/ahmados-installer"
     "${profile_path}/airootfs/usr/local/bin/ahmados-run-smoke-checks"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-compat-check"
     "${profile_path}/airootfs/usr/local/bin/ahmados-firstboot"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
     "${profile_path}/airootfs/usr/local/bin/ahmados-open-firstboot-report"
@@ -91,6 +92,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-export-diagnostics"
     "${profile_path}/airootfs/usr/local/bin/lumina-installer"
     "${profile_path}/airootfs/usr/local/bin/lumina-run-smoke-checks"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-compat-check"
     "${profile_path}/airootfs/usr/local/bin/lumina-firstboot"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
     "${profile_path}/airootfs/usr/local/bin/lumina-refresh-release-metadata"
@@ -106,6 +108,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/share/applications/ahmados-firstboot-report.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-run-smoke-checks.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop"
+    "${profile_path}/airootfs/usr/share/applications/lumina-windows-compat-check.desktop"
     "${repo_root}/scripts/build-iso-arch.sh"
     "${repo_root}/scripts/build-iso.ps1"
     "${repo_root}/scripts/bootstrap-arch-build-env.sh"
@@ -173,7 +176,7 @@ for required_path in "${required_paths[@]}"; do
 done
 
 if [[ -f "${profile_path}/packages.x86_64" ]]; then
-    for required_package in archinstall curl qt6-declarative qt6-svg systemsettings plasma-x11-session spectacle; do
+    for required_package in archinstall curl qt6-declarative qt6-svg systemsettings plasma-x11-session spectacle qemu-full libvirt virt-manager edk2-ovmf dnsmasq bridge-utils swtpm iptables-nft; do
         if ! grep -qx "${required_package}" "${profile_path}/packages.x86_64"; then
             add_error "Missing expected package in packages.x86_64: ${required_package}"
         fi
@@ -291,6 +294,7 @@ ${profile_path}/airootfs/usr/share/applications/ahmados-run-smoke-checks.desktop
 ${profile_path}/airootfs/usr/share/applications/ahmados-update-center.desktop|Exec=/usr/local/bin/lumina-update-center
 ${profile_path}/airootfs/usr/share/applications/ahmados-welcome.desktop|Exec=/usr/local/bin/lumina-welcome
 ${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop|Exec=/usr/local/bin/lumina-installer
+${profile_path}/airootfs/usr/share/applications/lumina-windows-compat-check.desktop|Exec=/usr/local/bin/lumina-windows-compat-check
 ${profile_path}/airootfs/home/live/Desktop/Install Lumina-OS.desktop|Exec=/usr/local/bin/lumina-installer
 EOF
 

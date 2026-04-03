@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Lumina Windows Compatibility Check
+Comment=Inspect whether this machine is ready for Windows VM and passthrough workflows
+Exec=/usr/local/bin/lumina-windows-compat-check
+Icon=computer
+Terminal=false
+Categories=Qt;KDE;System;Utility;
+StartupNotify=true

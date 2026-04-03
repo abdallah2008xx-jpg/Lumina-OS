@@ -15,10 +15,16 @@ chmod 755 /usr/local/bin/ahmados-capture-screenshot
 chmod 755 /usr/local/bin/lumina-capture-screenshot
 chown -R live:live /home/live
 
+for optional_group in libvirt kvm; do
+    if getent group "${optional_group}" >/dev/null 2>&1; then
+        usermod -aG "${optional_group}" live
+    fi
+done
+
 systemctl enable NetworkManager.service
 systemctl enable sddm.service
 
-for service in vboxservice.service vmtoolsd.service vmware-vmblock-fuse.service; do
+for service in vboxservice.service vmtoolsd.service vmware-vmblock-fuse.service libvirtd.service virtlogd.service; do
     if [[ -f "/usr/lib/systemd/system/${service}" ]]; then
         systemctl enable "${service}"
     fi

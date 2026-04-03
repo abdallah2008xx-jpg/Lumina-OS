@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Install Lumina-OS
+Comment=Launch the guided Lumina-OS installer
+Exec=/usr/local/bin/lumina-installer
+Icon=drive-harddisk
+Terminal=false
+Categories=Qt;KDE;System;Settings;
+StartupNotify=true

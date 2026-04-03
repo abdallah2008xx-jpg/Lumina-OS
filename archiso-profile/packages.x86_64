@@ -1,5 +1,6 @@
 # Core system
 arch-install-scripts
+archinstall
 base
 linux
 linux-firmware
@@ -51,6 +52,7 @@ ark
 firefox
 
 # Real hardware diagnostics / storage friendliness
+btrfs-progs
 pciutils
 usbutils
 dmidecode
@@ -59,6 +61,9 @@ hdparm
 ntfs-3g
 exfatprogs
 dosfstools
+f2fs-tools
+parted
+xfsprogs
 
 # Fonts / polish baseline
 noto-fonts

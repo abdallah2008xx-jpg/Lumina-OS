@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+terminal_bin="$(command -v konsole || true)"
+run_script="$(mktemp /tmp/lumina-installer.XXXXXX.sh)"
+
+cat > "${run_script}" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+clear
+printf '%s\n' '========================================'
+printf '%s\n' '        Install Lumina-OS'
+printf '%s\n' '========================================'
+printf '\n'
+printf '%s\n' 'This starts the guided Arch installer (archinstall).'
+printf '%s\n' 'Recommended before you continue:'
+printf '%s\n' '  - confirm your target disk is selected correctly'
+printf '%s\n' '  - keep a backup of any important data'
+printf '%s\n' '  - stay connected to power on laptops'
+printf '\n'
+printf '%s\n' 'Installer logs will be written under /var/log/archinstall.'
+printf '%s\n' 'Close this terminal only after the installer finishes.'
+printf '\n'
+
+exec sudo archinstall
+EOF
+
+chmod 755 "${run_script}"
+
+if [[ -n "${terminal_bin}" ]]; then
+    exec "${terminal_bin}" --hold -p tabtitle="Install Lumina-OS" -e "${run_script}"
+fi
+
+exec "${run_script}"

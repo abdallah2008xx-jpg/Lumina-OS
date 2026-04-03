@@ -20,6 +20,7 @@ This file gives one fast answer to two questions:
 - the archiso profile is structured and prepared for a real Arch-side build
 - Lumina-OS Welcome exists as a real QML surface inside the live image
 - Lumina-OS Update Center exists as a real QML surface inside the live image
+- a real `archinstall`-based Lumina-OS installer launcher now exists inside the live image and on the live desktop
 - live-session defaults, firstboot reporting, smoke checks, and diagnostics export are implemented
 - compatibility-preserving `lumina-*` runtime aliases now front the main live-session commands while older `ahmados-*` command names stay available underneath
 
@@ -75,6 +76,8 @@ This file gives one fast answer to two questions:
 
 ### Runtime Verification
 - verify real boot reliability in a VM
+- verify the new installer launcher can complete a full install path on a blank VM disk
+- verify at least one real-hardware install path before calling the project ready for daily-driver use
 - verify SDDM in `login-test`
 - verify Plasma session entry and stability
 - verify Welcome behavior after closing the app

@@ -83,13 +83,14 @@ ApplicationWindow {
         {
             "eyebrow": qsTr("Ready"),
             "title": qsTr("Your Lumina-OS session choices are ready to apply."),
-            "body": qsTr("Closing Welcome now writes your selections to Lumina-OS config and reapplies the live-session defaults on top of the current Plasma session."),
+            "body": qsTr("Closing Welcome now writes your selections to Lumina-OS config and reapplies the live-session defaults on top of the current Plasma session. When you are ready to install permanently, use the Install Lumina-OS launcher from the desktop or app menu."),
             "sideTitle": qsTr("What will happen next"),
             "items": [
                 qsTr("The selected Plasma layout is applied"),
                 qsTr("The selected Lumina-OS color scheme is applied"),
                 qsTr("The selected wallpaper becomes active"),
-                qsTr("Update Center foregrounds the chosen release channel")
+                qsTr("Update Center foregrounds the chosen release channel"),
+                qsTr("A guided Install Lumina-OS launcher is available from the desktop")
             ]
         }
     ]

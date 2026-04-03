@@ -23,6 +23,7 @@
 - VM test checklist and Arch build guide added
 - real Lumina-OS Welcome app shell added to the live image and autostarted once for the `live` user
 - real Lumina-OS Update Center app shell added to the live image
+- a real `archinstall`-based Lumina-OS installer launcher is now included in the live image, application menu, and live desktop
 - real Welcome persistence added for appearance, wallpaper, layout, and release-channel choices
 - additional Plasma layout variants added: Classic and Minimal
 - Lumina-OS Night color scheme added for a real dark-session option
@@ -135,6 +136,7 @@
 ## Next
 - build a fresh `stable` ISO that includes the latest screenshot/runtime/Welcome fixes and validate it in VirtualBox
 - boot `login-test`, validate SDDM/manual login, and finish its first real VM cycle
+- validate the new installer path on a blank VM disk before treating Lumina-OS as install-ready for daily-driver use
 - finish the first GitHub Actions-backed VM cycle through the new diagnostics-bundle wrapper so the end of the evidence chain is just as automated as the start
 - test the real Welcome choice application inside a built ISO
 - test the metadata-backed Update Center inside a built ISO

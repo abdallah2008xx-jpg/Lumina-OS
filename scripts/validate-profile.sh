@@ -79,6 +79,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/share/ahmados/update-center/Main.qml"
     "${profile_path}/airootfs/usr/share/ahmados/update-center/releases.json"
     "${profile_path}/airootfs/usr/local/bin/ahmados-export-diagnostics"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-installer"
     "${profile_path}/airootfs/usr/local/bin/ahmados-run-smoke-checks"
     "${profile_path}/airootfs/usr/local/bin/ahmados-firstboot"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
@@ -88,6 +89,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-welcome"
     "${profile_path}/airootfs/usr/local/bin/lumina-capture-screenshot"
     "${profile_path}/airootfs/usr/local/bin/lumina-export-diagnostics"
+    "${profile_path}/airootfs/usr/local/bin/lumina-installer"
     "${profile_path}/airootfs/usr/local/bin/lumina-run-smoke-checks"
     "${profile_path}/airootfs/usr/local/bin/lumina-firstboot"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
@@ -99,9 +101,11 @@ required_paths=(
     "${profile_path}/airootfs/home/live/.config/plasmarc"
     "${profile_path}/airootfs/usr/local/lib/ahmados-session-context.sh"
     "${profile_path}/airootfs/home/live/.config/autostart/ahmados-firstboot.desktop"
+    "${profile_path}/airootfs/home/live/Desktop/Install Lumina-OS.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-export-diagnostics.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-firstboot-report.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-run-smoke-checks.desktop"
+    "${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop"
     "${repo_root}/scripts/build-iso-arch.sh"
     "${repo_root}/scripts/build-iso.ps1"
     "${repo_root}/scripts/bootstrap-arch-build-env.sh"
@@ -166,7 +170,7 @@ for required_path in "${required_paths[@]}"; do
 done
 
 if [[ -f "${profile_path}/packages.x86_64" ]]; then
-    for required_package in curl qt6-declarative qt6-svg systemsettings plasma-x11-session spectacle; do
+    for required_package in archinstall curl qt6-declarative qt6-svg systemsettings plasma-x11-session spectacle; do
         if ! grep -qx "${required_package}" "${profile_path}/packages.x86_64"; then
             add_error "Missing expected package in packages.x86_64: ${required_package}"
         fi
@@ -283,6 +287,8 @@ ${profile_path}/airootfs/usr/share/applications/ahmados-firstboot-report.desktop
 ${profile_path}/airootfs/usr/share/applications/ahmados-run-smoke-checks.desktop|Exec=/usr/local/bin/lumina-run-smoke-checks --open
 ${profile_path}/airootfs/usr/share/applications/ahmados-update-center.desktop|Exec=/usr/local/bin/lumina-update-center
 ${profile_path}/airootfs/usr/share/applications/ahmados-welcome.desktop|Exec=/usr/local/bin/lumina-welcome
+${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop|Exec=/usr/local/bin/lumina-installer
+${profile_path}/airootfs/home/live/Desktop/Install Lumina-OS.desktop|Exec=/usr/local/bin/lumina-installer
 EOF
 
 for json_candidate in \

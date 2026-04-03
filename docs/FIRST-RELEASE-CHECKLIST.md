@@ -20,12 +20,20 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Boot the ISO in a VM
 - [ ] Confirm Plasma session entry
 - [ ] Confirm Welcome behavior
+- [ ] Confirm the Install Lumina-OS launcher opens `archinstall`
 - [ ] Confirm Update Center behavior
 - [ ] Confirm firstboot report generation
 - [ ] Run smoke checks
 - [ ] Export diagnostics
 - [ ] Finish the cycle with `.\scripts\finish-vm-test-cycle.ps1`
 - [ ] Review blockers, readiness, validation matrix, and cycle-chain audit
+
+## Install Path
+- [ ] Boot the ISO on a blank VM disk
+- [ ] Launch `Install Lumina-OS`
+- [ ] Complete one end-to-end install path without installer errors
+- [ ] Reboot into the installed system
+- [ ] Confirm the installed system reaches Plasma successfully
 
 ## Login-Test Build
 - [ ] Run `./scripts/build-iso-arch.sh --mode login-test`

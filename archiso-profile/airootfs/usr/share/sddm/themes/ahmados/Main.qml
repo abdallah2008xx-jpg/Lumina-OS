@@ -247,13 +247,16 @@ Rectangle {
                 }
 
                 Rectangle {
+                    id: infoCard
                     width: parent.width
+                    height: infoCardContent.implicitHeight + 28
                     radius: 18
                     color: "#325A86D8"
                     border.color: "#54C8E5FF"
                     border.width: 1
 
                     Column {
+                        id: infoCardContent
                         width: parent.width
                         anchors.margins: 14
                         anchors.fill: parent

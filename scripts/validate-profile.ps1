@@ -51,6 +51,7 @@ $requiredPaths = @(
     "archiso-profile\packages.x86_64",
     "archiso-profile\build-variants\sddm\stable-autologin.conf",
     "archiso-profile\build-variants\sddm\manual-login.conf",
+    "archiso-profile\airootfs\etc\pacman.d\mirrorlist",
     "archiso-profile\airootfs\etc\sddm.conf.d\theme.conf",
     "archiso-profile\airootfs\etc\ahmados-release.conf",
     "archiso-profile\airootfs\usr\share\sddm\themes\ahmados\Main.qml",
@@ -195,6 +196,16 @@ if (Test-Path $packageFile) {
         if ($packages -notcontains $requiredPackage) {
             Add-Error "Missing expected package in packages.x86_64: $requiredPackage"
         }
+    }
+}
+
+$mirrorlistPath = Join-Path $RepoRoot "archiso-profile\airootfs\etc\pacman.d\mirrorlist"
+if (Test-Path $mirrorlistPath) {
+    $activeServers = Get-Content $mirrorlistPath |
+        Where-Object { $_ -match '^\s*Server\s*=' }
+
+    if ($activeServers.Count -lt 1) {
+        Add-Error "The live pacman mirrorlist does not contain any active Server entries."
     }
 }
 

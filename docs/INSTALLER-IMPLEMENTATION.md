@@ -11,7 +11,9 @@
 ## Runtime Behavior
 - The launcher opens a terminal and starts `sudo archinstall`.
 - Before `archinstall` opens, the launcher now checks that the network is ready and performs a package-database sync preflight.
+- The launcher now also initializes and populates the `pacman-key` keyring automatically if the live session keyring is missing or unreadable.
 - If the sync fails, the launcher stops early and shows a clearer connectivity error instead of dropping the user into a partial installer failure.
+- The live image now ships a small active `mirrorlist` override so the installer is not blocked by a fully commented default mirror list.
 - The live user already has passwordless sudo through the existing live-session setup.
 - Installer logs are written by `archinstall` under `/var/log/archinstall`.
 

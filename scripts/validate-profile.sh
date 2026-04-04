@@ -63,6 +63,7 @@ required_paths=(
     "${profile_path}/packages.x86_64"
     "${profile_path}/build-variants/sddm/stable-autologin.conf"
     "${profile_path}/build-variants/sddm/manual-login.conf"
+    "${profile_path}/airootfs/etc/pacman.d/mirrorlist"
     "${profile_path}/airootfs/etc/sddm.conf.d/theme.conf"
     "${profile_path}/airootfs/etc/ahmados-release.conf"
     "${profile_path}/airootfs/usr/share/sddm/themes/ahmados/Main.qml"
@@ -190,6 +191,13 @@ if [[ -f "${profile_path}/packages.x86_64" ]]; then
             add_error "Missing expected package in packages.x86_64: ${required_package}"
         fi
     done
+fi
+
+mirrorlist_path="${profile_path}/airootfs/etc/pacman.d/mirrorlist"
+if [[ -f "${mirrorlist_path}" ]]; then
+    if ! grep -Eq '^[[:space:]]*Server[[:space:]]*=' "${mirrorlist_path}"; then
+        add_error "The live pacman mirrorlist does not contain any active Server entries."
+    fi
 fi
 
 wallpaper_dir="${profile_path}/airootfs/usr/share/ahmados/wallpapers"

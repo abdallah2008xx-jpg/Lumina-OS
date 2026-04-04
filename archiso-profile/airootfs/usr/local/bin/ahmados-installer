@@ -42,6 +42,33 @@ if command -v nm-online >/dev/null 2>&1; then
     printf '\n'
 fi
 
+printf '%s\n' 'Checking pacman keyring readiness...'
+if ! sudo pacman-key --list-keys >/tmp/lumina-installer-keyring-check.log 2>&1; then
+    printf '%s\n' 'Pacman keyring is not ready yet. Initializing it now...'
+    if ! sudo pacman-key --init >/tmp/lumina-installer-keyring-init.log 2>&1; then
+        printf '\n'
+        printf '%s\n' 'Failed to initialize the pacman keyring.'
+        printf '%s\n' 'Inspect: /tmp/lumina-installer-keyring-init.log'
+        printf '\n'
+        tail -n 20 /tmp/lumina-installer-keyring-init.log || true
+        wait_for_enter
+        exit 1
+    fi
+
+    if ! sudo pacman-key --populate archlinux >/tmp/lumina-installer-keyring-populate.log 2>&1; then
+        printf '\n'
+        printf '%s\n' 'Failed to populate the Arch Linux pacman keyring.'
+        printf '%s\n' 'Inspect: /tmp/lumina-installer-keyring-populate.log'
+        printf '\n'
+        tail -n 20 /tmp/lumina-installer-keyring-populate.log || true
+        wait_for_enter
+        exit 1
+    fi
+fi
+
+printf '%s\n' 'Pacman keyring looks ready.'
+printf '\n'
+
 printf '%s\n' 'Refreshing the Arch package database before opening the installer...'
 if ! sudo pacman -Sy --noconfirm > /tmp/lumina-installer-pacman.log 2>&1; then
     printf '\n'

@@ -1,0 +1,8 @@
+##
+## Lumina-OS live mirror baseline
+## Keep at least one active Server line so live installs can sync packages.
+##
+
+Server = https://losangeles.mirror.pkgbuild.com/$repo/os/$arch
+Server = https://mirror.umd.edu/archlinux/$repo/os/$arch
+Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch

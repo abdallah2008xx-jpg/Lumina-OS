@@ -14,6 +14,9 @@
 - The launcher now also initializes and populates the `pacman-key` keyring automatically if the live session keyring is missing or unreadable.
 - If the sync fails, the launcher stops early and shows a clearer connectivity error instead of dropping the user into a partial installer failure.
 - The live image now ships a small active `mirrorlist` override so the installer is not blocked by a fully commented default mirror list.
+- The launcher now tells the user to choose `Exit archinstall` after installation, not `Reboot system`, so Lumina-OS can finalize the target automatically.
+- A new `lumina-finalize-install` pass now installs the expected Plasma/SDDM baseline into the target, enables the graphical services, copies Lumina-specific assets into the installed system, and applies defaults to `/etc/skel` plus any created users.
+- A recovery launcher named `Finalize Installed Lumina-OS` is also available from the live session if the user already rebooted before the finalize step.
 - The live user already has passwordless sudo through the existing live-session setup.
 - Installer logs are written by `archinstall` under `/var/log/archinstall`.
 
@@ -24,7 +27,6 @@
 ## Remaining Work
 - validate the installer end-to-end on a dedicated VM disk
 - validate at least one full install on real hardware
-- add Lumina-OS-specific post-install defaults if needed
 - decide later whether to keep `archinstall` as the primary installer or replace it with a more branded GUI flow
 
 ## Installer Validation Workflow

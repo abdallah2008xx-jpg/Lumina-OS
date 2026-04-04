@@ -27,6 +27,10 @@ printf '\n'
 printf '%s\n' 'Installer logs will be written under /var/log/archinstall.'
 printf '%s\n' 'Close this terminal only after the installer finishes.'
 printf '\n'
+printf '%s\n' 'Important: when archinstall completes, choose "Exit archinstall".'
+printf '%s\n' 'Lumina-OS will then finalize the installed system automatically.'
+printf '%s\n' 'If you reboot directly from archinstall, boot the live ISO again and run "Finalize Installed Lumina-OS".'
+printf '\n'
 
 if command -v nm-online >/dev/null 2>&1; then
     printf '%s\n' 'Checking network readiness...'
@@ -84,7 +88,48 @@ fi
 printf '%s\n' 'Package database refreshed successfully.'
 printf '\n'
 
-exec sudo archinstall
+archinstall_status=0
+if ! sudo archinstall; then
+    archinstall_status=$?
+fi
+
+finalize_target=""
+for candidate in /mnt /mnt/archinstall; do
+    if [[ -f "${candidate}/etc/os-release" ]]; then
+        finalize_target="${candidate}"
+        break
+    fi
+done
+
+if [[ "${archinstall_status}" -eq 0 && -n "${finalize_target}" ]]; then
+    printf '\n'
+    printf '%s\n' 'Finalizing the installed Lumina-OS system...'
+    if ! sudo /usr/local/bin/lumina-finalize-install > /tmp/lumina-installer-finalize.log 2>&1; then
+        printf '\n'
+        printf '%s\n' 'Lumina-OS could not finish the post-install finalize step automatically.'
+        printf '%s\n' 'Inspect: /tmp/lumina-installer-finalize.log'
+        printf '%s\n' 'From the live session, run "Finalize Installed Lumina-OS" and retry the reboot.'
+        printf '\n'
+        tail -n 40 /tmp/lumina-installer-finalize.log || true
+        wait_for_enter
+        exit 1
+    fi
+
+    printf '\n'
+    printf '%s\n' 'Lumina-OS finalize completed.'
+    printf '%s\n' 'You can now reboot into the installed system.'
+    wait_for_enter
+    exit 0
+fi
+
+if [[ -n "${finalize_target}" ]]; then
+    printf '\n'
+    printf '%s\n' 'An installed target was detected, but the automatic Lumina finalize step did not run.'
+    printf '%s\n' 'From the live session, run "Finalize Installed Lumina-OS" and then reboot.'
+    wait_for_enter
+fi
+
+exit "${archinstall_status}"
 EOF
 
 chmod 755 "${run_script}"

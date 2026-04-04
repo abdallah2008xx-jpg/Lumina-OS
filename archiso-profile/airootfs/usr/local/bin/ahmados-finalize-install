@@ -1,0 +1,172 @@
+#!/usr/bin/env bash
+set -euo pipefail
+shopt -s nullglob
+
+find_target_root() {
+    local candidate
+
+    for candidate in /mnt /mnt/archinstall; do
+        if [[ -f "${candidate}/etc/os-release" ]]; then
+            printf '%s\n' "${candidate}"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+copy_path_into_target() {
+    local src="$1"
+    local target_root="$2"
+    local target_path="${target_root}${src}"
+
+    if [[ ! -e "${src}" ]]; then
+        return 0
+    fi
+
+    mkdir -p "$(dirname "${target_path}")"
+    rm -rf "${target_path}"
+    cp -a "${src}" "${target_path}"
+}
+
+sync_tree_contents() {
+    local src="$1"
+    local dst="$2"
+
+    if [[ ! -d "${src}" ]]; then
+        return 0
+    fi
+
+    mkdir -p "${dst}"
+    cp -a "${src}/." "${dst}/"
+}
+
+if [[ "${EUID}" -ne 0 ]]; then
+    exec sudo "$0" "$@"
+fi
+
+target_root="$(find_target_root || true)"
+
+if [[ -z "${target_root}" ]]; then
+    printf '%s\n' 'No mounted installation target was found.'
+    printf '%s\n' 'Boot the live ISO, mount the installed system under /mnt, then run this tool again.'
+    exit 1
+fi
+
+printf '%s\n' "Finalizing installed Lumina-OS system at ${target_root}"
+printf '\n'
+
+install_packages=(
+    archlinux-keyring
+    networkmanager
+    sddm
+    plasma-desktop
+    plasma-workspace
+    plasma-x11-session
+    systemsettings
+    konsole
+    dolphin
+    plasma-nm
+    plasma-pa
+    spectacle
+    ark
+    firefox
+    xorg-server
+    xorg-xinit
+    xorg-xrandr
+    xorg-xsetroot
+    xorg-xwayland
+    wayland
+    qt6-wayland
+    qt5-wayland
+    qt6-declarative
+    qt6-svg
+    mesa
+    breeze
+    breeze-gtk
+    breeze-icons
+    qqc2-breeze-style
+    noto-fonts
+    noto-fonts-cjk
+    noto-fonts-emoji
+    inter-font
+    ttf-dejavu
+    ttf-liberation
+    virtualbox-guest-utils
+    open-vm-tools
+    libvirt
+    qemu-full
+    swtpm
+    virt-manager
+)
+
+printf '%s\n' 'Refreshing package metadata inside the target...'
+arch-chroot "${target_root}" pacman -Sy --noconfirm
+
+printf '%s\n' 'Installing Lumina-OS graphical and integration packages into the target...'
+arch-chroot "${target_root}" pacman -S --needed --noconfirm "${install_packages[@]}"
+
+printf '%s\n' 'Copying Lumina-OS assets into the installed system...'
+
+for src in \
+    /etc/ahmados-release.conf \
+    /etc/sddm.conf.d/theme.conf \
+    /usr/local/lib/ahmados-session-context.sh \
+    /usr/share/ahmados \
+    /usr/share/sddm/themes/ahmados \
+    /usr/share/plasma/desktoptheme/LuminaGlass; do
+    copy_path_into_target "${src}" "${target_root}"
+done
+
+for src in \
+    /usr/local/bin/ahmados* \
+    /usr/local/bin/lumina* \
+    /usr/share/applications/ahmados*.desktop \
+    /usr/share/applications/lumina*.desktop \
+    /usr/share/color-schemes/AhmadOS*.colors \
+    /usr/share/plasma/look-and-feel/com.ahmados.desktop*; do
+    copy_path_into_target "${src}" "${target_root}"
+done
+
+printf '%s\n' 'Applying Lumina-OS defaults for future and existing users...'
+sync_tree_contents /home/live/.config "${target_root}/etc/skel/.config"
+sync_tree_contents /home/live/.local "${target_root}/etc/skel/.local"
+
+while IFS=: read -r username _ uid gid _ home _; do
+    if [[ -z "${home}" || ! -d "${target_root}${home}" ]]; then
+        continue
+    fi
+
+    sync_tree_contents /home/live/.config "${target_root}${home}/.config"
+    sync_tree_contents /home/live/.local "${target_root}${home}/.local"
+    chown -R "${uid}:${gid}" "${target_root}${home}/.config" "${target_root}${home}/.local"
+done < <(awk -F: '($3 >= 1000 && $1 != "nobody" && $1 != "live"){print}' "${target_root}/etc/passwd")
+
+printf '%s\n' 'Enabling Lumina-OS services in the installed system...'
+for unit in NetworkManager.service sddm.service; do
+    arch-chroot "${target_root}" systemctl enable "${unit}"
+done
+
+for optional_unit in libvirtd.service virtlogd.service virtlockd.service vboxservice.service vmtoolsd.service; do
+    if arch-chroot "${target_root}" bash -lc "[ -f '/usr/lib/systemd/system/${optional_unit}' ]"; then
+        arch-chroot "${target_root}" systemctl enable "${optional_unit}"
+    fi
+done
+
+arch-chroot "${target_root}" systemctl set-default graphical.target
+
+report_path="${target_root}/root/lumina-install-finalize-report.md"
+cat > "${report_path}" <<EOF
+# Lumina-OS Install Finalize Report
+
+- Target root: ${target_root}
+- Graphical packages: installed
+- Services enabled: NetworkManager, sddm
+- Default target: graphical.target
+- Custom Lumina assets: copied
+- User defaults: applied to /etc/skel and existing users
+EOF
+
+printf '\n'
+printf '%s\n' 'Lumina-OS finalize completed successfully.'
+printf '%s\n' "A report was written to ${report_path}."

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Finalize Installed Lumina-OS
+Comment=Apply Lumina-OS graphical defaults and services to an installed system
+Exec=/usr/local/bin/lumina-finalize-install
+Icon=system-software-install
+Terminal=true
+Categories=Qt;KDE;System;Settings;
+StartupNotify=true

@@ -80,6 +80,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/share/ahmados/update-center/Main.qml"
     "${profile_path}/airootfs/usr/share/ahmados/update-center/releases.json"
     "${profile_path}/airootfs/usr/local/bin/ahmados-export-diagnostics"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-finalize-install"
     "${profile_path}/airootfs/usr/local/bin/ahmados-installer"
     "${profile_path}/airootfs/usr/local/bin/ahmados-run-smoke-checks"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-compat-check"
@@ -94,6 +95,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-welcome"
     "${profile_path}/airootfs/usr/local/bin/lumina-capture-screenshot"
     "${profile_path}/airootfs/usr/local/bin/lumina-export-diagnostics"
+    "${profile_path}/airootfs/usr/local/bin/lumina-finalize-install"
     "${profile_path}/airootfs/usr/local/bin/lumina-installer"
     "${profile_path}/airootfs/usr/local/bin/lumina-run-smoke-checks"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-compat-check"
@@ -115,6 +117,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/share/applications/ahmados-export-diagnostics.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-firstboot-report.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-run-smoke-checks.desktop"
+    "${profile_path}/airootfs/usr/share/applications/lumina-finalize-install.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-windows-apps.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-windows-compat-check.desktop"
@@ -287,6 +290,8 @@ fi
 customize_airootfs="${profile_path}/airootfs/root/customize_airootfs.sh"
 if [[ -f "${customize_airootfs}" ]]; then
     for required_chmod_target in \
+        /usr/local/bin/ahmados-finalize-install \
+        /usr/local/bin/lumina-finalize-install \
         /usr/local/bin/ahmados-capture-screenshot \
         /usr/local/bin/lumina-capture-screenshot; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
@@ -311,6 +316,7 @@ ${profile_path}/airootfs/usr/share/applications/ahmados-firstboot-report.desktop
 ${profile_path}/airootfs/usr/share/applications/ahmados-run-smoke-checks.desktop|Exec=/usr/local/bin/lumina-run-smoke-checks --open
 ${profile_path}/airootfs/usr/share/applications/ahmados-update-center.desktop|Exec=/usr/local/bin/lumina-update-center
 ${profile_path}/airootfs/usr/share/applications/ahmados-welcome.desktop|Exec=/usr/local/bin/lumina-welcome
+${profile_path}/airootfs/usr/share/applications/lumina-finalize-install.desktop|Exec=/usr/local/bin/lumina-finalize-install
 ${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop|Exec=/usr/local/bin/lumina-installer
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-apps.desktop|Exec=/usr/local/bin/lumina-windows-apps
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-compat-check.desktop|Exec=/usr/local/bin/lumina-windows-compat-check

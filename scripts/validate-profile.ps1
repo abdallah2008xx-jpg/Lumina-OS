@@ -68,6 +68,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\share\ahmados\update-center\Main.qml",
     "archiso-profile\airootfs\usr\share\ahmados\update-center\releases.json",
     "archiso-profile\airootfs\usr\local\bin\ahmados-export-diagnostics",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-finalize-install",
     "archiso-profile\airootfs\usr\local\bin\ahmados-installer",
     "archiso-profile\airootfs\usr\local\bin\ahmados-run-smoke-checks",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-compat-check",
@@ -82,6 +83,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-welcome",
     "archiso-profile\airootfs\usr\local\bin\lumina-capture-screenshot",
     "archiso-profile\airootfs\usr\local\bin\lumina-export-diagnostics",
+    "archiso-profile\airootfs\usr\local\bin\lumina-finalize-install",
     "archiso-profile\airootfs\usr\local\bin\lumina-installer",
     "archiso-profile\airootfs\usr\local\bin\lumina-run-smoke-checks",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-compat-check",
@@ -103,6 +105,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\share\applications\ahmados-export-diagnostics.desktop",
     "archiso-profile\airootfs\usr\share\applications\ahmados-firstboot-report.desktop",
     "archiso-profile\airootfs\usr\share\applications\ahmados-run-smoke-checks.desktop",
+    "archiso-profile\airootfs\usr\share\applications\lumina-finalize-install.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop",
@@ -323,6 +326,7 @@ $expectedExecMappings = @{
     "archiso-profile\airootfs\usr\share\applications\ahmados-run-smoke-checks.desktop" = "Exec=/usr/local/bin/lumina-run-smoke-checks --open"
     "archiso-profile\airootfs\usr\share\applications\ahmados-update-center.desktop" = "Exec=/usr/local/bin/lumina-update-center"
     "archiso-profile\airootfs\usr\share\applications\ahmados-welcome.desktop" = "Exec=/usr/local/bin/lumina-welcome"
+    "archiso-profile\airootfs\usr\share\applications\lumina-finalize-install.desktop" = "Exec=/usr/local/bin/lumina-finalize-install"
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop" = "Exec=/usr/local/bin/lumina-installer"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop" = "Exec=/usr/local/bin/lumina-windows-apps"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop" = "Exec=/usr/local/bin/lumina-windows-compat-check"
@@ -334,6 +338,8 @@ $customizeAirootfsPath = Join-Path $RepoRoot "archiso-profile\airootfs\root\cust
 if (Test-Path $customizeAirootfsPath) {
     $customizeContent = Get-Content -Raw $customizeAirootfsPath
     foreach ($requiredChmodTarget in @(
+        "/usr/local/bin/ahmados-finalize-install",
+        "/usr/local/bin/lumina-finalize-install",
         "/usr/local/bin/ahmados-capture-screenshot",
         "/usr/local/bin/lumina-capture-screenshot"
     )) {

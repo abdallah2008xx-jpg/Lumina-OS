@@ -1,0 +1,13 @@
+# id|name|category|basic_route|vm_route|studio_route|notes
+photoshop|Adobe Photoshop|Creator Apps|Wine experiments only|Windows VM recommended|Windows VM with GPU focus|Best experience comes from a normal Windows VM with trusted Adobe workflows.
+premiere-pro|Adobe Premiere Pro|Creator Apps|Not recommended on basic tier|Windows VM recommended|Windows VM with GPU focus|Video timelines and export workflows should stay on the Windows VM path.
+illustrator|Adobe Illustrator|Creator Apps|Wine experiments only|Windows VM recommended|Windows VM recommended|Vector workflows can be tested lightly on Wine, but the real target remains the Windows VM path.
+after-effects|Adobe After Effects|Creator Apps|Not recommended on basic tier|Windows VM recommended|Windows VM with GPU focus|Compositing and plugins should stay on a stronger Windows workspace.
+creative-cloud|Adobe Creative Cloud|Creator Apps|Not recommended on basic tier|Windows VM recommended|Windows VM recommended|Creative Cloud itself should be treated as a Windows workspace dependency.
+office|Microsoft 365 and Office|Productivity|Web apps or Wine first|Windows VM optional|Windows VM optional|Browser and Linux-native options stay valid even when Windows integration is available.
+notion-windows|Windows-only productivity tools|Productivity|Wine or web first|Windows VM optional|Windows VM optional|Many utility apps can stay on the lighter path before moving into the VM.
+fl-studio|FL Studio|Audio and Studio|Wine experiments only|Windows VM recommended|Windows VM with GPU focus|Audio tooling should be validated carefully with the target hardware and interfaces.
+epic-launcher|Epic Games Launcher|Gaming and Launchers|Heroic or Proton first|Windows VM fallback|Windows VM fallback|Prefer Linux-native launchers when possible and keep the VM as the fallback path.
+battle-net|Battle.net|Gaming and Launchers|Proton or Lutris first|Windows VM fallback|Windows VM fallback|Use the VM path when launcher reliability matters more than native integration.
+riot-client|Riot Client and kernel anti-cheat titles|Gaming and Launchers|Out of scope on basic tier|Out of scope for stealth or anti-cheat bypass|Out of scope for stealth or anti-cheat bypass|Lumina does not promise anti-cheat evasion or VM hiding.
+windows-launchers|Windows-only utilities and launchers|Utilities|Wine first|Windows VM recommended|Windows VM recommended|Use this path for installers, vendor tools, and utilities that resist normal Linux ports.

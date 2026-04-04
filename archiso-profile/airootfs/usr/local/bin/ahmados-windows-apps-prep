@@ -13,10 +13,12 @@ trap 'rmdir "${lock_dir}" >/dev/null 2>&1 || true' EXIT
 prep_report="${state_root}/windows-apps-ready.md"
 compat_report="${state_root}/windows-compat-report.md"
 bridge_report="${state_root}/windows-apps-bridge.md"
+catalog_report="${state_root}/windows-app-catalog.md"
 lab_report="${state_root}/windows-vm-lab.md"
 
 /usr/local/bin/ahmados-windows-compat-check >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-vm-lab --no-open --no-launch >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-apps-catalog --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-apps --no-open >/dev/null 2>&1 || true
 
 compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
@@ -41,9 +43,9 @@ fi
     printf '\n## Prepared Artifacts\n'
     printf -- '- Compatibility Report: %s\n' "${compat_report}"
     printf -- '- Windows Apps Report: %s\n' "${bridge_report}"
+    printf -- '- App Catalog Report: %s\n' "${catalog_report}"
     printf -- '- Advanced Lab Report: %s\n' "${lab_report}"
     printf '\n## Behavior\n'
     printf -- '- This prep step does not open a VM or a second desktop by itself.\n'
     printf -- '- It only prepares the Windows Apps path so the visible experience can feel faster and more integrated later.\n'
 } > "${prep_report}"
-

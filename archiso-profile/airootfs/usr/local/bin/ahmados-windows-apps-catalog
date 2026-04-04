@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+open_report=1
+
+for arg in "$@"; do
+    case "$arg" in
+        --no-open)
+            open_report=0
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+mkdir -p "${state_root}"
+
+catalog_path="/usr/share/lumina/windows-apps/catalog.tsv"
+compat_report="${state_root}/windows-compat-report.md"
+catalog_report="${state_root}/windows-app-catalog.md"
+
+/usr/local/bin/ahmados-windows-compat-check >/dev/null 2>&1 || true
+
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+compatibility_summary="$(awk -F': ' '/^- Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+
+case "${compatibility_tier}" in
+    windows-vm-ready|single-gpu-experimental)
+        active_profile="Windows VM"
+        ;;
+    full-passthrough-candidate)
+        active_profile="Studio"
+        ;;
+    *)
+        active_profile="Basic"
+        ;;
+esac
+
+creator_lines=""
+productivity_lines=""
+audio_lines=""
+gaming_lines=""
+utility_lines=""
+
+while IFS='|' read -r app_id app_name category basic_route vm_route studio_route notes; do
+    [[ -z "${app_id}" || "${app_id}" == \#* ]] && continue
+
+    recommended_route="${basic_route}"
+    case "${compatibility_tier}" in
+        windows-vm-ready|single-gpu-experimental)
+            recommended_route="${vm_route}"
+            ;;
+        full-passthrough-candidate)
+            recommended_route="${studio_route}"
+            ;;
+    esac
+
+    line=$(printf -- '- **%s**: %s\n  - %s\n' "${app_name}" "${recommended_route}" "${notes}")
+
+    case "${category}" in
+        "Creator Apps")
+            creator_lines+="${line}"
+            ;;
+        "Productivity")
+            productivity_lines+="${line}"
+            ;;
+        "Audio and Studio")
+            audio_lines+="${line}"
+            ;;
+        "Gaming and Launchers")
+            gaming_lines+="${line}"
+            ;;
+        *)
+            utility_lines+="${line}"
+            ;;
+    esac
+done < "${catalog_path}"
+
+{
+    printf '# Lumina Windows App Catalog\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Active Profile: %s\n' "${active_profile}"
+    printf -- '- Summary: %s\n' "${compatibility_summary:-not-available}"
+    printf '\n## Creator Apps\n'
+    printf '%s' "${creator_lines:-"- No creator app routes are available.\n"}"
+    printf '\n## Productivity\n'
+    printf '%s' "${productivity_lines:-"- No productivity app routes are available.\n"}"
+    printf '\n## Audio and Studio\n'
+    printf '%s' "${audio_lines:-"- No audio or studio app routes are available.\n"}"
+    printf '\n## Gaming and Launchers\n'
+    printf '%s' "${gaming_lines:-"- No gaming routes are available.\n"}"
+    if [[ -n "${utility_lines}" ]]; then
+        printf '\n## Utilities\n'
+        printf '%s' "${utility_lines}"
+    fi
+    printf '\n## Notes\n'
+    printf -- '- Lumina keeps anti-cheat bypass, VM hiding, and stealth claims out of scope.\n'
+    printf -- '- The catalog describes the recommended path for this machine, not a fake promise that every title will work.\n'
+    printf -- '- Use the Compatibility report and Windows VM Lab before promising a heavy Windows workflow on a new device.\n'
+    printf '\n## Reports\n'
+    printf -- '- Compatibility Report: %s\n' "${compat_report}"
+    printf -- '- App Catalog Report: %s\n' "${catalog_report}"
+} > "${catalog_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '      Lumina Windows App Catalog'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Compatibility tier: %s\n' "${compatibility_tier:-unknown}"
+printf 'Active profile: %s\n' "${active_profile}"
+printf 'Report: %s\n' "${catalog_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${catalog_report}" >/dev/null 2>&1 || true
+fi

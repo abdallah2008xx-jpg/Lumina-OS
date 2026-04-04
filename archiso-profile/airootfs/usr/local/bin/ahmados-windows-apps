@@ -21,8 +21,10 @@ mkdir -p "${state_root}"
 compat_report="${state_root}/windows-compat-report.md"
 lab_report="${state_root}/windows-vm-lab.md"
 bridge_report="${state_root}/windows-apps-bridge.md"
+catalog_report="${state_root}/windows-app-catalog.md"
 
 /usr/local/bin/ahmados-windows-vm-lab --no-open --no-launch >/dev/null
+/usr/local/bin/ahmados-windows-apps-catalog --no-open >/dev/null
 
 compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
 compatibility_summary="$(awk -F': ' '/^- Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
@@ -70,10 +72,12 @@ esac
     printf -- '- A live hardware checker is already present.\n'
     printf -- '- The virtualization baseline is already bundled in the ISO.\n'
     printf -- '- The advanced Windows VM Lab path is already available for engineering and validation work.\n'
+    printf -- '- The Windows App Catalog now maps common app families to the right path for this machine.\n'
     printf '\n## Next Step For This Machine\n'
     printf -- '- %s\n' "${next_step}"
     printf '\n## Reports\n'
     printf -- '- Windows Apps Report: %s\n' "${bridge_report}"
+    printf -- '- App Catalog Report: %s\n' "${catalog_report}"
     printf -- '- Compatibility Report: %s\n' "${compat_report}"
     printf -- '- Advanced Lab Report: %s\n' "${lab_report}"
 } > "${bridge_report}"
@@ -89,9 +93,9 @@ printf '\n'
 
 if [[ ${open_reports} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
     xdg-open "${bridge_report}" >/dev/null 2>&1 || true
+    xdg-open "${catalog_report}" >/dev/null 2>&1 || true
 fi
 
 if [[ ${launch_advanced_lab} -eq 1 ]]; then
     /usr/local/bin/ahmados-windows-vm-lab >/dev/null 2>&1 &
 fi
-

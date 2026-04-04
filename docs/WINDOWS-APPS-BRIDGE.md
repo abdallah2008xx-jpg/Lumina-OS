@@ -44,6 +44,7 @@ The current phase adds:
 - a Windows VM Lab for advanced setup work
 - a user-facing `Lumina Windows Apps` entry point that frames the experience in product language instead of engineering language
 - a Windows App Catalog that maps common app families to the right path for the current machine
+- a guided Windows App Assistant that turns one chosen app into a concrete route instead of leaving the user with generic reports
 - a hidden session-start prep step that warms the Windows Apps path without opening an extra desktop
 
 ## Future Target

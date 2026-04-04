@@ -1,0 +1,170 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_app_id=""
+open_reports=1
+list_only=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --app-id)
+            selected_app_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_reports=0
+            shift
+            ;;
+        --list)
+            list_only=1
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+mkdir -p "${state_root}"
+
+catalog_path="/usr/share/lumina/windows-apps/catalog.tsv"
+compat_report="${state_root}/windows-compat-report.md"
+bridge_report="${state_root}/windows-apps-bridge.md"
+catalog_report="${state_root}/windows-app-catalog.md"
+lab_report="${state_root}/windows-vm-lab.md"
+assistant_report="${state_root}/windows-app-assistant.md"
+
+/usr/local/bin/ahmados-windows-apps --no-open >/dev/null 2>&1 || true
+
+if [[ ${list_only} -eq 1 ]]; then
+    awk -F'|' 'NF >= 2 && $1 !~ /^#/ {printf "%s\t%s\t%s\n", $1, $2, $3}' "${catalog_path}"
+    exit 0
+fi
+
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+experience_mode="$(awk -F': ' '/^- Experience Mode:/ {print $2; exit}' "${bridge_report}" 2>/dev/null || true)"
+
+choose_with_kdialog() {
+    local entries=()
+
+    while IFS='|' read -r app_id app_name category _; do
+        [[ -z "${app_id}" || "${app_id}" == \#* ]] && continue
+        entries+=("${app_id}" "${app_name} - ${category}")
+    done < "${catalog_path}"
+
+    if [[ ${#entries[@]} -eq 0 ]]; then
+        return 1
+    fi
+
+    kdialog --title "Lumina Windows Apps" \
+        --menu "Choose the Windows app workflow you want Lumina to guide." \
+        "${entries[@]}" 2>/dev/null || return 1
+}
+
+if [[ -z "${selected_app_id}" ]] && command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}" ]]; then
+    selected_app_id="$(choose_with_kdialog || true)"
+fi
+
+if [[ -z "${selected_app_id}" ]]; then
+    selected_app_id="photoshop"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_app_id}" 'NF >= 7 && $1 == target {print; exit}' "${catalog_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows app id: %s\n' "${selected_app_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r app_id app_name category basic_route vm_route studio_route notes <<< "${selected_row}"
+
+recommended_route="${basic_route}"
+route_profile="Basic"
+case "${compatibility_tier}" in
+    windows-vm-ready|single-gpu-experimental)
+        recommended_route="${vm_route}"
+        route_profile="Windows VM"
+        ;;
+    full-passthrough-candidate)
+        recommended_route="${studio_route}"
+        route_profile="Studio"
+        ;;
+esac
+
+readiness="guided"
+if [[ "${recommended_route}" == *"Out of scope"* ]]; then
+    readiness="out-of-scope"
+elif [[ "${recommended_route}" == *"Windows VM"* ]]; then
+    readiness="windows-vm"
+elif [[ "${recommended_route}" == *"GPU focus"* ]]; then
+    readiness="studio-vm"
+elif [[ "${recommended_route}" == *"Proton"* || "${recommended_route}" == *"Wine"* || "${recommended_route}" == *"Web"* ]]; then
+    readiness="linux-first"
+fi
+
+next_steps=""
+case "${readiness}" in
+    linux-first)
+        next_steps+="- Start from the Linux-first path first, then only move into Windows VM mode if the workflow still resists Lumina.\n"
+        next_steps+="- Keep the advanced Windows workspace as the fallback instead of the first promise.\n"
+        ;;
+    windows-vm)
+        next_steps+="- Open Lumina Windows VM Lab and create a clean Windows VM with OVMF, TPM, and virtio where possible.\n"
+        next_steps+="- Install this application inside that Windows VM, then treat Lumina as the visible desktop around it.\n"
+        ;;
+    studio-vm)
+        next_steps+="- Start with a normal Windows VM first, then move toward the stronger GPU-oriented path only after the base workflow is stable.\n"
+        next_steps+="- Keep storage and project files on a fast disk because this workflow benefits from stronger IO and graphics paths.\n"
+        ;;
+    out-of-scope)
+        next_steps+="- Lumina does not promise anti-cheat bypass or hidden VM tricks for this workflow.\n"
+        next_steps+="- Keep this title or launcher outside the official supported path for now.\n"
+        ;;
+    *)
+        next_steps+="- Review the compatibility and VM lab reports before locking in a workflow for this application.\n"
+        ;;
+esac
+
+experience_hint="The goal is for this application to feel like a Lumina workflow, not like you are managing two separate desktops."
+if [[ "${category}" == "Gaming and Launchers" ]]; then
+    experience_hint="Gaming should eventually use a dedicated performance path while Lumina stays the visible shell."
+elif [[ "${category}" == "Creator Apps" || "${category}" == "Audio and Studio" ]]; then
+    experience_hint="Creator workflows should eventually open from Lumina surfaces while the heavy Windows workspace stays hidden underneath."
+fi
+
+{
+    printf '# Lumina Windows App Assistant\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Selected App: %s\n' "${app_name}"
+    printf -- '- App Id: %s\n' "${app_id}"
+    printf -- '- Category: %s\n' "${category}"
+    printf -- '- Experience Mode: %s\n' "${experience_mode:-unknown}"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Route Profile: %s\n' "${route_profile}"
+    printf -- '- Recommended Route: %s\n' "${recommended_route}"
+    printf -- '- Readiness: %s\n' "${readiness}"
+    printf '\n## Why This Route\n'
+    printf -- '- %s\n' "${notes}"
+    printf -- '- %s\n' "${experience_hint}"
+    printf '\n## Next Steps\n'
+    printf '%b' "${next_steps}"
+    printf '\n## Related Reports\n'
+    printf -- '- Windows Apps Report: %s\n' "${bridge_report}"
+    printf -- '- App Catalog Report: %s\n' "${catalog_report}"
+    printf -- '- Compatibility Report: %s\n' "${compat_report}"
+    printf -- '- Advanced Lab Report: %s\n' "${lab_report}"
+} > "${assistant_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '      Lumina Windows App Assistant'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Selected app: %s\n' "${app_name}"
+printf 'Recommended route: %s\n' "${recommended_route}"
+printf 'Report: %s\n' "${assistant_report}"
+printf '\n'
+
+if [[ ${open_reports} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${assistant_report}" >/dev/null 2>&1 || true
+fi

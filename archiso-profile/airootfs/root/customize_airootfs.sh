@@ -23,6 +23,10 @@ chmod 755 /usr/local/bin/ahmados-finalize-install
 chmod 755 /usr/local/bin/lumina-finalize-install
 chmod 755 /usr/local/bin/ahmados-capture-screenshot
 chmod 755 /usr/local/bin/lumina-capture-screenshot
+chmod 755 /usr/local/bin/ahmados-windows-apps-catalog
+chmod 755 /usr/local/bin/lumina-windows-apps-catalog
+chmod 755 /usr/local/bin/ahmados-windows-app-assistant
+chmod 755 /usr/local/bin/lumina-windows-app-assistant
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

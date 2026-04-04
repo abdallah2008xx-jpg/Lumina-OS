@@ -80,6 +80,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/share/ahmados/update-center/Main.qml"
     "${profile_path}/airootfs/usr/share/ahmados/update-center/releases.json"
     "${profile_path}/airootfs/usr/local/bin/ahmados-export-diagnostics"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-apply-session-defaults"
     "${profile_path}/airootfs/usr/local/bin/ahmados-finalize-install"
     "${profile_path}/airootfs/usr/local/bin/ahmados-installer"
     "${profile_path}/airootfs/usr/local/bin/ahmados-run-smoke-checks"
@@ -94,6 +95,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-update-center"
     "${profile_path}/airootfs/usr/local/bin/ahmados-welcome"
     "${profile_path}/airootfs/usr/local/bin/lumina-capture-screenshot"
+    "${profile_path}/airootfs/usr/local/bin/lumina-apply-session-defaults"
     "${profile_path}/airootfs/usr/local/bin/lumina-export-diagnostics"
     "${profile_path}/airootfs/usr/local/bin/lumina-finalize-install"
     "${profile_path}/airootfs/usr/local/bin/lumina-installer"
@@ -257,7 +259,7 @@ if [[ -f "${release_config}" ]]; then
     done
 fi
 
-session_defaults="${profile_path}/airootfs/home/live/.local/bin/ahmados-apply-session-defaults"
+session_defaults="${profile_path}/airootfs/usr/local/bin/ahmados-apply-session-defaults"
 if [[ -f "${session_defaults}" ]] && ! grep -q 'desktop_theme_name="default"' "${session_defaults}"; then
     add_error "ahmados-apply-session-defaults does not set the default Plasma desktop theme."
 fi
@@ -292,6 +294,8 @@ if [[ -f "${customize_airootfs}" ]]; then
     for required_chmod_target in \
         /usr/local/bin/ahmados-finalize-install \
         /usr/local/bin/lumina-finalize-install \
+        /usr/local/bin/ahmados-apply-session-defaults \
+        /usr/local/bin/lumina-apply-session-defaults \
         /usr/local/bin/ahmados-capture-screenshot \
         /usr/local/bin/lumina-capture-screenshot; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
@@ -309,7 +313,7 @@ while IFS='|' read -r desktop_path expected_exec; do
 done <<EOF
 ${profile_path}/airootfs/home/live/.config/autostart/ahmados-firstboot.desktop|Exec=/usr/local/bin/lumina-firstboot
 ${profile_path}/airootfs/home/live/.config/autostart/ahmados-windows-apps-prep.desktop|Exec=/usr/local/bin/lumina-windows-apps-prep
-${profile_path}/airootfs/home/live/.config/autostart/ahmados-session-defaults.desktop|Exec=/home/live/.local/bin/lumina-apply-session-defaults
+${profile_path}/airootfs/home/live/.config/autostart/ahmados-session-defaults.desktop|Exec=/usr/local/bin/lumina-apply-session-defaults
 ${profile_path}/airootfs/home/live/.config/autostart/ahmados-welcome.desktop|Exec=/usr/local/bin/lumina-welcome --once
 ${profile_path}/airootfs/usr/share/applications/ahmados-export-diagnostics.desktop|Exec=/usr/local/bin/lumina-export-diagnostics
 ${profile_path}/airootfs/usr/share/applications/ahmados-firstboot-report.desktop|Exec=/usr/local/bin/lumina-open-firstboot-report

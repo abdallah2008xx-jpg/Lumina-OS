@@ -41,6 +41,88 @@ sync_tree_contents() {
     cp -a "${src}/." "${dst}/"
 }
 
+write_text_file() {
+    local target_path="$1"
+
+    mkdir -p "$(dirname "${target_path}")"
+    cat > "${target_path}"
+}
+
+apply_static_user_defaults() {
+    local user_root="$1"
+    local owner="${2:-}"
+
+    write_text_file "${user_root}/.local/bin/ahmados-apply-session-defaults" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec /usr/local/bin/ahmados-apply-session-defaults "$@"
+EOF
+
+    write_text_file "${user_root}/.local/bin/lumina-apply-session-defaults" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec /usr/local/bin/lumina-apply-session-defaults "$@"
+EOF
+
+    chmod 755 \
+        "${user_root}/.local/bin/ahmados-apply-session-defaults" \
+        "${user_root}/.local/bin/lumina-apply-session-defaults"
+
+    write_text_file "${user_root}/.config/autostart/ahmados-session-defaults.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Lumina-OS Session Defaults
+Exec=/usr/local/bin/lumina-apply-session-defaults
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=2
+EOF
+
+    write_text_file "${user_root}/.config/autostart/ahmados-welcome.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Lumina-OS Welcome
+Exec=/usr/local/bin/lumina-welcome --once
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=3
+EOF
+
+    write_text_file "${user_root}/.config/autostart/ahmados-firstboot.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Lumina-OS First Boot
+Exec=/usr/local/bin/lumina-firstboot
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=4
+EOF
+
+    write_text_file "${user_root}/.config/autostart/ahmados-windows-apps-prep.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Lumina Windows Apps Prep
+Exec=/usr/local/bin/lumina-windows-apps-prep
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=4
+EOF
+
+    write_text_file "${user_root}/.dmrc" <<'EOF'
+[Desktop]
+Session=plasmax11.desktop
+EOF
+
+    rm -f "${user_root}/.config/ahmados/session-defaults-applied"
+
+    if [[ -n "${owner}" ]]; then
+        chown -R "${owner}" "${user_root}/.config" "${user_root}/.local"
+        chown "${owner}" "${user_root}/.dmrc"
+    fi
+}
+
 if [[ "${EUID}" -ne 0 ]]; then
     exec sudo "$0" "$@"
 fi
@@ -131,6 +213,7 @@ done
 printf '%s\n' 'Applying Lumina-OS defaults for future and existing users...'
 sync_tree_contents /home/live/.config "${target_root}/etc/skel/.config"
 sync_tree_contents /home/live/.local "${target_root}/etc/skel/.local"
+apply_static_user_defaults "${target_root}/etc/skel"
 
 while IFS=: read -r username _ uid gid _ home _; do
     if [[ -z "${home}" || ! -d "${target_root}${home}" ]]; then
@@ -139,7 +222,7 @@ while IFS=: read -r username _ uid gid _ home _; do
 
     sync_tree_contents /home/live/.config "${target_root}${home}/.config"
     sync_tree_contents /home/live/.local "${target_root}${home}/.local"
-    chown -R "${uid}:${gid}" "${target_root}${home}/.config" "${target_root}${home}/.local"
+    apply_static_user_defaults "${target_root}${home}" "${uid}:${gid}"
 done < <(awk -F: '($3 >= 1000 && $1 != "nobody" && $1 != "live"){print}' "${target_root}/etc/passwd")
 
 printf '%s\n' 'Enabling Lumina-OS services in the installed system...'

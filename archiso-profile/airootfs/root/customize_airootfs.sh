@@ -11,6 +11,8 @@ fi
 passwd -d live
 chmod 755 /home/live/.local/bin/ahmados-apply-session-defaults
 chmod 755 /home/live/.local/bin/lumina-apply-session-defaults
+chmod 755 /usr/local/bin/ahmados-apply-session-defaults
+chmod 755 /usr/local/bin/lumina-apply-session-defaults
 chmod 755 /usr/local/bin/ahmados-finalize-install
 chmod 755 /usr/local/bin/lumina-finalize-install
 chmod 755 /usr/local/bin/ahmados-capture-screenshot

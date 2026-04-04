@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-exec /home/live/.local/bin/ahmados-apply-session-defaults "$@"
+exec /usr/local/bin/lumina-apply-session-defaults "$@"

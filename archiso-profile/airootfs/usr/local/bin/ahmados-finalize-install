@@ -122,7 +122,7 @@ EOF
 
     write_text_file "${user_root}/.dmrc" <<'EOF'
 [Desktop]
-Session=plasmax11.desktop
+Session=plasmax11
 EOF
 
     rm -f "${user_root}/.config/ahmados/session-defaults-applied"

@@ -232,35 +232,38 @@ Rectangle {
                 width: parent.width
                 spacing: 12
 
-                Text {
-                    text: textConstants.welcomeText.arg(sddm.hostName)
-                    color: root.primaryText
-                    font.pixelSize: 22
-                    wrapMode: Text.WordWrap
-                    width: parent.width
-                }
-
-                Text {
-                    text: qsTr("Focused, calm, and ready for validation.")
-                    color: root.secondaryText
-                    font.pixelSize: 13
-                }
-
                 Rectangle {
-                    id: infoCard
+                    id: introCard
                     width: parent.width
-                    height: infoCardContent.implicitHeight + 28
+                    height: introCardContent.implicitHeight + 36
                     radius: 18
-                    color: "#325A86D8"
-                    border.color: "#54C8E5FF"
+                    color: "#284D6A8D"
+                    border.color: "#44C8E5FF"
                     border.width: 1
 
                     Column {
-                        id: infoCardContent
-                        width: parent.width
-                        anchors.margins: 14
+                        id: introCardContent
+                        width: parent.width - 36
+                        anchors.margins: 18
                         anchors.fill: parent
-                        spacing: 4
+                        spacing: 6
+
+                        Text {
+                            width: parent.width
+                            text: textConstants.welcomeText.arg(sddm.hostName)
+                            color: root.primaryText
+                            font.pixelSize: 19
+                            font.bold: true
+                            wrapMode: Text.WordWrap
+                        }
+
+                        Text {
+                            width: parent.width
+                            text: qsTr("Focused, calm, and ready for validation.")
+                            color: root.secondaryText
+                            font.pixelSize: 13
+                            wrapMode: Text.WordWrap
+                        }
 
                         Text {
                             width: parent.width

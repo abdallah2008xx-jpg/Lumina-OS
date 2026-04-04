@@ -13,6 +13,10 @@ chmod 755 /home/live/.local/bin/ahmados-apply-session-defaults
 chmod 755 /home/live/.local/bin/lumina-apply-session-defaults
 chmod 755 /usr/local/bin/ahmados-apply-session-defaults
 chmod 755 /usr/local/bin/lumina-apply-session-defaults
+chmod 755 /usr/local/bin/ahmados-vm-display-prep
+chmod 755 /usr/local/bin/lumina-vm-display-prep
+chmod 755 /usr/local/bin/ahmados-vm-guest-services
+chmod 755 /usr/local/bin/lumina-vm-guest-services
 chmod 755 /usr/local/bin/ahmados-finalize-install
 chmod 755 /usr/local/bin/lumina-finalize-install
 chmod 755 /usr/local/bin/ahmados-capture-screenshot
@@ -27,9 +31,12 @@ done
 
 systemctl enable NetworkManager.service
 systemctl enable sddm.service
+systemctl enable ahmados-vm-guest-services.service
 
-for service in vboxservice.service vmtoolsd.service vmware-vmblock-fuse.service libvirtd.service virtlogd.service; do
+for service in libvirtd.service virtlogd.service virtlockd.service; do
     if [[ -f "/usr/lib/systemd/system/${service}" ]]; then
+        systemctl enable "${service}"
+    elif [[ -f "/etc/systemd/system/${service}" ]]; then
         systemctl enable "${service}"
     fi
 done

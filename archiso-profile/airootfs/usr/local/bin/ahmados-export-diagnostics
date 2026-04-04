@@ -30,6 +30,10 @@ if command -v ahmados-run-smoke-checks >/dev/null 2>&1; then
     ahmados-run-smoke-checks || true
 fi
 
+if command -v ahmados-vm-display-prep >/dev/null 2>&1; then
+    ahmados-vm-display-prep || true
+fi
+
 summary_file="${bundle_dir}/summary.md"
 hostname_value="$(resolve_hostname_value 2>/dev/null || printf '%s' 'unknown')"
 session_type="$(resolve_session_type 2>/dev/null || printf '%s' 'unknown')"
@@ -64,6 +68,7 @@ copy_if_present() {
 
 copy_if_present "${state_root}/firstboot-report.md" "firstboot-report.md"
 copy_if_present "${state_root}/smoke-check-report.md" "smoke-check-report.md"
+copy_if_present "${state_root}/vm-display-report.md" "vm-display-report.md"
 copy_if_present "${config_root}/welcome.conf" "welcome.conf"
 copy_if_present "${cache_root}/update-center/releases.json" "releases.json"
 copy_if_present "${cache_root}/update-center/status.json" "release-status.json"

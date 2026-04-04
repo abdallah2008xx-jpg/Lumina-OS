@@ -80,6 +80,16 @@ NoDisplay=true
 X-KDE-autostart-phase=2
 EOF
 
+    write_text_file "${user_root}/.config/autostart/ahmados-vm-display-prep.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Lumina-OS VM Display Prep
+Exec=/usr/local/bin/lumina-vm-display-prep
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=1
+EOF
+
     write_text_file "${user_root}/.config/autostart/ahmados-welcome.desktop" <<'EOF'
 [Desktop Entry]
 Type=Application
@@ -193,6 +203,7 @@ printf '%s\n' 'Copying Lumina-OS assets into the installed system...'
 for src in \
     /etc/ahmados-release.conf \
     /etc/sddm.conf.d/theme.conf \
+    /etc/systemd/system/ahmados-vm-guest-services.service \
     /usr/local/lib/ahmados-session-context.sh \
     /usr/share/ahmados \
     /usr/share/sddm/themes/ahmados \
@@ -226,11 +237,11 @@ while IFS=: read -r username _ uid gid _ home _; do
 done < <(awk -F: '($3 >= 1000 && $1 != "nobody" && $1 != "live"){print}' "${target_root}/etc/passwd")
 
 printf '%s\n' 'Enabling Lumina-OS services in the installed system...'
-for unit in NetworkManager.service sddm.service; do
+for unit in NetworkManager.service sddm.service ahmados-vm-guest-services.service; do
     arch-chroot "${target_root}" systemctl enable "${unit}"
 done
 
-for optional_unit in libvirtd.service virtlogd.service virtlockd.service vboxservice.service vmtoolsd.service; do
+for optional_unit in libvirtd.service virtlogd.service virtlockd.service; do
     if arch-chroot "${target_root}" bash -lc "[ -f '/usr/lib/systemd/system/${optional_unit}' ]"; then
         arch-chroot "${target_root}" systemctl enable "${optional_unit}"
     fi
@@ -245,6 +256,7 @@ cat > "${report_path}" <<EOF
 - Target root: ${target_root}
 - Graphical packages: installed
 - Services enabled: NetworkManager, sddm
+- VM guest service selector: enabled
 - Default target: graphical.target
 - Custom Lumina assets: copied
 - User defaults: applied to /etc/skel and existing users

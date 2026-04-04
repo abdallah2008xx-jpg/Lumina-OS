@@ -86,6 +86,8 @@ $content = @"
 - [ ] Networking can be configured
 - [ ] Browser access works if internet is available
 - [ ] Guest display behavior is acceptable
+- [ ] No oversized desktop or scrollbars are visible in the VM window
+- [ ] Display resize or fallback behavior is recorded when using VirtualBox
 
 ## Findings
 - none yet

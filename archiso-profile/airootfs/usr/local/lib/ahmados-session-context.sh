@@ -213,3 +213,164 @@ resolve_dbus_address() {
 
     printf '%s\n' ""
 }
+
+resolve_hypervisor() {
+    local hypervisor=""
+    local product_name=""
+    local sys_vendor=""
+
+    if command -v systemd-detect-virt >/dev/null 2>&1; then
+        hypervisor="$(systemd-detect-virt 2>/dev/null || true)"
+        hypervisor="${hypervisor//$'\n'/}"
+        hypervisor="${hypervisor//$'\r'/}"
+        hypervisor="$(printf '%s' "${hypervisor}" | tr -d '[:space:]')"
+    fi
+
+    if [[ -z "${hypervisor}" || "${hypervisor}" == "none" ]]; then
+        if [[ -r /sys/class/dmi/id/product_name ]]; then
+            product_name="$(tr -d '\r\n' < /sys/class/dmi/id/product_name 2>/dev/null || true)"
+        fi
+
+        if [[ -r /sys/class/dmi/id/sys_vendor ]]; then
+            sys_vendor="$(tr -d '\r\n' < /sys/class/dmi/id/sys_vendor 2>/dev/null || true)"
+        fi
+
+        case "${product_name} ${sys_vendor}" in
+            *VirtualBox*|*virtualbox*)
+                hypervisor="virtualbox"
+                ;;
+            *VMware*|*vmware*)
+                hypervisor="vmware"
+                ;;
+        esac
+    fi
+
+    if [[ -n "${hypervisor}" && "${hypervisor}" != "none" ]]; then
+        printf '%s\n' "${hypervisor}"
+    else
+        printf '%s\n' "bare-metal"
+    fi
+}
+
+resolve_primary_x11_output() {
+    local xrandr_output="${1:-}"
+
+    if [[ -z "${xrandr_output}" ]]; then
+        xrandr_output="$(xrandr --current 2>/dev/null || true)"
+    fi
+
+    if [[ -z "${xrandr_output}" ]]; then
+        return 1
+    fi
+
+    printf '%s\n' "${xrandr_output}" | awk '
+        / connected primary / {
+            print $1
+            exit
+        }
+        / connected / {
+            print $1
+            exit
+        }
+    '
+}
+
+resolve_current_x11_mode() {
+    local output_name="${1:-}"
+    local xrandr_output="${2:-}"
+
+    if [[ -z "${output_name}" ]]; then
+        return 1
+    fi
+
+    if [[ -z "${xrandr_output}" ]]; then
+        xrandr_output="$(xrandr --current 2>/dev/null || true)"
+    fi
+
+    if [[ -z "${xrandr_output}" ]]; then
+        return 1
+    fi
+
+    printf '%s\n' "${xrandr_output}" | awk -v target="${output_name}" '
+        $1 == target && / connected/ {
+            in_target = 1
+            next
+        }
+        /^[^[:space:]]/ {
+            if (in_target) {
+                exit
+            }
+        }
+        in_target && /\*/ {
+            print $1
+            exit
+        }
+    '
+}
+
+resolve_x11_mode_dimensions() {
+    local mode_name="${1:-}"
+
+    if [[ "${mode_name}" =~ ^([0-9]+)x([0-9]+)$ ]]; then
+        printf '%s %s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
+        return 0
+    fi
+
+    return 1
+}
+
+x11_output_supports_mode() {
+    local output_name="$1"
+    local mode_name="$2"
+    local xrandr_output="${3:-}"
+
+    if [[ -z "${xrandr_output}" ]]; then
+        xrandr_output="$(xrandr --current 2>/dev/null || true)"
+    fi
+
+    if [[ -z "${output_name}" || -z "${mode_name}" || -z "${xrandr_output}" ]]; then
+        return 1
+    fi
+
+    printf '%s\n' "${xrandr_output}" | awk -v target="${output_name}" -v requested="${mode_name}" '
+        $1 == target && / connected/ {
+            in_target = 1
+            next
+        }
+        /^[^[:space:]]/ {
+            if (in_target) {
+                exit
+            }
+        }
+        in_target && $1 == requested {
+            found = 1
+            exit
+        }
+        END {
+            exit(found ? 0 : 1)
+        }
+    '
+}
+
+choose_virtualbox_fallback_x11_mode() {
+    local output_name="${1:-}"
+    local xrandr_output="${2:-}"
+    local candidate=""
+
+    if [[ -z "${output_name}" ]]; then
+        return 1
+    fi
+
+    if [[ -z "${xrandr_output}" ]]; then
+        xrandr_output="$(xrandr --current 2>/dev/null || true)"
+    fi
+
+    for candidate in 1366x768 1600x900 1440x900 1400x900 1280x800 1280x720 1024x768; do
+        if x11_output_supports_mode "${output_name}" "${candidate}" "${xrandr_output}"; then
+            printf '%s\n' "${candidate}"
+            return 0
+        fi
+    done
+
+    return 1
+}

@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+session_context_lib="/usr/local/lib/ahmados-session-context.sh"
+if [[ -f "${session_context_lib}" ]]; then
+    # shellcheck source=/usr/local/lib/ahmados-session-context.sh
+    source "${session_context_lib}"
+fi
+
+state_root="${XDG_STATE_HOME:-${HOME}/.local/state}/ahmados"
+report_file="${state_root}/vm-display-report.md"
+preferred_fallback_mode="1366x768"
+
+mkdir -p "${state_root}"
+
+hypervisor_value="$(resolve_hypervisor 2>/dev/null || printf '%s' 'bare-metal')"
+session_type="$(resolve_session_type 2>/dev/null || printf '%s' 'unknown')"
+display_value="${DISPLAY:-$(resolve_display_value 2>/dev/null || printf '%s' ':0')}"
+xauthority_path="$(resolve_xauthority_path 2>/dev/null || printf '%s' '')"
+status="no-action"
+reason="not-a-virtualbox-session"
+output_name="unknown"
+current_mode="unknown"
+applied_mode="none"
+
+export DISPLAY="${display_value}"
+if [[ -n "${xauthority_path}" ]]; then
+    export XAUTHORITY="${xauthority_path}"
+fi
+
+write_report() {
+    cat > "${report_file}" <<EOF
+# Lumina-OS VM Display Prep Report
+
+- Generated: $(date -Iseconds)
+- Hypervisor: ${hypervisor_value}
+- Session Type: ${session_type}
+- Display: ${display_value}
+- Output: ${output_name}
+- Current Mode: ${current_mode}
+- Applied Mode: ${applied_mode}
+- Status: ${status}
+- Reason: ${reason}
+EOF
+}
+
+if [[ "${hypervisor_value}" != "oracle" && "${hypervisor_value}" != "virtualbox" ]]; then
+    write_report
+    exit 0
+fi
+
+if [[ "${session_type}" != "x11" || -z "${DISPLAY:-}" ]]; then
+    reason="non-x11-session"
+    write_report
+    exit 0
+fi
+
+if ! command -v xrandr >/dev/null 2>&1; then
+    status="warn"
+    reason="xrandr-unavailable"
+    write_report
+    exit 0
+fi
+
+xrandr_snapshot=""
+for _ in 1 2 3 4 5 6; do
+    xrandr_snapshot="$(xrandr --current 2>/dev/null || true)"
+    output_name="$(resolve_primary_x11_output "${xrandr_snapshot}" 2>/dev/null || true)"
+    current_mode="$(resolve_current_x11_mode "${output_name}" "${xrandr_snapshot}" 2>/dev/null || true)"
+
+    if [[ -n "${output_name}" && -n "${current_mode}" ]]; then
+        break
+    fi
+
+    sleep 1
+done
+
+output_name="${output_name:-unknown}"
+current_mode="${current_mode:-unknown}"
+
+if [[ "${output_name}" == "unknown" || "${current_mode}" == "unknown" ]]; then
+    status="warn"
+    reason="unable-to-read-current-mode"
+    write_report
+    exit 0
+fi
+
+if read -r current_width current_height < <(resolve_x11_mode_dimensions "${current_mode}" 2>/dev/null); then
+    if (( current_width <= 1920 && current_height <= 1200 )); then
+        status="pass"
+        reason="display-already-fit"
+        write_report
+        exit 0
+    fi
+else
+    status="warn"
+    reason="unparseable-current-mode"
+    write_report
+    exit 0
+fi
+
+fallback_mode="$(choose_virtualbox_fallback_x11_mode "${output_name}" "${xrandr_snapshot}" 2>/dev/null || true)"
+if [[ -z "${fallback_mode}" ]] && x11_output_supports_mode "${output_name}" "${preferred_fallback_mode}" "${xrandr_snapshot}"; then
+    fallback_mode="${preferred_fallback_mode}"
+fi
+if [[ -z "${fallback_mode}" || "${fallback_mode}" == "${current_mode}" ]]; then
+    status="warn"
+    reason="no-safe-fallback-mode"
+    write_report
+    exit 0
+fi
+
+if xrandr --output "${output_name}" --mode "${fallback_mode}" >/dev/null 2>&1; then
+    applied_mode="${fallback_mode}"
+    status="pass"
+    reason="fallback-applied-for-oversized-virtualbox-display"
+else
+    status="warn"
+    reason="fallback-mode-apply-failed"
+fi
+
+write_report

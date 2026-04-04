@@ -1,0 +1,13 @@
+[Unit]
+Description=Lumina-OS VM guest integration selector
+After=local-fs.target systemd-modules-load.service
+Before=display-manager.service graphical.target
+ConditionPathExists=/usr/local/bin/ahmados-vm-guest-services
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/ahmados-vm-guest-services
+RemainAfterExit=yes
+
+[Install]
+WantedBy=graphical.target

@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+session_context_lib="/usr/local/lib/ahmados-session-context.sh"
+if [[ -f "${session_context_lib}" ]]; then
+    # shellcheck source=/usr/local/lib/ahmados-session-context.sh
+    source "${session_context_lib}"
+fi
+
+service_exists() {
+    local service_name="$1"
+
+    [[ -f "/usr/lib/systemd/system/${service_name}" || -f "/etc/systemd/system/${service_name}" ]]
+}
+
+start_if_present() {
+    local service_name="$1"
+
+    if service_exists "${service_name}"; then
+        systemctl start "${service_name}" >/dev/null 2>&1 || true
+    fi
+}
+
+stop_if_present() {
+    local service_name="$1"
+
+    if service_exists "${service_name}"; then
+        systemctl stop "${service_name}" >/dev/null 2>&1 || true
+    fi
+}
+
+hypervisor_value="$(resolve_hypervisor 2>/dev/null || printf '%s' 'bare-metal')"
+
+case "${hypervisor_value}" in
+    oracle|virtualbox)
+        start_if_present "vboxservice.service"
+        stop_if_present "vmtoolsd.service"
+        stop_if_present "vmware-vmblock-fuse.service"
+        ;;
+    vmware)
+        start_if_present "vmtoolsd.service"
+        start_if_present "vmware-vmblock-fuse.service"
+        stop_if_present "vboxservice.service"
+        ;;
+    *)
+        stop_if_present "vboxservice.service"
+        stop_if_present "vmtoolsd.service"
+        stop_if_present "vmware-vmblock-fuse.service"
+        ;;
+esac

@@ -69,6 +69,8 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\share\ahmados\update-center\releases.json",
     "archiso-profile\airootfs\usr\local\bin\ahmados-export-diagnostics",
     "archiso-profile\airootfs\usr\local\bin\ahmados-apply-session-defaults",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-vm-display-prep",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-vm-guest-services",
     "archiso-profile\airootfs\usr\local\bin\ahmados-finalize-install",
     "archiso-profile\airootfs\usr\local\bin\ahmados-installer",
     "archiso-profile\airootfs\usr\local\bin\ahmados-run-smoke-checks",
@@ -84,6 +86,8 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-welcome",
     "archiso-profile\airootfs\usr\local\bin\lumina-capture-screenshot",
     "archiso-profile\airootfs\usr\local\bin\lumina-apply-session-defaults",
+    "archiso-profile\airootfs\usr\local\bin\lumina-vm-display-prep",
+    "archiso-profile\airootfs\usr\local\bin\lumina-vm-guest-services",
     "archiso-profile\airootfs\usr\local\bin\lumina-export-diagnostics",
     "archiso-profile\airootfs\usr\local\bin\lumina-finalize-install",
     "archiso-profile\airootfs\usr\local\bin\lumina-installer",
@@ -101,7 +105,9 @@ $requiredPaths = @(
     "archiso-profile\airootfs\home\live\.local\bin\lumina-apply-session-defaults",
     "archiso-profile\airootfs\home\live\.config\plasmarc",
     "archiso-profile\airootfs\usr\local\lib\ahmados-session-context.sh",
+    "archiso-profile\airootfs\etc\systemd\system\ahmados-vm-guest-services.service",
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-firstboot.desktop",
+    "archiso-profile\airootfs\home\live\.config\autostart\ahmados-vm-display-prep.desktop",
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-windows-apps-prep.desktop",
     "archiso-profile\airootfs\home\live\Desktop\Install Lumina-OS.desktop",
     "archiso-profile\airootfs\usr\share\applications\ahmados-export-diagnostics.desktop",
@@ -129,6 +135,7 @@ $requiredPaths = @(
     "scripts\download-github-actions-artifact.ps1",
     "scripts\start-github-actions-install-test.ps1",
     "scripts\capture-virtualbox-guest-screenshot.ps1",
+    "scripts\repair-virtualbox-display.ps1",
     "scripts\import-iso-artifact.ps1",
     "scripts\start-github-actions-vm-cycle.ps1",
     "scripts\finish-github-actions-vm-cycle.ps1",
@@ -320,6 +327,7 @@ if (Test-Path $smokeCheckPath) {
 
 $expectedExecMappings = @{
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-firstboot.desktop" = "Exec=/usr/local/bin/lumina-firstboot"
+    "archiso-profile\airootfs\home\live\.config\autostart\ahmados-vm-display-prep.desktop" = "Exec=/usr/local/bin/lumina-vm-display-prep"
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-windows-apps-prep.desktop" = "Exec=/usr/local/bin/lumina-windows-apps-prep"
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-session-defaults.desktop" = "Exec=/usr/local/bin/lumina-apply-session-defaults"
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-welcome.desktop" = "Exec=/usr/local/bin/lumina-welcome --once"
@@ -344,12 +352,39 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/lumina-finalize-install",
         "/usr/local/bin/ahmados-apply-session-defaults",
         "/usr/local/bin/lumina-apply-session-defaults",
+        "/usr/local/bin/ahmados-vm-display-prep",
+        "/usr/local/bin/lumina-vm-display-prep",
+        "/usr/local/bin/ahmados-vm-guest-services",
+        "/usr/local/bin/lumina-vm-guest-services",
         "/usr/local/bin/ahmados-capture-screenshot",
         "/usr/local/bin/lumina-capture-screenshot"
     )) {
         if ($customizeContent -notmatch [regex]::Escape("chmod 755 $requiredChmodTarget")) {
             Add-Error "customize_airootfs.sh does not enforce executable permissions for $requiredChmodTarget"
         }
+    }
+
+    if ($customizeContent -notmatch 'systemctl enable ahmados-vm-guest-services\.service') {
+        Add-Error "customize_airootfs.sh does not enable ahmados-vm-guest-services.service."
+    }
+}
+
+$finalizeInstallPath = Join-Path $RepoRoot "archiso-profile\airootfs\usr\local\bin\ahmados-finalize-install"
+if (Test-Path $finalizeInstallPath) {
+    $finalizeContent = Get-Content -Raw $finalizeInstallPath
+    if ($finalizeContent -notmatch '/etc/systemd/system/ahmados-vm-guest-services\.service') {
+        Add-Error "ahmados-finalize-install does not copy the VM guest selector systemd unit."
+    }
+    if ($finalizeContent -notmatch 'ahmados-vm-guest-services\.service') {
+        Add-Error "ahmados-finalize-install does not enable the VM guest selector service."
+    }
+}
+
+$vmDisplayPrepPath = Join-Path $RepoRoot "archiso-profile\airootfs\usr\local\bin\ahmados-vm-display-prep"
+if (Test-Path $vmDisplayPrepPath) {
+    $vmDisplayPrepContent = Get-Content -Raw $vmDisplayPrepPath
+    if ($vmDisplayPrepContent -notmatch '1366x768') {
+        Add-Error "ahmados-vm-display-prep does not define the expected VirtualBox fallback mode."
     }
 }
 

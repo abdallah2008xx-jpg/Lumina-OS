@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Lumina-OS VM Display Prep
+Exec=/usr/local/bin/lumina-vm-display-prep
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=1

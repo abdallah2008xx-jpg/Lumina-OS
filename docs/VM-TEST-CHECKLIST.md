@@ -112,6 +112,14 @@ If VirtualBox host-side screenshots stay black even though the guest has clearly
 
 That helper first attempts `VBoxManage controlvm ... screenshotpng`, then falls back to `/usr/local/bin/lumina-capture-screenshot` inside the guest when the host-side PNG is effectively blank.
 
+If a VirtualBox run reopens with an oversized guest desktop and scrollbars, repair the saved hint and push a safer guest mode before continuing:
+
+```powershell
+.\scripts\repair-virtualbox-display.ps1 -VmName "LuminaOS-Stable-18-Check-20260402-0610"
+```
+
+That helper resets the guest display hint to `1366x768`, keeps `VBoxSVGA`, and pushes a safe mode hint to the running VM.
+
 The finish step now also updates:
 - `status/test-session-audits/`
 - `status/blockers/CURRENT-BLOCKERS.md`
@@ -187,6 +195,8 @@ If you want to refresh the side-by-side mode coverage after manual edits, use:
 - VirtualBox guest behavior is acceptable
 - VMware guest behavior is acceptable if tested
 - display resize behavior is recorded
+- no horizontal or vertical scrollbars should appear in the VM window during normal desktop use
+- if the guest initially opens oversized, record whether the VirtualBox fallback or repair helper corrected it
 
 ## Theme Checks
 - SDDM colors and spacing are acceptable

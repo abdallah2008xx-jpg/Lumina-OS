@@ -81,6 +81,8 @@ required_paths=(
     "${profile_path}/airootfs/usr/share/ahmados/update-center/releases.json"
     "${profile_path}/airootfs/usr/local/bin/ahmados-export-diagnostics"
     "${profile_path}/airootfs/usr/local/bin/ahmados-apply-session-defaults"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-vm-display-prep"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-vm-guest-services"
     "${profile_path}/airootfs/usr/local/bin/ahmados-finalize-install"
     "${profile_path}/airootfs/usr/local/bin/ahmados-installer"
     "${profile_path}/airootfs/usr/local/bin/ahmados-run-smoke-checks"
@@ -96,6 +98,8 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-welcome"
     "${profile_path}/airootfs/usr/local/bin/lumina-capture-screenshot"
     "${profile_path}/airootfs/usr/local/bin/lumina-apply-session-defaults"
+    "${profile_path}/airootfs/usr/local/bin/lumina-vm-display-prep"
+    "${profile_path}/airootfs/usr/local/bin/lumina-vm-guest-services"
     "${profile_path}/airootfs/usr/local/bin/lumina-export-diagnostics"
     "${profile_path}/airootfs/usr/local/bin/lumina-finalize-install"
     "${profile_path}/airootfs/usr/local/bin/lumina-installer"
@@ -113,7 +117,9 @@ required_paths=(
     "${profile_path}/airootfs/home/live/.local/bin/lumina-apply-session-defaults"
     "${profile_path}/airootfs/home/live/.config/plasmarc"
     "${profile_path}/airootfs/usr/local/lib/ahmados-session-context.sh"
+    "${profile_path}/airootfs/etc/systemd/system/ahmados-vm-guest-services.service"
     "${profile_path}/airootfs/home/live/.config/autostart/ahmados-firstboot.desktop"
+    "${profile_path}/airootfs/home/live/.config/autostart/ahmados-vm-display-prep.desktop"
     "${profile_path}/airootfs/home/live/.config/autostart/ahmados-windows-apps-prep.desktop"
     "${profile_path}/airootfs/home/live/Desktop/Install Lumina-OS.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-export-diagnostics.desktop"
@@ -140,6 +146,7 @@ required_paths=(
     "${repo_root}/scripts/download-github-actions-artifact.ps1"
     "${repo_root}/scripts/start-github-actions-install-test.ps1"
     "${repo_root}/scripts/capture-virtualbox-guest-screenshot.ps1"
+    "${repo_root}/scripts/repair-virtualbox-display.ps1"
     "${repo_root}/scripts/import-iso-artifact.ps1"
     "${repo_root}/scripts/start-github-actions-vm-cycle.ps1"
     "${repo_root}/scripts/finish-github-actions-vm-cycle.ps1"
@@ -296,12 +303,36 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/lumina-finalize-install \
         /usr/local/bin/ahmados-apply-session-defaults \
         /usr/local/bin/lumina-apply-session-defaults \
+        /usr/local/bin/ahmados-vm-display-prep \
+        /usr/local/bin/lumina-vm-display-prep \
+        /usr/local/bin/ahmados-vm-guest-services \
+        /usr/local/bin/lumina-vm-guest-services \
         /usr/local/bin/ahmados-capture-screenshot \
         /usr/local/bin/lumina-capture-screenshot; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
             add_error "customize_airootfs.sh does not enforce executable permissions for ${required_chmod_target}"
         fi
     done
+
+    if ! grep -Fq "systemctl enable ahmados-vm-guest-services.service" "${customize_airootfs}"; then
+        add_error "customize_airootfs.sh does not enable ahmados-vm-guest-services.service."
+    fi
+fi
+
+finalize_install="${profile_path}/airootfs/usr/local/bin/ahmados-finalize-install"
+if [[ -f "${finalize_install}" ]]; then
+    if ! grep -Fq "/etc/systemd/system/ahmados-vm-guest-services.service" "${finalize_install}"; then
+        add_error "ahmados-finalize-install does not copy the VM guest selector systemd unit."
+    fi
+
+    if ! grep -Fq "ahmados-vm-guest-services.service" "${finalize_install}"; then
+        add_error "ahmados-finalize-install does not enable the VM guest selector service."
+    fi
+fi
+
+vm_display_prep="${profile_path}/airootfs/usr/local/bin/ahmados-vm-display-prep"
+if [[ -f "${vm_display_prep}" ]] && ! grep -Fq "1366x768" "${vm_display_prep}"; then
+    add_error "ahmados-vm-display-prep does not define the expected VirtualBox fallback mode."
 fi
 
 while IFS='|' read -r desktop_path expected_exec; do
@@ -312,6 +343,7 @@ while IFS='|' read -r desktop_path expected_exec; do
     fi
 done <<EOF
 ${profile_path}/airootfs/home/live/.config/autostart/ahmados-firstboot.desktop|Exec=/usr/local/bin/lumina-firstboot
+${profile_path}/airootfs/home/live/.config/autostart/ahmados-vm-display-prep.desktop|Exec=/usr/local/bin/lumina-vm-display-prep
 ${profile_path}/airootfs/home/live/.config/autostart/ahmados-windows-apps-prep.desktop|Exec=/usr/local/bin/lumina-windows-apps-prep
 ${profile_path}/airootfs/home/live/.config/autostart/ahmados-session-defaults.desktop|Exec=/usr/local/bin/lumina-apply-session-defaults
 ${profile_path}/airootfs/home/live/.config/autostart/ahmados-welcome.desktop|Exec=/usr/local/bin/lumina-welcome --once

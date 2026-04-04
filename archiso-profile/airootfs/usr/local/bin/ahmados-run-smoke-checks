@@ -21,6 +21,10 @@ fi
 
 mkdir -p "${state_root}" "${config_root}"
 
+if command -v ahmados-vm-display-prep >/dev/null 2>&1; then
+    ahmados-vm-display-prep >/dev/null 2>&1 || true
+fi
+
 read_ini_value() {
     local file_path="$1"
     local section_name="$2"
@@ -146,6 +150,7 @@ actual_colorscheme_name="$(read_ini_value "${kdeglobals_file}" "General" "Name" 
 session_type="$(resolve_session_type 2>/dev/null || printf '%s' 'unknown')"
 desktop_session="$(resolve_desktop_session 2>/dev/null || printf '%s' 'unknown')"
 hostname_value="$(resolve_hostname_value 2>/dev/null || printf '%s' 'unknown')"
+hypervisor_value="$(resolve_hypervisor 2>/dev/null || printf '%s' 'bare-metal')"
 
 if [[ "${actual_colorscheme}" == "unknown" || -z "${actual_colorscheme}" ]]; then
     case "${actual_colorscheme_name}" in
@@ -177,6 +182,7 @@ file_check "${config_file}" "Welcome Config"
 file_check "${state_root}/firstboot-report.md" "Firstboot Report"
 # This run rewrites the smoke report itself, so treat report generation as the check.
 add_check "PASS" "Smoke Report" "report will be refreshed by the current run"
+file_check "${state_root}/vm-display-report.md" "VM Display Report"
 file_check "${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados/update-center/releases.json" "Update Metadata Cache"
 file_check "${XDG_CACHE_HOME:-${HOME}/.cache}/ahmados/update-center/status.json" "Update Status Cache"
 
@@ -198,11 +204,28 @@ else
     add_check "WARN" "Wallpaper Asset" "selected wallpaper is missing: ${expected_wallpaper}"
 fi
 
+if [[ "${hypervisor_value}" == "oracle" || "${hypervisor_value}" == "virtualbox" ]] && [[ "${session_type}" == "x11" ]] && command -v xrandr >/dev/null 2>&1; then
+    xrandr_snapshot="$(xrandr --current 2>/dev/null || true)"
+    output_name="$(resolve_primary_x11_output "${xrandr_snapshot}" 2>/dev/null || true)"
+    current_mode="$(resolve_current_x11_mode "${output_name}" "${xrandr_snapshot}" 2>/dev/null || true)"
+
+    if [[ -n "${current_mode}" ]] && read -r current_width current_height < <(resolve_x11_mode_dimensions "${current_mode}" 2>/dev/null); then
+        if (( current_width <= 1920 && current_height <= 1200 )); then
+            add_check "PASS" "VirtualBox Display Fit" "current mode ${current_mode} fits the expected VM window range"
+        else
+            add_check "WARN" "VirtualBox Display Fit" "current mode ${current_mode} is oversized and may cause scrollbars"
+        fi
+    else
+        add_check "WARN" "VirtualBox Display Fit" "unable to detect the current X11 display mode"
+    fi
+fi
+
 cat > "${report_file}" <<EOF
 # Lumina-OS Smoke Check Report
 
 - Generated: $(date -Iseconds)
 - Hostname: ${hostname_value}
+- Hypervisor: ${hypervisor_value}
 - Session Type: ${session_type}
 - Desktop Session: ${desktop_session}
 

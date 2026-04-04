@@ -61,6 +61,7 @@ common_dirs=(
     "${workspace_root}/exports"
     "${workspace_root}/vm-share"
     "${workspace_root}/checklists"
+    "${workspace_root}/state"
 )
 
 extra_dirs=()
@@ -89,6 +90,8 @@ done
 checklist_path="${workspace_root}/checklists/first-session-checklist.md"
 summary_path="${workspace_root}/workspace-summary.md"
 env_path="${workspace_root}/workspace.env"
+workflow_state_root="${workspace_root}/state"
+bootstrap_marker="${workflow_state_root}/bootstrap-ready.marker"
 
 {
     printf '# %s First Session Checklist\n\n' "${profile_name}"
@@ -138,6 +141,9 @@ env_path="${workspace_root}/workspace.env"
     printf 'LUMINA_WINDOWS_CHECKLIST_DIR=%q\n' "${workspace_root}/checklists"
 } > "${env_path}"
 
+touch "${bootstrap_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
 {
     printf '# Lumina Windows Workflow Bootstrap\n\n'
     printf -- '- Generated At: %s\n' "$(date -Is)"
@@ -156,6 +162,7 @@ env_path="${workspace_root}/workspace.env"
     printf -- '- Summary: %s\n' "${summary_path}"
     printf -- '- Checklist: %s\n' "${checklist_path}"
     printf -- '- Environment File: %s\n' "${env_path}"
+    printf -- '- State Root: %s\n' "${workflow_state_root}"
     printf '\n## Operating Note\n'
     printf -- '- This bootstrap does not create a Windows VM by itself. It prepares a clean Lumina-side workspace for the selected workflow.\n'
 } > "${bootstrap_report}"

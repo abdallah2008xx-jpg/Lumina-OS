@@ -95,6 +95,8 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-profile-assistant"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-profile-runbook"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-workflow-bootstrap"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-workflow-state"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-workflow-mark"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
@@ -119,6 +121,8 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-profile-assistant"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-profile-runbook"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-workflow-bootstrap"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-workflow-state"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-workflow-mark"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
@@ -340,7 +344,11 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/ahmados-windows-profile-runbook \
         /usr/local/bin/lumina-windows-profile-runbook \
         /usr/local/bin/ahmados-windows-workflow-bootstrap \
-        /usr/local/bin/lumina-windows-workflow-bootstrap; do
+        /usr/local/bin/lumina-windows-workflow-bootstrap \
+        /usr/local/bin/ahmados-windows-workflow-state \
+        /usr/local/bin/lumina-windows-workflow-state \
+        /usr/local/bin/ahmados-windows-workflow-mark \
+        /usr/local/bin/lumina-windows-workflow-mark; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
             add_error "customize_airootfs.sh does not enforce executable permissions for ${required_chmod_target}"
         fi

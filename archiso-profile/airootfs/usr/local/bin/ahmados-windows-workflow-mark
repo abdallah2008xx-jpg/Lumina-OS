@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+step_name=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --step)
+            step_name="${2:-}"
+            shift 2
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+if [[ -z "${selected_profile_id}" || -z "${step_name}" ]]; then
+    printf 'Usage: %s --profile-id <id> --step <step>\n' "$0" >&2
+    exit 1
+fi
+
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+workspace_root="${documents_root}/Lumina Windows Workflows/${selected_profile_id}"
+workflow_state_root="${workspace_root}/state"
+mkdir -p "${workflow_state_root}"
+
+case "${step_name}" in
+    bootstrap-ready)
+        marker_path="${workflow_state_root}/bootstrap-ready.marker"
+        ;;
+    vm-created)
+        marker_path="${workflow_state_root}/vm-created.marker"
+        ;;
+    vm-configured)
+        marker_path="${workflow_state_root}/vm-configured.marker"
+        ;;
+    apps-installed)
+        marker_path="${workflow_state_root}/apps-installed.marker"
+        ;;
+    checklist-complete)
+        marker_path="${workflow_state_root}/checklist-complete.marker"
+        ;;
+    linux-first-validated)
+        marker_path="${workflow_state_root}/linux-first-validated.marker"
+        ;;
+    *)
+        printf 'Unknown workflow step: %s\n' "${step_name}" >&2
+        exit 1
+        ;;
+esac
+
+touch "${marker_path}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${selected_profile_id}" --no-open >/dev/null 2>&1 || true
+
+printf '%s\n' '========================================'
+printf '%s\n' '     Lumina Workflow Marker Updated'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${selected_profile_id}"
+printf 'Step: %s\n' "${step_name}"
+printf 'Marker: %s\n' "${marker_path}"
+printf '\n'

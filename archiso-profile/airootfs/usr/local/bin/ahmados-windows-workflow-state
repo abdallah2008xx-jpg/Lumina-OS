@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+state_report="${state_root}/windows-workflow-state.md"
+profile_report="${state_root}/windows-profile-assistant.md"
+bootstrap_report="${state_root}/windows-workflow-bootstrap.md"
+runbook_report="${state_root}/windows-profile-runbook.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+
+mkdir -p "${workflow_state_root}"
+bootstrap_marker="${workflow_state_root}/bootstrap-ready.marker"
+vm_created_marker="${workflow_state_root}/vm-created.marker"
+vm_configured_marker="${workflow_state_root}/vm-configured.marker"
+apps_installed_marker="${workflow_state_root}/apps-installed.marker"
+checklist_complete_marker="${workflow_state_root}/checklist-complete.marker"
+linux_first_validated_marker="${workflow_state_root}/linux-first-validated.marker"
+notes_path="${workflow_state_root}/current-notes.md"
+
+touch "${notes_path}"
+
+recommended_route="$(awk -F': ' '/^- Recommended Route:/ {print $2; exit}' "${profile_report}" 2>/dev/null || true)"
+if [[ -z "${recommended_route}" ]]; then
+    recommended_route="${basic_route}"
+fi
+
+phase="bootstrap-pending"
+status="needs-bootstrap"
+
+if [[ -f "${bootstrap_marker}" ]]; then
+    phase="workspace-prepared"
+    status="in-progress"
+fi
+
+if [[ -f "${linux_first_validated_marker}" ]]; then
+    phase="linux-first-validated"
+    status="ready-for-review"
+fi
+
+if [[ -f "${vm_created_marker}" ]]; then
+    phase="vm-created"
+    status="in-progress"
+fi
+
+if [[ -f "${vm_configured_marker}" ]]; then
+    phase="vm-configured"
+    status="in-progress"
+fi
+
+if [[ -f "${apps_installed_marker}" ]]; then
+    phase="apps-installed"
+    status="in-progress"
+fi
+
+if [[ -f "${checklist_complete_marker}" ]]; then
+    phase="workflow-ready"
+    status="ready-for-next-stage"
+fi
+
+{
+    printf '# Lumina Windows Workflow State\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Workspace Root: %s\n' "${workspace_root}"
+    printf -- '- Recommended Route: %s\n' "${recommended_route:-unknown}"
+    printf -- '- Current Phase: %s\n' "${phase}"
+    printf -- '- Status: %s\n' "${status}"
+    printf '\n## Markers\n'
+    printf -- '- Bootstrap Ready: %s\n' "$([[ -f "${bootstrap_marker}" ]] && printf yes || printf no)"
+    printf -- '- VM Created: %s\n' "$([[ -f "${vm_created_marker}" ]] && printf yes || printf no)"
+    printf -- '- VM Configured: %s\n' "$([[ -f "${vm_configured_marker}" ]] && printf yes || printf no)"
+    printf -- '- Apps Installed: %s\n' "$([[ -f "${apps_installed_marker}" ]] && printf yes || printf no)"
+    printf -- '- Checklist Complete: %s\n' "$([[ -f "${checklist_complete_marker}" ]] && printf yes || printf no)"
+    printf -- '- Linux-First Validated: %s\n' "$([[ -f "${linux_first_validated_marker}" ]] && printf yes || printf no)"
+    printf '\n## State Paths\n'
+    printf -- '- Workflow State Root: %s\n' "${workflow_state_root}"
+    printf -- '- Notes File: %s\n' "${notes_path}"
+    printf '\n## Related Reports\n'
+    printf -- '- Profile Assistant Report: %s\n' "${profile_report}"
+    printf -- '- Workflow Runbook Report: %s\n' "${runbook_report}"
+    printf -- '- Workflow Bootstrap Report: %s\n' "${bootstrap_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+} > "${state_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '     Lumina Windows Workflow State'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Phase: %s\n' "${phase}"
+printf 'Status: %s\n' "${status}"
+printf 'Report: %s\n' "${state_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${state_report}" >/dev/null 2>&1 || true
+fi

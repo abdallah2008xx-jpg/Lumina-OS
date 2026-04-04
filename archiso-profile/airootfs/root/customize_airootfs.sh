@@ -33,6 +33,10 @@ chmod 755 /usr/local/bin/ahmados-windows-profile-runbook
 chmod 755 /usr/local/bin/lumina-windows-profile-runbook
 chmod 755 /usr/local/bin/ahmados-windows-workflow-bootstrap
 chmod 755 /usr/local/bin/lumina-windows-workflow-bootstrap
+chmod 755 /usr/local/bin/ahmados-windows-workflow-state
+chmod 755 /usr/local/bin/lumina-windows-workflow-state
+chmod 755 /usr/local/bin/ahmados-windows-workflow-mark
+chmod 755 /usr/local/bin/lumina-windows-workflow-mark
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

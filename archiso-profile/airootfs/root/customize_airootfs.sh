@@ -17,6 +17,8 @@ chmod 755 /usr/local/bin/ahmados-vm-display-prep
 chmod 755 /usr/local/bin/lumina-vm-display-prep
 chmod 755 /usr/local/bin/ahmados-vm-guest-services
 chmod 755 /usr/local/bin/lumina-vm-guest-services
+chmod 755 /usr/local/bin/ahmados-refresh-update-markers
+chmod 755 /usr/local/bin/lumina-refresh-update-markers
 chmod 755 /usr/local/bin/ahmados-finalize-install
 chmod 755 /usr/local/bin/lumina-finalize-install
 chmod 755 /usr/local/bin/ahmados-capture-screenshot
@@ -32,6 +34,7 @@ done
 systemctl enable NetworkManager.service
 systemctl enable sddm.service
 systemctl enable ahmados-vm-guest-services.service
+systemctl enable ahmados-update-markers.service
 
 for service in libvirtd.service virtlogd.service virtlockd.service; do
     if [[ -f "/usr/lib/systemd/system/${service}" ]]; then
@@ -42,3 +45,11 @@ for service in libvirtd.service virtlogd.service virtlockd.service; do
 done
 
 systemctl set-default graphical.target
+
+# The image is fully customized at build time, so mark /etc and /var as updated
+# to avoid slow ConditionNeedsUpdate jobs like ldconfig.service on first boot.
+touch /etc/.updated
+mkdir -p /var
+touch /var/.updated
+mkdir -p /var/lib/lumina
+touch /var/lib/lumina/pending-update-marker-refresh

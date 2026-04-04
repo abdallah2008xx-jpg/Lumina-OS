@@ -203,6 +203,7 @@ printf '%s\n' 'Copying Lumina-OS assets into the installed system...'
 for src in \
     /etc/ahmados-release.conf \
     /etc/sddm.conf.d/theme.conf \
+    /etc/systemd/system/ahmados-update-markers.service \
     /etc/systemd/system/ahmados-vm-guest-services.service \
     /usr/local/lib/ahmados-session-context.sh \
     /usr/share/ahmados \
@@ -237,7 +238,7 @@ while IFS=: read -r username _ uid gid _ home _; do
 done < <(awk -F: '($3 >= 1000 && $1 != "nobody" && $1 != "live"){print}' "${target_root}/etc/passwd")
 
 printf '%s\n' 'Enabling Lumina-OS services in the installed system...'
-for unit in NetworkManager.service sddm.service ahmados-vm-guest-services.service; do
+for unit in NetworkManager.service sddm.service ahmados-vm-guest-services.service ahmados-update-markers.service; do
     arch-chroot "${target_root}" systemctl enable "${unit}"
 done
 
@@ -249,6 +250,14 @@ done
 
 arch-chroot "${target_root}" systemctl set-default graphical.target
 
+# Mark the target as fully updated after all Lumina-specific files are copied so
+# the first boot does not spend extra time in ConditionNeedsUpdate jobs.
+touch "${target_root}/etc/.updated"
+mkdir -p "${target_root}/var"
+touch "${target_root}/var/.updated"
+mkdir -p "${target_root}/var/lib/lumina"
+touch "${target_root}/var/lib/lumina/pending-update-marker-refresh"
+
 report_path="${target_root}/root/lumina-install-finalize-report.md"
 cat > "${report_path}" <<EOF
 # Lumina-OS Install Finalize Report
@@ -256,8 +265,10 @@ cat > "${report_path}" <<EOF
 - Target root: ${target_root}
 - Graphical packages: installed
 - Services enabled: NetworkManager, sddm
+- Update marker refresh service: enabled
 - VM guest service selector: enabled
 - Default target: graphical.target
+- Update markers refreshed: yes
 - Custom Lumina assets: copied
 - User defaults: applied to /etc/skel and existing users
 EOF

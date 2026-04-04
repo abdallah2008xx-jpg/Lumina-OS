@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+pending_flag="/var/lib/lumina/pending-update-marker-refresh"
+
+if [[ ! -e "${pending_flag}" ]]; then
+    exit 0
+fi
+
+mkdir -p /var/lib/lumina /var
+touch /etc/.updated
+touch /var/.updated
+rm -f "${pending_flag}"

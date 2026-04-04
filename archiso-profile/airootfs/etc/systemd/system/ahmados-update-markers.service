@@ -1,0 +1,15 @@
+[Unit]
+Description=Refresh Lumina-OS update markers after first-boot writes
+DefaultDependencies=no
+ConditionPathExists=/var/lib/lumina/pending-update-marker-refresh
+After=local-fs.target systemd-machine-id-commit.service systemd-sysusers.service systemd-tmpfiles-setup.service systemd-journal-catalog-update.service
+Before=ldconfig.service systemd-update-done.service sysinit.target
+Conflicts=shutdown.target initrd-switch-root.target
+Before=shutdown.target initrd-switch-root.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/lumina-refresh-update-markers
+
+[Install]
+WantedBy=sysinit.target

@@ -71,6 +71,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-apply-session-defaults",
     "archiso-profile\airootfs\usr\local\bin\ahmados-vm-display-prep",
     "archiso-profile\airootfs\usr\local\bin\ahmados-vm-guest-services",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-refresh-update-markers",
     "archiso-profile\airootfs\usr\local\bin\ahmados-finalize-install",
     "archiso-profile\airootfs\usr\local\bin\ahmados-installer",
     "archiso-profile\airootfs\usr\local\bin\ahmados-run-smoke-checks",
@@ -88,6 +89,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-apply-session-defaults",
     "archiso-profile\airootfs\usr\local\bin\lumina-vm-display-prep",
     "archiso-profile\airootfs\usr\local\bin\lumina-vm-guest-services",
+    "archiso-profile\airootfs\usr\local\bin\lumina-refresh-update-markers",
     "archiso-profile\airootfs\usr\local\bin\lumina-export-diagnostics",
     "archiso-profile\airootfs\usr\local\bin\lumina-finalize-install",
     "archiso-profile\airootfs\usr\local\bin\lumina-installer",
@@ -105,6 +107,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\home\live\.local\bin\lumina-apply-session-defaults",
     "archiso-profile\airootfs\home\live\.config\plasmarc",
     "archiso-profile\airootfs\usr\local\lib\ahmados-session-context.sh",
+    "archiso-profile\airootfs\etc\systemd\system\ahmados-update-markers.service",
     "archiso-profile\airootfs\etc\systemd\system\ahmados-vm-guest-services.service",
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-firstboot.desktop",
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-vm-display-prep.desktop",
@@ -356,6 +359,8 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/lumina-vm-display-prep",
         "/usr/local/bin/ahmados-vm-guest-services",
         "/usr/local/bin/lumina-vm-guest-services",
+        "/usr/local/bin/ahmados-refresh-update-markers",
+        "/usr/local/bin/lumina-refresh-update-markers",
         "/usr/local/bin/ahmados-capture-screenshot",
         "/usr/local/bin/lumina-capture-screenshot"
     )) {
@@ -367,6 +372,18 @@ if (Test-Path $customizeAirootfsPath) {
     if ($customizeContent -notmatch 'systemctl enable ahmados-vm-guest-services\.service') {
         Add-Error "customize_airootfs.sh does not enable ahmados-vm-guest-services.service."
     }
+
+    if ($customizeContent -notmatch 'systemctl enable ahmados-update-markers\.service') {
+        Add-Error "customize_airootfs.sh does not enable ahmados-update-markers.service."
+    }
+
+    if ($customizeContent -notmatch 'touch /etc/\.updated') {
+        Add-Error "customize_airootfs.sh does not refresh /etc/.updated."
+    }
+
+    if ($customizeContent -notmatch 'touch /var/\.updated') {
+        Add-Error "customize_airootfs.sh does not refresh /var/.updated."
+    }
 }
 
 $finalizeInstallPath = Join-Path $RepoRoot "archiso-profile\airootfs\usr\local\bin\ahmados-finalize-install"
@@ -375,8 +392,25 @@ if (Test-Path $finalizeInstallPath) {
     if ($finalizeContent -notmatch '/etc/systemd/system/ahmados-vm-guest-services\.service') {
         Add-Error "ahmados-finalize-install does not copy the VM guest selector systemd unit."
     }
+    if ($finalizeContent -notmatch '/etc/systemd/system/ahmados-update-markers\.service') {
+        Add-Error "ahmados-finalize-install does not copy the update marker systemd unit."
+    }
     if ($finalizeContent -notmatch 'ahmados-vm-guest-services\.service') {
         Add-Error "ahmados-finalize-install does not enable the VM guest selector service."
+    }
+    if ($finalizeContent -notmatch 'ahmados-update-markers\.service') {
+        Add-Error "ahmados-finalize-install does not enable the update marker service."
+    }
+
+    if ($finalizeContent -notmatch 'touch "\$\{target_root\}/etc/\.updated"') {
+        Add-Error "ahmados-finalize-install does not refresh target /etc/.updated."
+    }
+
+    if ($finalizeContent -notmatch 'touch "\$\{target_root\}/var/\.updated"') {
+        Add-Error "ahmados-finalize-install does not refresh target /var/.updated."
+    }
+    if ($finalizeContent -notmatch 'pending-update-marker-refresh') {
+        Add-Error "ahmados-finalize-install does not queue the first-boot update marker refresh."
     }
 }
 

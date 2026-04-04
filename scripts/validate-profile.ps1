@@ -80,6 +80,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-firstboot",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-app-assistant",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-profile-assistant",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
@@ -101,6 +102,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-firstboot",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-app-assistant",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-profile-assistant",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
@@ -112,6 +114,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\home\live\.config\plasmarc",
     "archiso-profile\airootfs\usr\local\lib\ahmados-session-context.sh",
     "archiso-profile\airootfs\usr\share\lumina\windows-apps\catalog.tsv",
+    "archiso-profile\airootfs\usr\share\lumina\windows-apps\profiles.tsv",
     "archiso-profile\airootfs\etc\systemd\system\ahmados-update-markers.service",
     "archiso-profile\airootfs\etc\systemd\system\ahmados-vm-guest-services.service",
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-firstboot.desktop",
@@ -346,7 +349,7 @@ $expectedExecMappings = @{
     "archiso-profile\airootfs\usr\share\applications\ahmados-welcome.desktop" = "Exec=/usr/local/bin/lumina-welcome"
     "archiso-profile\airootfs\usr\share\applications\lumina-finalize-install.desktop" = "Exec=/usr/local/bin/lumina-finalize-install"
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop" = "Exec=/usr/local/bin/lumina-installer"
-    "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop" = "Exec=/usr/local/bin/lumina-windows-app-assistant"
+    "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop" = "Exec=/usr/local/bin/lumina-windows-profile-assistant"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop" = "Exec=/usr/local/bin/lumina-windows-compat-check"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-vm-lab.desktop" = "Exec=/usr/local/bin/lumina-windows-vm-lab"
     "archiso-profile\airootfs\home\live\Desktop\Install Lumina-OS.desktop" = "Exec=/usr/local/bin/lumina-installer"
@@ -371,7 +374,9 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/ahmados-windows-apps-catalog",
         "/usr/local/bin/lumina-windows-apps-catalog",
         "/usr/local/bin/ahmados-windows-app-assistant",
-        "/usr/local/bin/lumina-windows-app-assistant"
+        "/usr/local/bin/lumina-windows-app-assistant",
+        "/usr/local/bin/ahmados-windows-profile-assistant",
+        "/usr/local/bin/lumina-windows-profile-assistant"
     )) {
         if ($customizeContent -notmatch [regex]::Escape("chmod 755 $requiredChmodTarget")) {
             Add-Error "customize_airootfs.sh does not enforce executable permissions for $requiredChmodTarget"

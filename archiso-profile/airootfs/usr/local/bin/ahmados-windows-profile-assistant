@@ -1,0 +1,178 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_reports=1
+list_only=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_reports=0
+            shift
+            ;;
+        --list)
+            list_only=1
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+assistant_report="${state_root}/windows-profile-assistant.md"
+app_assistant_report="${state_root}/windows-app-assistant.md"
+catalog_report="${state_root}/windows-app-catalog.md"
+bridge_report="${state_root}/windows-apps-bridge.md"
+compat_report="${state_root}/windows-compat-report.md"
+lab_report="${state_root}/windows-vm-lab.md"
+
+/usr/local/bin/ahmados-windows-apps --no-open >/dev/null 2>&1 || true
+
+if [[ ${list_only} -eq 1 ]]; then
+    awk -F'|' 'NF >= 3 && $1 !~ /^#/ {printf "%s\t%s\t%s\n", $1, $2, $3}' "${profiles_path}"
+    exit 0
+fi
+
+choose_profile_with_kdialog() {
+    local entries=()
+
+    while IFS='|' read -r profile_id profile_name focus _; do
+        [[ -z "${profile_id}" || "${profile_id}" == \#* ]] && continue
+        entries+=("${profile_id}" "${profile_name} - ${focus}")
+    done < "${profiles_path}"
+
+    if [[ ${#entries[@]} -eq 0 ]]; then
+        return 1
+    fi
+
+    kdialog --title "Lumina Windows Apps" \
+        --menu "Choose the Windows workflow profile you want Lumina to guide." \
+        "${entries[@]}" 2>/dev/null || return 1
+}
+
+if [[ -z "${selected_profile_id}" ]] && command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}" ]]; then
+    selected_profile_id="$(choose_profile_with_kdialog || true)"
+fi
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+experience_mode="$(awk -F': ' '/^- Experience Mode:/ {print $2; exit}' "${bridge_report}" 2>/dev/null || true)"
+
+recommended_route="${basic_route}"
+route_profile="Basic"
+case "${compatibility_tier}" in
+    windows-vm-ready|single-gpu-experimental)
+        recommended_route="${vm_route}"
+        route_profile="Windows VM"
+        ;;
+    full-passthrough-candidate)
+        recommended_route="${studio_route}"
+        route_profile="Studio"
+        ;;
+esac
+
+readiness="guided"
+if [[ "${recommended_route}" == *"Out of scope"* ]]; then
+    readiness="out-of-scope"
+elif [[ "${recommended_route}" == *"Windows VM"* ]]; then
+    readiness="windows-vm"
+elif [[ "${recommended_route}" == *"GPU focus"* ]]; then
+    readiness="studio-vm"
+elif [[ "${recommended_route}" == *"Proton"* || "${recommended_route}" == *"Wine"* || "${recommended_route}" == *"Web"* || "${recommended_route}" == *"Heroic"* ]]; then
+    readiness="linux-first"
+fi
+
+IFS=',' read -r -a app_id_array <<< "${app_ids}"
+default_app_id="${app_id_array[0]}"
+/usr/local/bin/ahmados-windows-app-assistant --app-id "${default_app_id}" --no-open >/dev/null 2>&1 || true
+
+suggested_apps=""
+for app_id in "${app_id_array[@]}"; do
+    app_line="$(awk -F'|' -v target="${app_id}" 'NF >= 2 && $1 == target {printf "- %s (%s)\n", $2, $1; exit}' /usr/share/lumina/windows-apps/catalog.tsv || true)"
+    [[ -n "${app_line}" ]] && suggested_apps+="${app_line}"
+done
+
+next_steps=""
+case "${readiness}" in
+    linux-first)
+        next_steps+="- Start with the lighter Linux-first route for this workflow and only escalate into the Windows workspace if the friction stays real.\n"
+        next_steps+="- Keep Lumina-native apps, Proton, Wine, and browser workflows visible where they already fit.\n"
+        ;;
+    windows-vm)
+        next_steps+="- Open Lumina Windows VM Lab and build one clean Windows workspace for this profile.\n"
+        next_steps+="- Keep all apps in this profile inside the same Windows VM where possible so the workflow feels consistent.\n"
+        ;;
+    studio-vm)
+        next_steps+="- Start with a normal Windows VM first, then strengthen it for GPU-oriented creator work after the base route proves stable.\n"
+        next_steps+="- Keep storage, assets, and cache on the fastest disk available for this workflow.\n"
+        ;;
+    out-of-scope)
+        next_steps+="- Keep this workflow outside the official supported path for now.\n"
+        next_steps+="- Do not promise anti-cheat bypass, VM hiding, or stealth support as part of this profile.\n"
+        ;;
+    *)
+        next_steps+="- Review the related reports before choosing a final route for this workflow.\n"
+        ;;
+esac
+
+{
+    printf '# Lumina Windows Workflow Profile\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Selected Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Focus: %s\n' "${focus}"
+    printf -- '- Experience Mode: %s\n' "${experience_mode:-unknown}"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Route Profile: %s\n' "${route_profile}"
+    printf -- '- Recommended Route: %s\n' "${recommended_route}"
+    printf -- '- Readiness: %s\n' "${readiness}"
+    printf '\n## Why This Profile Exists\n'
+    printf -- '- %s\n' "${notes}"
+    printf -- '- This profile keeps Lumina as the visible desktop while grouping related Windows workflows under one route.\n'
+    printf '\n## Suggested Apps In This Profile\n'
+    printf '%s' "${suggested_apps:-"- No app list is available for this profile.\n"}"
+    printf '\n## Next Steps\n'
+    printf '%b' "${next_steps}"
+    printf '\n## Related Reports\n'
+    printf -- '- Workflow Profile Report: %s\n' "${assistant_report}"
+    printf -- '- App Assistant Report: %s\n' "${app_assistant_report}"
+    printf -- '- App Catalog Report: %s\n' "${catalog_report}"
+    printf -- '- Windows Apps Report: %s\n' "${bridge_report}"
+    printf -- '- Compatibility Report: %s\n' "${compat_report}"
+    printf -- '- Advanced Lab Report: %s\n' "${lab_report}"
+} > "${assistant_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '    Lumina Windows Workflow Profile'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Selected profile: %s\n' "${profile_name}"
+printf 'Recommended route: %s\n' "${recommended_route}"
+printf 'Report: %s\n' "${assistant_report}"
+printf '\n'
+
+if [[ ${open_reports} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${assistant_report}" >/dev/null 2>&1 || true
+fi

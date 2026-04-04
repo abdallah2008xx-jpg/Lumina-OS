@@ -93,6 +93,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-assistant"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-profile-assistant"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-profile-runbook"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
@@ -115,6 +116,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-assistant"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-profile-assistant"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-profile-runbook"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
@@ -127,6 +129,11 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/lib/ahmados-session-context.sh"
     "${profile_path}/airootfs/usr/share/lumina/windows-apps/catalog.tsv"
     "${profile_path}/airootfs/usr/share/lumina/windows-apps/profiles.tsv"
+    "${profile_path}/airootfs/usr/share/lumina/windows-apps/manifests/adobe-creator.md"
+    "${profile_path}/airootfs/usr/share/lumina/windows-apps/manifests/office-productivity.md"
+    "${profile_path}/airootfs/usr/share/lumina/windows-apps/manifests/studio-audio.md"
+    "${profile_path}/airootfs/usr/share/lumina/windows-apps/manifests/gaming-launchers.md"
+    "${profile_path}/airootfs/usr/share/lumina/windows-apps/manifests/restricted-gaming.md"
     "${profile_path}/airootfs/etc/systemd/system/ahmados-update-markers.service"
     "${profile_path}/airootfs/etc/systemd/system/ahmados-vm-guest-services.service"
     "${profile_path}/airootfs/home/live/.config/autostart/ahmados-firstboot.desktop"
@@ -327,7 +334,9 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/ahmados-windows-app-assistant \
         /usr/local/bin/lumina-windows-app-assistant \
         /usr/local/bin/ahmados-windows-profile-assistant \
-        /usr/local/bin/lumina-windows-profile-assistant; do
+        /usr/local/bin/lumina-windows-profile-assistant \
+        /usr/local/bin/ahmados-windows-profile-runbook \
+        /usr/local/bin/lumina-windows-profile-runbook; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
             add_error "customize_airootfs.sh does not enforce executable permissions for ${required_chmod_target}"
         fi

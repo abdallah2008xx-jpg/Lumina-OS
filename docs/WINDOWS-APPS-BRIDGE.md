@@ -46,6 +46,7 @@ The current phase adds:
 - a workflow-profile entry point for broader use cases like Adobe, Office, and gaming launchers
 - a Windows App Catalog that maps common app families to the right path for the current machine
 - a guided Windows App Assistant that turns one chosen app into a concrete route instead of leaving the user with generic reports
+- a workflow runbook layer that turns each broader profile into an actionable starter plan
 - a hidden session-start prep step that warms the Windows Apps path without opening an extra desktop
 
 ## Future Target

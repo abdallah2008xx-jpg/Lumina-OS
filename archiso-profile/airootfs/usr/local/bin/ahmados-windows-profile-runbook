@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+manifests_root="/usr/share/lumina/windows-apps/manifests"
+runbook_report="${state_root}/windows-profile-runbook.md"
+compat_report="${state_root}/windows-compat-report.md"
+bridge_report="${state_root}/windows-apps-bridge.md"
+catalog_report="${state_root}/windows-app-catalog.md"
+profile_report="${state_root}/windows-profile-assistant.md"
+lab_report="${state_root}/windows-vm-lab.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+experience_mode="$(awk -F': ' '/^- Experience Mode:/ {print $2; exit}' "${bridge_report}" 2>/dev/null || true)"
+
+recommended_route="${basic_route}"
+case "${compatibility_tier}" in
+    windows-vm-ready|single-gpu-experimental)
+        recommended_route="${vm_route}"
+        ;;
+    full-passthrough-candidate)
+        recommended_route="${studio_route}"
+        ;;
+esac
+
+manifest_path="${manifests_root}/${profile_id}.md"
+manifest_body="No manifest is available for this profile yet."
+if [[ -f "${manifest_path}" ]]; then
+    manifest_body="$(cat "${manifest_path}")"
+fi
+
+route_actions=""
+case "${recommended_route}" in
+    *"Windows VM"* )
+        route_actions+="- Open Lumina Windows VM Lab and build one clean Windows workspace for this profile.\n"
+        route_actions+="- Keep the apps in this workflow grouped inside the same Windows VM when possible.\n"
+        ;;
+    *"GPU focus"* )
+        route_actions+="- Start from a normal Windows VM first, then strengthen the workflow only after the base route proves stable.\n"
+        route_actions+="- Treat storage, graphics, and export speed as first-class concerns in this workflow.\n"
+        ;;
+    *"Out of scope"* )
+        route_actions+="- Keep this workflow outside the official supported path.\n"
+        route_actions+="- Do not market stealth, anti-cheat bypass, or hidden-VM behavior as part of Lumina.\n"
+        ;;
+    * )
+        route_actions+="- Stay Linux-first where the workflow already feels smooth.\n"
+        route_actions+="- Escalate into a Windows workspace only when the Linux-first route still resists the real workload.\n"
+        ;;
+esac
+
+{
+    printf '# Lumina Windows Workflow Runbook\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Focus: %s\n' "${focus}"
+    printf -- '- Experience Mode: %s\n' "${experience_mode:-unknown}"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Recommended Route: %s\n' "${recommended_route}"
+    printf '\n## Operating Rule\n'
+    printf -- '- Lumina stays the visible desktop. The Windows layer exists only to support the workflow that still needs it.\n'
+    printf -- '- %s\n' "${notes}"
+    printf '\n## Immediate Actions\n'
+    printf '%b' "${route_actions}"
+    printf '\n## Starter Manifest\n\n'
+    printf '%s\n' "${manifest_body}"
+    printf '\n## Related Reports\n'
+    printf -- '- Profile Assistant Report: %s\n' "${profile_report}"
+    printf -- '- Windows Apps Report: %s\n' "${bridge_report}"
+    printf -- '- App Catalog Report: %s\n' "${catalog_report}"
+    printf -- '- Compatibility Report: %s\n' "${compat_report}"
+    printf -- '- Advanced Lab Report: %s\n' "${lab_report}"
+} > "${runbook_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '    Lumina Windows Workflow Runbook'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Recommended route: %s\n' "${recommended_route}"
+printf 'Report: %s\n' "${runbook_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${runbook_report}" >/dev/null 2>&1 || true
+fi

@@ -29,6 +29,8 @@ chmod 755 /usr/local/bin/ahmados-windows-app-assistant
 chmod 755 /usr/local/bin/lumina-windows-app-assistant
 chmod 755 /usr/local/bin/ahmados-windows-profile-assistant
 chmod 755 /usr/local/bin/lumina-windows-profile-assistant
+chmod 755 /usr/local/bin/ahmados-windows-profile-runbook
+chmod 755 /usr/local/bin/lumina-windows-profile-runbook
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

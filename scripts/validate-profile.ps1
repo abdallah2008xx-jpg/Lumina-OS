@@ -81,6 +81,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-app-assistant",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-profile-assistant",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-profile-runbook",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
@@ -103,6 +104,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-app-assistant",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-profile-assistant",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-profile-runbook",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
@@ -115,6 +117,11 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\lib\ahmados-session-context.sh",
     "archiso-profile\airootfs\usr\share\lumina\windows-apps\catalog.tsv",
     "archiso-profile\airootfs\usr\share\lumina\windows-apps\profiles.tsv",
+    "archiso-profile\airootfs\usr\share\lumina\windows-apps\manifests\adobe-creator.md",
+    "archiso-profile\airootfs\usr\share\lumina\windows-apps\manifests\office-productivity.md",
+    "archiso-profile\airootfs\usr\share\lumina\windows-apps\manifests\studio-audio.md",
+    "archiso-profile\airootfs\usr\share\lumina\windows-apps\manifests\gaming-launchers.md",
+    "archiso-profile\airootfs\usr\share\lumina\windows-apps\manifests\restricted-gaming.md",
     "archiso-profile\airootfs\etc\systemd\system\ahmados-update-markers.service",
     "archiso-profile\airootfs\etc\systemd\system\ahmados-vm-guest-services.service",
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-firstboot.desktop",
@@ -376,7 +383,9 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/ahmados-windows-app-assistant",
         "/usr/local/bin/lumina-windows-app-assistant",
         "/usr/local/bin/ahmados-windows-profile-assistant",
-        "/usr/local/bin/lumina-windows-profile-assistant"
+        "/usr/local/bin/lumina-windows-profile-assistant",
+        "/usr/local/bin/ahmados-windows-profile-runbook",
+        "/usr/local/bin/lumina-windows-profile-runbook"
     )) {
         if ($customizeContent -notmatch [regex]::Escape("chmod 755 $requiredChmodTarget")) {
             Add-Error "customize_airootfs.sh does not enforce executable permissions for $requiredChmodTarget"

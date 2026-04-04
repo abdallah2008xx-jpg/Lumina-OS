@@ -47,6 +47,7 @@ The current phase adds:
 - a Windows App Catalog that maps common app families to the right path for the current machine
 - a guided Windows App Assistant that turns one chosen app into a concrete route instead of leaving the user with generic reports
 - a workflow runbook layer that turns each broader profile into an actionable starter plan
+- a workspace bootstrap layer that creates Lumina-side folders, checklists, and naming conventions for the chosen workflow
 - a hidden session-start prep step that warms the Windows Apps path without opening an extra desktop
 
 ## Future Target

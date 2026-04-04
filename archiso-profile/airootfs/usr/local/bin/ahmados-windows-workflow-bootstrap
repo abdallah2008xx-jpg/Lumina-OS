@@ -1,0 +1,175 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+bootstrap_report="${state_root}/windows-workflow-bootstrap.md"
+profile_report="${state_root}/windows-profile-assistant.md"
+runbook_report="${state_root}/windows-profile-runbook.md"
+compat_report="${state_root}/windows-compat-report.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-profile-assistant --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-profile-runbook --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+recommended_route="$(awk -F': ' '/^- Recommended Route:/ {print $2; exit}' "${profile_report}" 2>/dev/null || true)"
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+vm_name="Lumina-${profile_id//-/_}-vm"
+share_name="${profile_id//-/_}_share"
+
+common_dirs=(
+    "${workspace_root}"
+    "${workspace_root}/notes"
+    "${workspace_root}/installers"
+    "${workspace_root}/imports"
+    "${workspace_root}/exports"
+    "${workspace_root}/vm-share"
+    "${workspace_root}/checklists"
+)
+
+extra_dirs=()
+case "${profile_id}" in
+    adobe-creator)
+        extra_dirs+=("${workspace_root}/projects" "${workspace_root}/assets" "${workspace_root}/fonts" "${workspace_root}/plugins")
+        ;;
+    office-productivity)
+        extra_dirs+=("${workspace_root}/documents" "${workspace_root}/meetings" "${workspace_root}/cloud-sync")
+        ;;
+    studio-audio)
+        extra_dirs+=("${workspace_root}/projects" "${workspace_root}/samples" "${workspace_root}/plugins" "${workspace_root}/renders")
+        ;;
+    gaming-launchers)
+        extra_dirs+=("${workspace_root}/launcher-cache" "${workspace_root}/game-imports" "${workspace_root}/patch-notes")
+        ;;
+    restricted-gaming)
+        extra_dirs+=("${workspace_root}/notes-only")
+        ;;
+esac
+
+for dir_path in "${common_dirs[@]}" "${extra_dirs[@]}"; do
+    mkdir -p "${dir_path}"
+done
+
+checklist_path="${workspace_root}/checklists/first-session-checklist.md"
+summary_path="${workspace_root}/workspace-summary.md"
+env_path="${workspace_root}/workspace.env"
+
+{
+    printf '# %s First Session Checklist\n\n' "${profile_name}"
+    printf -- '- Confirm the compatibility tier before promising the workflow.\n'
+    printf -- '- Confirm the suggested VM name: `%s`\n' "${vm_name}"
+    printf -- '- Confirm the shared folder path: `%s`\n' "${workspace_root}/vm-share"
+    printf -- '- Place trusted installers in `%s`\n' "${workspace_root}/installers"
+    printf -- '- Keep exchanged files moving through `%s` and `%s`\n' "${workspace_root}/imports" "${workspace_root}/exports"
+    printf -- '- Keep notes and troubleshooting in `%s`\n' "${workspace_root}/notes"
+    printf -- '- Follow the runbook at `%s`\n' "${runbook_report}"
+    printf -- '- Keep Lumina as the visible shell; the Windows layer exists only to support this workflow.\n'
+} > "${checklist_path}"
+
+{
+    printf '# %s Workspace Summary\n\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Focus: %s\n' "${focus}"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Recommended Route: %s\n' "${recommended_route:-unknown}"
+    printf -- '- Suggested VM Name: %s\n' "${vm_name}"
+    printf -- '- Suggested Share Name: %s\n' "${share_name}"
+    printf -- '- Workspace Root: %s\n' "${workspace_root}"
+    printf '\n## Core Paths\n'
+    printf -- '- Installers: %s\n' "${workspace_root}/installers"
+    printf -- '- Imports: %s\n' "${workspace_root}/imports"
+    printf -- '- Exports: %s\n' "${workspace_root}/exports"
+    printf -- '- VM Share: %s\n' "${workspace_root}/vm-share"
+    printf -- '- Notes: %s\n' "${workspace_root}/notes"
+    printf -- '- Checklists: %s\n' "${workspace_root}/checklists"
+    printf '\n## Related Reports\n'
+    printf -- '- Workflow Profile Report: %s\n' "${profile_report}"
+    printf -- '- Workflow Runbook Report: %s\n' "${runbook_report}"
+    printf -- '- Workflow Bootstrap Report: %s\n' "${bootstrap_report}"
+} > "${summary_path}"
+
+{
+    printf 'LUMINA_WINDOWS_PROFILE_ID=%q\n' "${profile_id}"
+    printf 'LUMINA_WINDOWS_PROFILE_NAME=%q\n' "${profile_name}"
+    printf 'LUMINA_WINDOWS_VM_NAME=%q\n' "${vm_name}"
+    printf 'LUMINA_WINDOWS_SHARE_NAME=%q\n' "${share_name}"
+    printf 'LUMINA_WINDOWS_WORKSPACE_ROOT=%q\n' "${workspace_root}"
+    printf 'LUMINA_WINDOWS_INSTALLERS_DIR=%q\n' "${workspace_root}/installers"
+    printf 'LUMINA_WINDOWS_IMPORTS_DIR=%q\n' "${workspace_root}/imports"
+    printf 'LUMINA_WINDOWS_EXPORTS_DIR=%q\n' "${workspace_root}/exports"
+    printf 'LUMINA_WINDOWS_VM_SHARE_DIR=%q\n' "${workspace_root}/vm-share"
+    printf 'LUMINA_WINDOWS_NOTES_DIR=%q\n' "${workspace_root}/notes"
+    printf 'LUMINA_WINDOWS_CHECKLIST_DIR=%q\n' "${workspace_root}/checklists"
+} > "${env_path}"
+
+{
+    printf '# Lumina Windows Workflow Bootstrap\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Workspace Root: %s\n' "${workspace_root}"
+    printf -- '- Suggested VM Name: %s\n' "${vm_name}"
+    printf -- '- Suggested Share Name: %s\n' "${share_name}"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Recommended Route: %s\n' "${recommended_route:-unknown}"
+    printf '\n## Created Paths\n'
+    for dir_path in "${common_dirs[@]}" "${extra_dirs[@]}"; do
+        printf -- '- %s\n' "${dir_path}"
+    done
+    printf '\n## Workspace Files\n'
+    printf -- '- Summary: %s\n' "${summary_path}"
+    printf -- '- Checklist: %s\n' "${checklist_path}"
+    printf -- '- Environment File: %s\n' "${env_path}"
+    printf '\n## Operating Note\n'
+    printf -- '- This bootstrap does not create a Windows VM by itself. It prepares a clean Lumina-side workspace for the selected workflow.\n'
+} > "${bootstrap_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '   Lumina Windows Workflow Bootstrap'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Workspace root: %s\n' "${workspace_root}"
+printf 'Suggested VM name: %s\n' "${vm_name}"
+printf 'Report: %s\n' "${bootstrap_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${bootstrap_report}" >/dev/null 2>&1 || true
+fi

@@ -146,9 +146,14 @@ linux_first_validated_marker="${workflow_state_root}/linux-first-validated.marke
 
 experience_mode="$(awk -F': ' '/^- Experience Mode:/ {print $2; exit}' "${bridge_report}" 2>/dev/null || true)"
 compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+resource_summary="$(awk -F': ' '/^- Resource Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
 recommended_route="$(awk -F': ' '/^- Recommended Route:/ {print $2; exit}' "${profile_report}" 2>/dev/null || true)"
 current_phase="$(awk -F': ' '/^- Current Phase:/ {print $2; exit}' "${state_report}" 2>/dev/null || true)"
 workflow_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${state_report}" 2>/dev/null || true)"
+warm_start_status="$(awk -F': ' '/^- Warm Start Status:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
+pressure_state="$(awk -F': ' '/^- Pressure State:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
+workflow_guard="$(awk -F': ' '/^- Workflow Guard:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
 
 if [[ -z "${recommended_route}" ]]; then
     recommended_route="${basic_route}"
@@ -166,6 +171,7 @@ fi
 next_action="Review the workflow reports"
 next_command="xdg-open '${profile_report}'"
 operator_note="Stay Lumina-first and move only one layer at a time."
+runtime_guard_note=""
 
 if [[ ! -f "${bootstrap_marker}" ]]; then
     next_action="Prepare the Lumina-side workspace"
@@ -293,6 +299,12 @@ else
     operator_note="At this point the workflow has a stable Lumina-side home, a repeatable rhythm, and a tracked state."
 fi
 
+if [[ "${resource_class}" == "light" ]]; then
+    runtime_guard_note="Lightweight mode is active. Keep one Windows workflow warm at a time and prefer Linux-first launches whenever possible."
+elif [[ "${resource_class}" == "performance" ]]; then
+    runtime_guard_note="Performance mode is available, but Lumina should still avoid pointless background Windows load."
+fi
+
 {
     printf '# Lumina Windows Workflow Hub\n\n'
     printf -- '- Generated At: %s\n' "$(date -Is)"
@@ -301,13 +313,21 @@ fi
     printf -- '- Focus: %s\n' "${focus}"
     printf -- '- Experience Mode: %s\n' "${experience_mode:-unknown}"
     printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Resource Class: %s\n' "${resource_class:-unknown}"
+    printf -- '- Resource Summary: %s\n' "${resource_summary:-unknown}"
     printf -- '- Recommended Route: %s\n' "${recommended_route}"
     printf -- '- Current Phase: %s\n' "${current_phase:-unknown}"
     printf -- '- Workflow Status: %s\n' "${workflow_status:-unknown}"
+    printf -- '- Warm Start Status: %s\n' "${warm_start_status:-not-run}"
+    printf -- '- Pressure State: %s\n' "${pressure_state:-unknown}"
+    printf -- '- Workflow Guard: %s\n' "${workflow_guard:-unknown}"
     printf '\n## Next Action\n'
     printf -- '- %s\n' "${next_action}"
     printf -- '- Suggested Command: `%s`\n' "${next_command}"
     printf -- '- Operator Note: %s\n' "${operator_note}"
+    if [[ -n "${runtime_guard_note}" ]]; then
+        printf -- '- Runtime Guard Note: %s\n' "${runtime_guard_note}"
+    fi
     printf '\n## Marker Snapshot\n'
     printf -- '- Bootstrap Ready: %s\n' "$([[ -f "${bootstrap_marker}" ]] && printf yes || printf no)"
     printf -- '- Launch Recipe Ready: %s\n' "$([[ -f "${launch_recipe_marker}" ]] && printf yes || printf no)"

@@ -33,9 +33,12 @@ done
 state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
 documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
 mkdir -p "${state_root}"
+runtime_root="${state_root}/windows-runtime"
+mkdir -p "${runtime_root}"
 
 profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
 warm_start_report="${state_root}/windows-vm-warm-start.md"
+compat_report="${state_root}/windows-compat-report.md"
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="adobe-creator"
@@ -57,12 +60,24 @@ vm_create_env_path="${workspace_root}/vm-create.env"
 guest_agent_marker="${workflow_state_root}/guest-agent-pack-ready.marker"
 vm_created_marker="${workflow_state_root}/vm-created.marker"
 vm_configured_marker="${workflow_state_root}/vm-configured.marker"
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+if [[ -z "${resource_class}" ]]; then
+    resource_class="balanced"
+fi
+efficiency_mode="balanced"
+runtime_lock_path="${runtime_root}/active-workflow.env"
+single_workflow_guard="inactive"
+pressure_state="normal"
+locked_profile_id=""
+locked_vm_name=""
 
 if [[ -f "${vm_create_env_path}" ]]; then
     # shellcheck disable=SC1090
     source "${vm_create_env_path}"
     vm_name="${LUMINA_WINDOWS_VM_NAME:-${vm_name}}"
     share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${share_path}}"
+    efficiency_mode="${LUMINA_WINDOWS_VM_EFFICIENCY_MODE:-${efficiency_mode}}"
+    resource_class="${LUMINA_WINDOWS_VM_RESOURCE_CLASS:-${resource_class}}"
 fi
 
 connect_uri="qemu:///system"
@@ -86,7 +101,33 @@ pending_requests=0
 guest_ip="not-detected"
 warm_status="unchanged"
 
-if [[ ! -f "${vm_created_marker}" && "${initial_state}" == "not-found" ]]; then
+if [[ -f "${runtime_lock_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${runtime_lock_path}"
+    locked_profile_id="${LUMINA_WINDOWS_ACTIVE_PROFILE_ID:-}"
+    locked_vm_name="${LUMINA_WINDOWS_ACTIVE_VM_NAME:-}"
+fi
+
+if [[ "${resource_class}" == "light" ]]; then
+    single_workflow_guard="single-workflow"
+    pressure_state="guarded-lightweight"
+
+    if [[ -n "${locked_profile_id}" && "${locked_profile_id}" != "${profile_id}" && -n "${locked_vm_name}" ]]; then
+        locked_vm_state="$(virsh --connect "${connect_uri}" domstate "${locked_vm_name}" 2>/dev/null || echo "not-found")"
+        if [[ "${locked_vm_state}" == "running" || "${locked_vm_state}" == "paused" || "${locked_vm_state}" == "in shutdown" || "${locked_vm_state}" == "pmsuspended" ]]; then
+            warm_status="deferred-single-workflow"
+            final_state="${initial_state}"
+        else
+            rm -f "${runtime_lock_path}"
+            locked_profile_id=""
+            locked_vm_name=""
+        fi
+    fi
+fi
+
+if [[ "${warm_status}" == "deferred-single-workflow" ]]; then
+    :
+elif [[ ! -f "${vm_created_marker}" && "${initial_state}" == "not-found" ]]; then
     warm_status="missing-vm"
 else
     if [[ "${initial_state}" != "running" ]]; then
@@ -126,6 +167,17 @@ if [[ -d "${share_path}/launch-broker/requests" ]]; then
     pending_requests="$(find "${share_path}/launch-broker/requests" -maxdepth 1 -type f -name 'request-*.env' | wc -l | tr -d ' ')"
 fi
 
+if [[ "${final_state}" == "running" ]]; then
+    {
+        printf 'LUMINA_WINDOWS_ACTIVE_PROFILE_ID=%q\n' "${profile_id}"
+        printf 'LUMINA_WINDOWS_ACTIVE_PROFILE_NAME=%q\n' "${profile_name}"
+        printf 'LUMINA_WINDOWS_ACTIVE_VM_NAME=%q\n' "${vm_name}"
+        printf 'LUMINA_WINDOWS_ACTIVE_RESOURCE_CLASS=%q\n' "${resource_class}"
+        printf 'LUMINA_WINDOWS_ACTIVE_EFFICIENCY_MODE=%q\n' "${efficiency_mode}"
+        printf 'LUMINA_WINDOWS_ACTIVE_UPDATED_AT=%q\n' "$(date -Is)"
+    } > "${runtime_lock_path}"
+fi
+
 {
     printf '# Lumina Windows VM Warm Start\n\n'
     printf -- '- Generated At: %s\n' "$(date -Is)"
@@ -135,15 +187,25 @@ fi
     printf -- '- Initial State: %s\n' "${initial_state}"
     printf -- '- Final State: %s\n' "${final_state}"
     printf -- '- Warm Start Status: %s\n' "${warm_status}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Efficiency Mode: %s\n' "${efficiency_mode}"
+    printf -- '- Workflow Guard: %s\n' "${single_workflow_guard}"
+    printf -- '- Pressure State: %s\n' "${pressure_state}"
     printf -- '- Guest IP: %s\n' "${guest_ip}"
     printf -- '- Pending Launch Requests: %s\n' "${pending_requests}"
     printf -- '- Guest Agent Pack Ready: %s\n' "$([[ -f "${guest_agent_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Created Marker: %s\n' "$([[ -f "${vm_created_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Configured Marker: %s\n' "$([[ -f "${vm_configured_marker}" ]] && printf yes || printf no)"
+    printf -- '- Runtime Lock: %s\n' "${runtime_lock_path}"
     printf '\n## Operator Notes\n'
     printf -- '- Warm start keeps the Windows workspace ready without forcing a visible viewer.\n'
     printf -- '- If pending launch requests stay above zero, the guest-side launch agent is probably not installed yet.\n'
     printf -- '- The next hidden-launch milestone is the guest agent consuming the queue automatically.\n'
+    if [[ "${warm_status}" == "deferred-single-workflow" ]]; then
+        printf -- '- Lumina deferred this warm start to protect a weak machine from running two Windows workflows at the same time.\n'
+    elif [[ "${resource_class}" == "light" ]]; then
+        printf -- '- This machine is in lightweight mode, so Lumina prefers one focused Windows workflow at a time.\n'
+    fi
 } > "${warm_start_report}"
 
 printf '%s\n' '========================================'

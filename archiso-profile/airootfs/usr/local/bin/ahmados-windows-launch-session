@@ -67,21 +67,48 @@ session_outcome="staged"
 session_note="Lumina staged the request and captured the launch context."
 guest_launch_status="not-applicable"
 guest_launch_message="No guest-side launch status was needed yet."
+warm_start_status="not-run"
+resource_class="unknown"
+pressure_state="unknown"
+workflow_guard="unknown"
 
 case "${launch_method}" in
     vm-launch-request-staged)
         /usr/local/bin/ahmados-windows-vm-warm-start --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
-        /usr/local/bin/ahmados-windows-launch-results-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
-        pending_requests="$(awk -F': ' '/^- Pending Requests:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
-        guest_launch_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
-        guest_launch_message="$(awk -F': ' '/^- Message:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
-        session_phase="broker-warm-start-sync"
-        if [[ "${pending_requests:-0}" != "0" && ( -z "${guest_launch_status}" || "${guest_launch_status}" == "none" ) ]]; then
-            session_outcome="waiting-for-guest-agent"
-            session_note="Lumina staged the request and warmed the VM, but the guest-side agent still needs to consume the queue."
+        warm_start_status="$(awk -F': ' '/^- Warm Start Status:/ {print $2; exit}' "${warm_start_report}" 2>/dev/null || true)"
+        resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${warm_start_report}" 2>/dev/null || true)"
+        pressure_state="$(awk -F': ' '/^- Pressure State:/ {print $2; exit}' "${warm_start_report}" 2>/dev/null || true)"
+        workflow_guard="$(awk -F': ' '/^- Workflow Guard:/ {print $2; exit}' "${warm_start_report}" 2>/dev/null || true)"
+        session_phase="broker-warm-start"
+
+        if [[ "${warm_start_status}" == "deferred-single-workflow" ]]; then
+            session_outcome="deferred-for-smoothness"
+            guest_launch_status="deferred"
+            guest_launch_message="Lumina kept the current lightweight workflow stable and refused to warm a second Windows workspace."
+            session_note="Lumina staged the request but deferred warm start to protect a weak machine from running multiple Windows workflows at once."
+        elif [[ "${warm_start_status}" == "missing-vm" ]]; then
+            session_outcome="workspace-vm-missing"
+            guest_launch_status="missing-vm"
+            guest_launch_message="The Windows workspace VM does not exist yet."
+            session_note="Lumina staged the request, but the workflow still needs the Windows VM to be created first."
+        elif [[ "${warm_start_status}" == "start-failed" ]]; then
+            session_outcome="vm-start-failed"
+            guest_launch_status="start-failed"
+            guest_launch_message="Lumina could not start the Windows workspace VM."
+            session_note="Lumina staged the request, but the Windows workspace failed to start and needs operator attention."
         else
-            session_outcome="launch-feedback-available"
-            session_note="Lumina staged the request, warmed the VM, and synced guest-side launch feedback back into workflow state."
+            /usr/local/bin/ahmados-windows-launch-results-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+            pending_requests="$(awk -F': ' '/^- Pending Requests:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+            guest_launch_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+            guest_launch_message="$(awk -F': ' '/^- Message:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+            session_phase="broker-warm-start-sync"
+            if [[ "${pending_requests:-0}" != "0" && ( -z "${guest_launch_status}" || "${guest_launch_status}" == "none" ) ]]; then
+                session_outcome="waiting-for-guest-agent"
+                session_note="Lumina staged the request and warmed the VM, but the guest-side agent still needs to consume the queue."
+            else
+                session_outcome="launch-feedback-available"
+                session_note="Lumina staged the request, warmed the VM, and synced guest-side launch feedback back into workflow state."
+            fi
         fi
         ;;
     wine-first)
@@ -116,6 +143,10 @@ esac
     printf -- '- Session Phase: %s\n' "${session_phase}"
     printf -- '- Session Outcome: %s\n' "${session_outcome}"
     printf -- '- VM Name: %s\n' "${vm_name:-unknown}"
+    printf -- '- Warm Start Status: %s\n' "${warm_start_status}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Pressure State: %s\n' "${pressure_state}"
+    printf -- '- Workflow Guard: %s\n' "${workflow_guard}"
     printf -- '- Pending Requests: %s\n' "${pending_requests:-unknown}"
     printf -- '- Guest Launch Status: %s\n' "${guest_launch_status:-unknown}"
     printf -- '- Guest Launch Message: %s\n' "${guest_launch_message:-unknown}"
@@ -134,6 +165,9 @@ if command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}
             ;;
         launch-feedback-available)
             kdialog --title "Lumina Windows Apps" --passivepopup "Lumina staged the app and synced launch feedback from the Windows workspace." 3 2>/dev/null || true
+            ;;
+        deferred-for-smoothness)
+            kdialog --title "Lumina Windows Apps" --passivepopup "Lumina deferred this Windows app so a weak device stays smooth." 4 2>/dev/null || true
             ;;
         waiting-for-guest-agent)
             kdialog --title "Lumina Windows Apps" --passivepopup "Request staged. Finish the Windows guest agent setup once so future launches become hands-free." 4 2>/dev/null || true

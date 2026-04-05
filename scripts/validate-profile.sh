@@ -106,6 +106,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-vm-postcreate"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-install-starter"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-workflow-proof-pass"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-launch-broker"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
@@ -141,6 +142,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-vm-postcreate"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-install-starter"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-workflow-proof-pass"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-launch-broker"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
@@ -150,6 +152,7 @@ required_paths=(
     "${profile_path}/airootfs/home/live/.local/bin/ahmados-apply-session-defaults"
     "${profile_path}/airootfs/home/live/.local/bin/lumina-apply-session-defaults"
     "${profile_path}/airootfs/home/live/.config/plasmarc"
+    "${profile_path}/airootfs/home/live/.config/mimeapps.list"
     "${profile_path}/airootfs/usr/local/lib/ahmados-session-context.sh"
     "${profile_path}/airootfs/usr/share/lumina/windows-apps/catalog.tsv"
     "${profile_path}/airootfs/usr/share/lumina/windows-apps/profiles.tsv"
@@ -180,6 +183,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/share/applications/lumina-finalize-install.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-windows-apps.desktop"
+    "${profile_path}/airootfs/usr/share/applications/lumina-windows-launch-broker.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-windows-compat-check.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-windows-vm-lab.desktop"
     "${repo_root}/scripts/build-iso-arch.sh"
@@ -394,7 +398,9 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/ahmados-windows-app-install-starter \
         /usr/local/bin/lumina-windows-app-install-starter \
         /usr/local/bin/ahmados-windows-workflow-proof-pass \
-        /usr/local/bin/lumina-windows-workflow-proof-pass; do
+        /usr/local/bin/lumina-windows-workflow-proof-pass \
+        /usr/local/bin/ahmados-windows-launch-broker \
+        /usr/local/bin/lumina-windows-launch-broker; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
             add_error "customize_airootfs.sh does not enforce executable permissions for ${required_chmod_target}"
         fi
@@ -473,10 +479,32 @@ ${profile_path}/airootfs/usr/share/applications/ahmados-welcome.desktop|Exec=/us
 ${profile_path}/airootfs/usr/share/applications/lumina-finalize-install.desktop|Exec=/usr/local/bin/lumina-finalize-install
 ${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop|Exec=/usr/local/bin/lumina-installer
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-apps.desktop|Exec=/usr/local/bin/lumina-windows-workflow-hub
+${profile_path}/airootfs/usr/share/applications/lumina-windows-launch-broker.desktop|Exec=/usr/local/bin/lumina-windows-launch-broker --file %f
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-compat-check.desktop|Exec=/usr/local/bin/lumina-windows-compat-check
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-vm-lab.desktop|Exec=/usr/local/bin/lumina-windows-vm-lab
 ${profile_path}/airootfs/home/live/Desktop/Install Lumina-OS.desktop|Exec=/usr/local/bin/lumina-installer
 EOF
+
+mimeapps_list="${profile_path}/airootfs/home/live/.config/mimeapps.list"
+if [[ -f "${mimeapps_list}" ]]; then
+    for expected_mime_mapping in \
+        'application/vnd.microsoft.portable-executable=lumina-windows-launch-broker.desktop;' \
+        'application/x-ms-dos-executable=lumina-windows-launch-broker.desktop;' \
+        'application/x-msdownload=lumina-windows-launch-broker.desktop;' \
+        'application/x-msi=lumina-windows-launch-broker.desktop;'; do
+        if ! grep -Fq "${expected_mime_mapping}" "${mimeapps_list}"; then
+            add_error "mimeapps.list does not register the expected Windows launch broker mapping: ${expected_mime_mapping}"
+        fi
+    done
+fi
+
+json_validator_bin=""
+for python_candidate in python3 python; do
+    if command -v "${python_candidate}" >/dev/null 2>&1 && "${python_candidate}" -c "import json" >/dev/null 2>&1; then
+        json_validator_bin="${python_candidate}"
+        break
+    fi
+done
 
 for json_candidate in \
     "${profile_path}/airootfs/usr/share/ahmados/update-center/releases.json" \
@@ -484,12 +512,8 @@ for json_candidate in \
     "${profile_path}/airootfs/usr/share/plasma/look-and-feel/com.ahmados.desktop.classic/manifest.json" \
     "${profile_path}/airootfs/usr/share/plasma/look-and-feel/com.ahmados.desktop.minimal/manifest.json" \
     "${profile_path}/airootfs/usr/share/plasma/desktoptheme/LuminaGlass/metadata.json"; do
-    if command -v python3 >/dev/null 2>&1; then
-        if ! python3 -m json.tool "${json_candidate}" >/dev/null 2>&1; then
-            add_error "Invalid JSON in: ${json_candidate#${repo_root}/}"
-        fi
-    elif command -v python >/dev/null 2>&1; then
-        if ! python -m json.tool "${json_candidate}" >/dev/null 2>&1; then
+    if [[ -n "${json_validator_bin}" ]]; then
+        if ! "${json_validator_bin}" -m json.tool "${json_candidate}" >/dev/null 2>&1; then
             add_error "Invalid JSON in: ${json_candidate#${repo_root}/}"
         fi
     else

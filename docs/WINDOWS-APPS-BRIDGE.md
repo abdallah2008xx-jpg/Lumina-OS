@@ -63,6 +63,15 @@ The current phase adds:
 - a VM launcher layer that creates a real Windows VM with one command instead of requiring manual virt-install execution
 - a VM runner layer that manages daily VM operations (start, stop, connect, snapshot) from one entry point
 - an auto-configure layer that checks VM networking, shares, and snapshots and offers to mark the VM as configured
+- an EXE launch broker that captures `.exe` and `.msi` clicks, selects the right workflow, and stages the launch into the matching Lumina workspace
+- default MIME handling that routes Windows launch files into the Lumina broker instead of treating them like stray binaries
+- a staged launch-request layer that copies unsupported Windows launch files into the workflow share and opens the right VM path honestly
+
+## Current Limits
+
+- Lumina now owns the `.exe` and `.msi` entry point on the desktop side.
+- It can select a workflow, prepare a workspace, stage the launch request, and open the right VM tools.
+- A true guest-side launch agent that executes the staged request invisibly inside Windows is still a later layer.
 
 ## Future Target
 

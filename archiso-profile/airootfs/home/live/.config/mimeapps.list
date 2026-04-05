@@ -1,0 +1,11 @@
+[Default Applications]
+application/vnd.microsoft.portable-executable=lumina-windows-launch-broker.desktop;
+application/x-ms-dos-executable=lumina-windows-launch-broker.desktop;
+application/x-msdownload=lumina-windows-launch-broker.desktop;
+application/x-msi=lumina-windows-launch-broker.desktop;
+
+[Added Associations]
+application/vnd.microsoft.portable-executable=lumina-windows-launch-broker.desktop;
+application/x-ms-dos-executable=lumina-windows-launch-broker.desktop;
+application/x-msdownload=lumina-windows-launch-broker.desktop;
+application/x-msi=lumina-windows-launch-broker.desktop;

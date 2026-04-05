@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Lumina Windows Launch Broker
+Comment=Route Windows launch files through the Lumina Windows Apps workflow
+Exec=/usr/local/bin/lumina-windows-launch-broker --file %f
+Icon=application-x-ms-dos-executable
+Terminal=false
+NoDisplay=true
+Categories=Utility;System;
+MimeType=application/vnd.microsoft.portable-executable;application/x-ms-dos-executable;application/x-msdownload;application/x-msi;
+StartupNotify=true

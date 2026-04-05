@@ -94,6 +94,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-vm-postcreate",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-app-install-starter",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-workflow-proof-pass",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-launch-broker",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
@@ -129,6 +130,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-vm-postcreate",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-app-install-starter",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-workflow-proof-pass",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-launch-broker",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
@@ -138,6 +140,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\home\live\.local\bin\ahmados-apply-session-defaults",
     "archiso-profile\airootfs\home\live\.local\bin\lumina-apply-session-defaults",
     "archiso-profile\airootfs\home\live\.config\plasmarc",
+    "archiso-profile\airootfs\home\live\.config\mimeapps.list",
     "archiso-profile\airootfs\usr\local\lib\ahmados-session-context.sh",
     "archiso-profile\airootfs\usr\share\lumina\windows-apps\catalog.tsv",
     "archiso-profile\airootfs\usr\share\lumina\windows-apps\profiles.tsv",
@@ -168,6 +171,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\share\applications\lumina-finalize-install.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop",
+    "archiso-profile\airootfs\usr\share\applications\lumina-windows-launch-broker.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-vm-lab.desktop",
     "scripts\build-iso-arch.sh",
@@ -391,6 +395,7 @@ $expectedExecMappings = @{
     "archiso-profile\airootfs\usr\share\applications\lumina-finalize-install.desktop" = "Exec=/usr/local/bin/lumina-finalize-install"
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop" = "Exec=/usr/local/bin/lumina-installer"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop" = "Exec=/usr/local/bin/lumina-windows-workflow-hub"
+    "archiso-profile\airootfs\usr\share\applications\lumina-windows-launch-broker.desktop" = "Exec=/usr/local/bin/lumina-windows-launch-broker --file %f"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop" = "Exec=/usr/local/bin/lumina-windows-compat-check"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-vm-lab.desktop" = "Exec=/usr/local/bin/lumina-windows-vm-lab"
     "archiso-profile\airootfs\home\live\Desktop\Install Lumina-OS.desktop" = "Exec=/usr/local/bin/lumina-installer"
@@ -443,7 +448,9 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/ahmados-windows-app-install-starter",
         "/usr/local/bin/lumina-windows-app-install-starter",
         "/usr/local/bin/ahmados-windows-workflow-proof-pass",
-        "/usr/local/bin/lumina-windows-workflow-proof-pass"
+        "/usr/local/bin/lumina-windows-workflow-proof-pass",
+        "/usr/local/bin/ahmados-windows-launch-broker",
+        "/usr/local/bin/lumina-windows-launch-broker"
     )) {
         if ($customizeContent -notmatch [regex]::Escape("chmod 755 $requiredChmodTarget")) {
             Add-Error "customize_airootfs.sh does not enforce executable permissions for $requiredChmodTarget"
@@ -513,6 +520,21 @@ foreach ($desktopPath in $expectedExecMappings.Keys) {
     $expectedExec = $expectedExecMappings[$desktopPath]
     if ($desktopContent -notmatch [regex]::Escape($expectedExec)) {
         Add-Error "Launcher does not use the expected Lumina runtime alias: $desktopPath"
+    }
+}
+
+$mimeAppsPath = Join-Path $RepoRoot "archiso-profile\airootfs\home\live\.config\mimeapps.list"
+if (Test-Path $mimeAppsPath) {
+    $mimeAppsContent = Get-Content -Raw $mimeAppsPath
+    foreach ($mimeMapping in @(
+        "application/vnd.microsoft.portable-executable=lumina-windows-launch-broker.desktop;",
+        "application/x-ms-dos-executable=lumina-windows-launch-broker.desktop;",
+        "application/x-msdownload=lumina-windows-launch-broker.desktop;",
+        "application/x-msi=lumina-windows-launch-broker.desktop;"
+    )) {
+        if ($mimeAppsContent -notmatch [regex]::Escape($mimeMapping)) {
+            Add-Error "mimeapps.list does not register the expected Windows launch broker mapping: $mimeMapping"
+        }
     }
 }
 

@@ -1,0 +1,364 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+target_file=""
+open_report=0
+run_next_action=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --file)
+            target_file="${2:-}"
+            shift 2
+            ;;
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --open-report)
+            open_report=1
+            shift
+            ;;
+        --no-open-report)
+            open_report=0
+            shift
+            ;;
+        --no-run-next-action)
+            run_next_action=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+profile_report="${state_root}/windows-profile-assistant.md"
+broker_report="${state_root}/windows-launch-broker.md"
+
+has_gui=0
+if command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    has_gui=1
+fi
+
+pick_target_file() {
+    if [[ ${has_gui} -eq 1 ]]; then
+        kdialog --title "Lumina Windows Launch Broker" \
+            --getopenfilename "${HOME}" "*.exe *.msi|Windows launch files" 2>/dev/null || true
+        return
+    fi
+    return 1
+}
+
+choose_profile_with_kdialog() {
+    local entries=()
+
+    while IFS='|' read -r profile_id profile_name focus _; do
+        [[ -z "${profile_id}" || "${profile_id}" == \#* ]] && continue
+        entries+=("${profile_id}" "${profile_name} - ${focus}")
+    done < "${profiles_path}"
+
+    if [[ ${#entries[@]} -eq 0 ]]; then
+        return 1
+    fi
+
+    kdialog --title "Lumina Windows Launch Broker" \
+        --menu "Choose the workflow Lumina should use for this Windows file." \
+        "${entries[@]}" 2>/dev/null || true
+}
+
+guess_profile_id_from_filename() {
+    local lower_name="$1"
+
+    case "${lower_name}" in
+        *valorant*|*riot*|*vanguard*|*easyanticheat*|*eac*)
+            printf '%s\n' "restricted-gaming"
+            ;;
+        *photoshop*|*illustrator*|*premiere*|*after*effects*|*creative*cloud*|*adobe*)
+            printf '%s\n' "adobe-creator"
+            ;;
+        *fl*studio*|*ableton*|*cubase*|*reaper*|*studio*one*|*kontakt*|*plugin*)
+            printf '%s\n' "studio-audio"
+            ;;
+        *epic*|*battle.net*|*battlenet*|*steam*|*gog*|*ubisoft*|*ea*app*|*launcher*)
+            printf '%s\n' "gaming-launchers"
+            ;;
+        *word*|*excel*|*powerpoint*|*office*|*outlook*|*onenote*|*notion*|*teams*)
+            printf '%s\n' "office-productivity"
+            ;;
+        *)
+            printf '%s\n' ""
+            ;;
+    esac
+}
+
+if [[ -z "${target_file}" ]]; then
+    target_file="$(pick_target_file || true)"
+fi
+
+if [[ -z "${target_file}" ]]; then
+    printf 'No Windows launch file was selected.\n' >&2
+    exit 1
+fi
+
+if [[ ! -f "${target_file}" ]]; then
+    printf 'Launch target not found: %s\n' "${target_file}" >&2
+    exit 1
+fi
+
+target_file="$(realpath "${target_file}")"
+target_basename="$(basename "${target_file}")"
+target_lower_basename="$(printf '%s' "${target_basename}" | tr '[:upper:]' '[:lower:]')"
+target_extension="${target_lower_basename##*.}"
+target_kind="windows-executable"
+if [[ "${target_extension}" == "msi" ]]; then
+    target_kind="windows-installer"
+fi
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="$(guess_profile_id_from_filename "${target_lower_basename}")"
+fi
+
+if [[ -z "${selected_profile_id}" && ${has_gui} -eq 1 ]]; then
+    selected_profile_id="$(choose_profile_with_kdialog)"
+fi
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="office-productivity"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-onboarding --profile-id "${profile_id}" --skip-compat --auto >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-workflow-hub --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+workspace_env_path="${workspace_root}/workspace.env"
+vm_create_env_path="${workspace_root}/vm-create.env"
+mkdir -p "${workflow_state_root}"
+
+share_path="${workspace_root}/vm-share"
+share_name="${profile_id//-/_}_share"
+vm_name="Lumina-${profile_id//-/_}-vm"
+
+if [[ -f "${workspace_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${workspace_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_DIR:-${share_path}}"
+fi
+
+if [[ -f "${vm_create_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${vm_create_env_path}"
+    share_name="${LUMINA_WINDOWS_VM_SHARE_NAME:-${share_name}}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${share_path}}"
+    vm_name="${LUMINA_WINDOWS_VM_NAME:-${vm_name}}"
+fi
+
+vm_created_marker="${workflow_state_root}/vm-created.marker"
+vm_configured_marker="${workflow_state_root}/vm-configured.marker"
+profile_recommended_route="$(awk -F': ' '/^- Recommended Route:/ {print $2; exit}' "${profile_report}" 2>/dev/null || true)"
+
+route_mode="linux-first"
+route_note="Lumina will stay Linux-first unless the workflow needs a Windows workspace."
+if [[ "${profile_recommended_route}" == *"Out of scope"* ]]; then
+    route_mode="out-of-scope"
+    route_note="This workflow stays documented only. Lumina will not promise stealth or anti-cheat bypass."
+elif [[ "${profile_recommended_route}" == *"GPU focus"* ]]; then
+    route_mode="studio-vm"
+    route_note="This workflow prefers a stronger Windows workspace with higher-performance VM settings."
+elif [[ "${profile_recommended_route}" == *"Windows VM"* ]]; then
+    route_mode="windows-vm"
+    route_note="This workflow prefers a background Windows workspace."
+fi
+
+launch_requests_dir="${workspace_root}/launch-requests"
+share_launch_root="${share_path}/launch-broker"
+mkdir -p "${launch_requests_dir}" "${share_launch_root}"
+
+request_id="$(date +%Y%m%d-%H%M%S)-$$"
+request_markdown_path="${launch_requests_dir}/launch-${request_id}.md"
+request_env_path="${launch_requests_dir}/launch-${request_id}.env"
+history_log_path="${workflow_state_root}/launch-history.log"
+
+staged_target_path=""
+stage_note="No share staging was needed."
+
+stage_target_into_share() {
+    local source_path="$1"
+    local destination_path="$2"
+
+    mkdir -p "$(dirname "${destination_path}")"
+    cp -f "${source_path}" "${destination_path}"
+}
+
+if [[ "${target_file}" == "${share_path}"* ]]; then
+    staged_target_path="${target_file}"
+    stage_note="The target already lives inside the workflow share."
+else
+    staged_target_path="${share_launch_root}/${request_id}-${target_basename}"
+    stage_target_into_share "${target_file}" "${staged_target_path}"
+    stage_note="Lumina staged the target into the workflow share so the Windows side can see it later."
+fi
+
+launch_method="documentation-only"
+next_action="Open the workflow hub to continue."
+next_command="/usr/local/bin/lumina-windows-workflow-hub --profile-id ${profile_id}"
+
+if [[ "${route_mode}" == "linux-first" ]] && ! command -v wine >/dev/null 2>&1; then
+    if [[ "${vm_route}" != *"Out of scope"* ]]; then
+        route_mode="windows-vm-fallback"
+        route_note="Wine is not available, so Lumina will fall back to the Windows workspace path for this file."
+    fi
+fi
+
+if [[ "${route_mode}" == "out-of-scope" ]]; then
+    launch_method="documentation-only"
+    next_action="This file maps to an out-of-scope workflow. Lumina will open the workflow hub instead of pretending the path is solved."
+    next_command="/usr/local/bin/lumina-windows-workflow-hub --profile-id ${profile_id}"
+elif [[ "${route_mode}" == "linux-first" ]] && command -v wine >/dev/null 2>&1; then
+    launch_method="wine-first"
+    if [[ "${target_kind}" == "windows-installer" ]]; then
+        next_action="Lumina is trying the Linux-first path with Wine MSI handling."
+        next_command="wine msiexec /i \"${target_file}\""
+        nohup wine msiexec /i "${target_file}" >/dev/null 2>&1 &
+    else
+        next_action="Lumina is trying the Linux-first path with Wine."
+        next_command="wine start /unix \"${target_file}\""
+        nohup wine start /unix "${target_file}" >/dev/null 2>&1 &
+    fi
+elif [[ ! -f "${vm_created_marker}" ]]; then
+    launch_method="vm-create-needed"
+    next_action="Lumina needs to create the Windows workspace VM before this file can move through the hidden Windows path."
+    next_command="/usr/local/bin/lumina-windows-vm-launcher --profile-id ${profile_id}"
+elif [[ ! -f "${vm_configured_marker}" ]]; then
+    launch_method="vm-configure-needed"
+    next_action="Lumina found the VM, but it still needs the guided post-create configuration pass."
+    next_command="/usr/local/bin/lumina-windows-auto-configure --profile-id ${profile_id}"
+else
+    launch_method="vm-launch-request-staged"
+    next_action="Lumina staged the launch request and will now open the Windows workspace."
+    next_command="/usr/local/bin/lumina-windows-vm-runner --profile-id ${profile_id}"
+fi
+
+printf '%s %s %s -> %s [%s]\n' \
+    "$(date -Is)" "${profile_id}" "${target_file}" "${staged_target_path}" "${launch_method}" >> "${history_log_path}"
+
+{
+    printf 'LUMINA_WINDOWS_PROFILE_ID=%q\n' "${profile_id}"
+    printf 'LUMINA_WINDOWS_PROFILE_NAME=%q\n' "${profile_name}"
+    printf 'LUMINA_WINDOWS_TARGET_FILE=%q\n' "${target_file}"
+    printf 'LUMINA_WINDOWS_TARGET_BASENAME=%q\n' "${target_basename}"
+    printf 'LUMINA_WINDOWS_TARGET_KIND=%q\n' "${target_kind}"
+    printf 'LUMINA_WINDOWS_STAGED_TARGET=%q\n' "${staged_target_path}"
+    printf 'LUMINA_WINDOWS_SHARE_NAME=%q\n' "${share_name}"
+    printf 'LUMINA_WINDOWS_SHARE_PATH=%q\n' "${share_path}"
+    printf 'LUMINA_WINDOWS_VM_NAME=%q\n' "${vm_name}"
+    printf 'LUMINA_WINDOWS_LAUNCH_METHOD=%q\n' "${launch_method}"
+    printf 'LUMINA_WINDOWS_REQUEST_ID=%q\n' "${request_id}"
+} > "${request_env_path}"
+
+{
+    printf '# Lumina Windows Launch Request\n\n'
+    printf -- '- Request Id: %s\n' "${request_id}"
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Target File: %s\n' "${target_file}"
+    printf -- '- Target Kind: %s\n' "${target_kind}"
+    printf -- '- Staged Target: %s\n' "${staged_target_path}"
+    printf -- '- Share Name: %s\n' "${share_name}"
+    printf -- '- Share Path: %s\n' "${share_path}"
+    printf -- '- VM Name: %s\n' "${vm_name}"
+    printf -- '- Launch Method: %s\n' "${launch_method}"
+    printf '\n## Route Note\n'
+    printf -- '- %s\n' "${route_note}"
+    printf -- '- %s\n' "${stage_note}"
+    printf '\n## Next Step\n'
+    printf -- '- %s\n' "${next_action}"
+    printf -- '- Suggested Command: `%s`\n' "${next_command}"
+    printf '\n## Current Reality\n'
+    printf -- '- Lumina can stage the request, choose the workflow, and open the right Windows workspace tools.\n'
+    printf -- '- A true hidden guest-side launch agent is still a later layer, so this request is staged honestly instead of pretending the app already launched invisibly.\n'
+} > "${request_markdown_path}"
+
+{
+    printf '# Lumina Windows Launch Broker\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Target File: %s\n' "${target_file}"
+    printf -- '- Target Kind: %s\n' "${target_kind}"
+    printf -- '- Route Mode: %s\n' "${route_mode}"
+    printf -- '- Launch Method: %s\n' "${launch_method}"
+    printf -- '- VM Name: %s\n' "${vm_name}"
+    printf -- '- Request File: %s\n' "${request_markdown_path}"
+    printf -- '- Request Env: %s\n' "${request_env_path}"
+    printf -- '- Share Path: %s\n' "${share_path}"
+    printf -- '- Staged Target: %s\n' "${staged_target_path}"
+    printf '\n## Next Step\n'
+    printf -- '- %s\n' "${next_action}"
+    printf -- '- Suggested Command: `%s`\n' "${next_command}"
+} > "${broker_report}"
+
+if [[ ${has_gui} -eq 1 ]]; then
+    case "${launch_method}" in
+        wine-first)
+            kdialog --title "Lumina Windows Launch Broker" \
+                --passivepopup "Lumina is trying a Linux-first launch for ${target_basename}." 3 2>/dev/null || true
+            ;;
+        vm-launch-request-staged)
+            kdialog --title "Lumina Windows Launch Broker" \
+                --passivepopup "Launch request staged. Lumina is opening the Windows workspace." 3 2>/dev/null || true
+            ;;
+        vm-create-needed|vm-configure-needed)
+            kdialog --title "Lumina Windows Launch Broker" \
+                --passivepopup "Lumina is preparing the Windows workspace path for ${target_basename}." 3 2>/dev/null || true
+            ;;
+    esac
+fi
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${broker_report}" >/dev/null 2>&1 || true
+fi
+
+if [[ ${run_next_action} -eq 1 ]]; then
+    case "${launch_method}" in
+        documentation-only)
+            exec /usr/local/bin/ahmados-windows-workflow-hub --profile-id "${profile_id}"
+            ;;
+        vm-create-needed)
+            exec /usr/local/bin/ahmados-windows-vm-launcher --profile-id "${profile_id}"
+            ;;
+        vm-configure-needed)
+            exec /usr/local/bin/ahmados-windows-auto-configure --profile-id "${profile_id}"
+            ;;
+        vm-launch-request-staged)
+            exec /usr/local/bin/ahmados-windows-vm-runner --profile-id "${profile_id}"
+            ;;
+    esac
+fi
+
+printf '%s\n' '========================================'
+printf '%s\n' '    Lumina Windows Launch Broker'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Target: %s\n' "${target_file}"
+printf 'Method: %s\n' "${launch_method}"
+printf 'Report: %s\n' "${broker_report}"
+printf '\n'

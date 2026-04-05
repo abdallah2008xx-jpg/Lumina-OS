@@ -66,12 +66,15 @@ The current phase adds:
 - an EXE launch broker that captures `.exe` and `.msi` clicks, selects the right workflow, and stages the launch into the matching Lumina workspace
 - default MIME handling that routes Windows launch files into the Lumina broker instead of treating them like stray binaries
 - a staged launch-request layer that copies unsupported Windows launch files into the workflow share and opens the right VM path honestly
+- a guest-agent pack that generates the Windows-side launch consumer and startup helper for the selected workflow
+- a warm-start VM layer that starts the Windows workspace quietly and reports whether pending launch requests are ready to be consumed
 
 ## Current Limits
 
 - Lumina now owns the `.exe` and `.msi` entry point on the desktop side.
 - It can select a workflow, prepare a workspace, stage the launch request, and open the right VM tools.
-- A true guest-side launch agent that executes the staged request invisibly inside Windows is still a later layer.
+- It can also generate the guest-side launch agent pack and a quiet warm-start path for the VM.
+- The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 
 ## Future Target
 

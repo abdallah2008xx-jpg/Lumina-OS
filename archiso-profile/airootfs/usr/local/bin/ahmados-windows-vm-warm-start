@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+timeout_seconds=45
+open_report=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --timeout)
+            timeout_seconds="${2:-45}"
+            shift 2
+            ;;
+        --open-report)
+            open_report=1
+            shift
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+warm_start_report="${state_root}/windows-vm-warm-start.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+vm_name="Lumina-${profile_id//-/_}-vm"
+share_path="${workspace_root}/vm-share"
+vm_create_env_path="${workspace_root}/vm-create.env"
+guest_agent_marker="${workflow_state_root}/guest-agent-pack-ready.marker"
+vm_created_marker="${workflow_state_root}/vm-created.marker"
+vm_configured_marker="${workflow_state_root}/vm-configured.marker"
+
+if [[ -f "${vm_create_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${vm_create_env_path}"
+    vm_name="${LUMINA_WINDOWS_VM_NAME:-${vm_name}}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${share_path}}"
+fi
+
+connect_uri="qemu:///system"
+
+ensure_libvirtd() {
+    if ! virsh --connect "${connect_uri}" list >/dev/null 2>&1; then
+        sudo systemctl start libvirtd.service 2>/dev/null || true
+        sleep 2
+    fi
+}
+
+get_vm_state() {
+    virsh --connect "${connect_uri}" domstate "${vm_name}" 2>/dev/null || echo "not-found"
+}
+
+ensure_libvirtd
+
+initial_state="$(get_vm_state)"
+final_state="${initial_state}"
+pending_requests=0
+guest_ip="not-detected"
+warm_status="unchanged"
+
+if [[ ! -f "${vm_created_marker}" && "${initial_state}" == "not-found" ]]; then
+    warm_status="missing-vm"
+else
+    if [[ "${initial_state}" != "running" ]]; then
+        if virsh --connect "${connect_uri}" start "${vm_name}" >/dev/null 2>&1; then
+            warm_status="started"
+        else
+            warm_status="start-failed"
+        fi
+    else
+        warm_status="already-running"
+    fi
+
+    if [[ "${warm_status}" == "started" || "${warm_status}" == "already-running" ]]; then
+        start_epoch="$(date +%s)"
+        while true; do
+            final_state="$(get_vm_state)"
+            if [[ "${final_state}" == "running" ]]; then
+                break
+            fi
+
+            now_epoch="$(date +%s)"
+            if (( now_epoch - start_epoch >= timeout_seconds )); then
+                break
+            fi
+
+            sleep 2
+        done
+
+        ip_output="$(virsh --connect "${connect_uri}" domifaddr "${vm_name}" --source agent 2>/dev/null || virsh --connect "${connect_uri}" domifaddr "${vm_name}" 2>/dev/null || true)"
+        if [[ -n "${ip_output}" ]] && echo "${ip_output}" | grep -qE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
+            guest_ip="$(echo "${ip_output}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n1)"
+        fi
+    fi
+fi
+
+if [[ -d "${share_path}/launch-broker/requests" ]]; then
+    pending_requests="$(find "${share_path}/launch-broker/requests" -maxdepth 1 -type f -name 'request-*.env' | wc -l | tr -d ' ')"
+fi
+
+{
+    printf '# Lumina Windows VM Warm Start\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- VM Name: %s\n' "${vm_name}"
+    printf -- '- Initial State: %s\n' "${initial_state}"
+    printf -- '- Final State: %s\n' "${final_state}"
+    printf -- '- Warm Start Status: %s\n' "${warm_status}"
+    printf -- '- Guest IP: %s\n' "${guest_ip}"
+    printf -- '- Pending Launch Requests: %s\n' "${pending_requests}"
+    printf -- '- Guest Agent Pack Ready: %s\n' "$([[ -f "${guest_agent_marker}" ]] && printf yes || printf no)"
+    printf -- '- VM Created Marker: %s\n' "$([[ -f "${vm_created_marker}" ]] && printf yes || printf no)"
+    printf -- '- VM Configured Marker: %s\n' "$([[ -f "${vm_configured_marker}" ]] && printf yes || printf no)"
+    printf '\n## Operator Notes\n'
+    printf -- '- Warm start keeps the Windows workspace ready without forcing a visible viewer.\n'
+    printf -- '- If pending launch requests stay above zero, the guest-side launch agent is probably not installed yet.\n'
+    printf -- '- The next hidden-launch milestone is the guest agent consuming the queue automatically.\n'
+} > "${warm_start_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '     Lumina Windows VM Warm Start'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'VM: %s\n' "${vm_name}"
+printf 'Status: %s\n' "${warm_status}"
+printf 'Report: %s\n' "${warm_start_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${warm_start_report}" >/dev/null 2>&1 || true
+fi

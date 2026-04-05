@@ -65,6 +65,10 @@ chmod 755 /usr/local/bin/ahmados-windows-auto-configure
 chmod 755 /usr/local/bin/lumina-windows-auto-configure
 chmod 755 /usr/local/bin/ahmados-windows-launch-broker
 chmod 755 /usr/local/bin/lumina-windows-launch-broker
+chmod 755 /usr/local/bin/ahmados-windows-guest-agent-pack
+chmod 755 /usr/local/bin/lumina-windows-guest-agent-pack
+chmod 755 /usr/local/bin/ahmados-windows-vm-warm-start
+chmod 755 /usr/local/bin/lumina-windows-vm-warm-start
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

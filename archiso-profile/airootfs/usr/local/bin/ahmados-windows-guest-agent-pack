@@ -1,0 +1,301 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+guest_agent_report="${state_root}/windows-guest-agent-pack.md"
+vm_postcreate_report="${state_root}/windows-vm-postcreate.md"
+app_install_report="${state_root}/windows-app-install-starter.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-vm-postcreate --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+guest_agent_dir="${workspace_root}/guest-agent"
+share_path="${workspace_root}/vm-share"
+share_name="${profile_id//-/_}_share"
+vm_name="Lumina-${profile_id//-/_}-vm"
+workspace_env_path="${workspace_root}/workspace.env"
+vm_create_env_path="${workspace_root}/vm-create.env"
+
+mkdir -p "${workflow_state_root}" "${guest_agent_dir}" "${share_path}/launch-broker"
+
+if [[ -f "${workspace_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${workspace_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_DIR:-${share_path}}"
+fi
+
+if [[ -f "${vm_create_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${vm_create_env_path}"
+    share_name="${LUMINA_WINDOWS_VM_SHARE_NAME:-${share_name}}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${share_path}}"
+    vm_name="${LUMINA_WINDOWS_VM_NAME:-${vm_name}}"
+fi
+
+requests_dir="${share_path}/launch-broker/requests"
+results_dir="${share_path}/launch-broker/results"
+archive_dir="${share_path}/launch-broker/archive"
+mkdir -p "${requests_dir}" "${results_dir}" "${archive_dir}"
+
+guest_agent_marker="${workflow_state_root}/guest-agent-pack-ready.marker"
+guest_agent_config_path="${guest_agent_dir}/launch-agent.config.ps1"
+guest_agent_script_path="${guest_agent_dir}/LuminaLaunchAgent.ps1"
+guest_agent_install_path="${guest_agent_dir}/Install-LuminaLaunchAgent.ps1"
+guest_agent_cmd_path="${guest_agent_dir}/Run-LuminaLaunchAgent.cmd"
+guest_agent_notes_path="${guest_agent_dir}/launch-agent-contract.md"
+guest_agent_env_path="${guest_agent_dir}/launch-agent.env"
+
+cat > "${guest_agent_config_path}" <<EOF
+\$LuminaShareName = '${share_name}'
+\$LuminaShareRoot = '${share_path}'
+\$LuminaRequestsDir = '${requests_dir}'
+\$LuminaResultsDir = '${results_dir}'
+\$LuminaArchiveDir = '${archive_dir}'
+\$LuminaVmName = '${vm_name}'
+\$LuminaProfileId = '${profile_id}'
+EOF
+
+cat > "${guest_agent_script_path}" <<'EOF'
+param(
+    [switch]$Once
+)
+
+$ErrorActionPreference = 'Stop'
+$ConfigPath = Join-Path $PSScriptRoot 'launch-agent.config.ps1'
+if (-not (Test-Path $ConfigPath)) {
+    throw "Missing launch-agent.config.ps1"
+}
+
+. $ConfigPath
+
+function Import-LuminaEnv {
+    param([string]$Path)
+
+    $map = @{}
+    Get-Content -Path $Path | ForEach-Object {
+        if ($_ -match '^\s*#' -or $_ -notmatch '=') {
+            return
+        }
+        $parts = $_ -split '=', 2
+        $key = $parts[0].Trim()
+        $value = $parts[1].Trim()
+        if ($value.StartsWith("'") -and $value.EndsWith("'")) {
+            $value = $value.Substring(1, $value.Length - 2)
+        }
+        $map[$key] = $value
+    }
+    return $map
+}
+
+function Write-LuminaResult {
+    param(
+        [string]$RequestId,
+        [string]$Status,
+        [string]$Message
+    )
+
+    $ResultPath = Join-Path $LuminaResultsDir ("result-" + $RequestId + ".md")
+    @"
+# Lumina Windows Launch Result
+
+- Request Id: $RequestId
+- Status: $Status
+- Generated At: $(Get-Date -Format o)
+- Message: $Message
+"@ | Set-Content -Path $ResultPath -Encoding UTF8
+}
+
+function Process-LuminaRequest {
+    param([string]$RequestPath)
+
+    $Request = Import-LuminaEnv -Path $RequestPath
+    $RequestId = $Request['LUMINA_WINDOWS_REQUEST_ID']
+    $TargetKind = $Request['LUMINA_WINDOWS_TARGET_KIND']
+    $TargetPath = $Request['LUMINA_WINDOWS_STAGED_TARGET']
+
+    if (-not $RequestId) {
+        return
+    }
+
+    if (-not (Test-Path $TargetPath)) {
+        Write-LuminaResult -RequestId $RequestId -Status 'missing-target' -Message "Target not found: $TargetPath"
+        Move-Item -LiteralPath $RequestPath -Destination (Join-Path $LuminaArchiveDir ([IO.Path]::GetFileName($RequestPath))) -Force
+        return
+    }
+
+    if ($TargetKind -eq 'windows-installer') {
+        Start-Process -FilePath 'msiexec.exe' -ArgumentList '/i', $TargetPath
+        Write-LuminaResult -RequestId $RequestId -Status 'started-installer' -Message "Started MSI installer: $TargetPath"
+    } else {
+        Start-Process -FilePath $TargetPath
+        Write-LuminaResult -RequestId $RequestId -Status 'started-executable' -Message "Started executable: $TargetPath"
+    }
+
+    Move-Item -LiteralPath $RequestPath -Destination (Join-Path $LuminaArchiveDir ([IO.Path]::GetFileName($RequestPath))) -Force
+}
+
+if (-not (Test-Path $LuminaRequestsDir)) {
+    New-Item -ItemType Directory -Path $LuminaRequestsDir -Force | Out-Null
+}
+if (-not (Test-Path $LuminaResultsDir)) {
+    New-Item -ItemType Directory -Path $LuminaResultsDir -Force | Out-Null
+}
+if (-not (Test-Path $LuminaArchiveDir)) {
+    New-Item -ItemType Directory -Path $LuminaArchiveDir -Force | Out-Null
+}
+
+do {
+    Get-ChildItem -Path $LuminaRequestsDir -Filter 'request-*.env' -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime |
+        ForEach-Object { Process-LuminaRequest -RequestPath $_.FullName }
+
+    if (-not $Once) {
+        Start-Sleep -Seconds 3
+    }
+} while (-not $Once)
+EOF
+
+cat > "${guest_agent_install_path}" <<'EOF'
+$ErrorActionPreference = 'Stop'
+
+$AgentCmd = Join-Path $PSScriptRoot 'Run-LuminaLaunchAgent.cmd'
+$StartupDir = [Environment]::GetFolderPath('Startup')
+$ShortcutPath = Join-Path $StartupDir 'LuminaLaunchAgent.cmd'
+
+Copy-Item -LiteralPath $AgentCmd -Destination $ShortcutPath -Force
+Write-Host "Lumina Launch Agent registered in Startup:"
+Write-Host " - $ShortcutPath"
+EOF
+
+cat > "${guest_agent_cmd_path}" <<'EOF'
+@echo off
+powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0LuminaLaunchAgent.ps1"
+EOF
+
+cat > "${guest_agent_notes_path}" <<EOF
+# ${profile_name} Guest Agent Contract
+
+- Generated At: $(date -Is)
+- Profile Id: ${profile_id}
+- VM Name: ${vm_name}
+- Share Name: ${share_name}
+- Share Path: ${share_path}
+
+## What This Pack Does
+
+- gives the Windows side a polling launch agent
+- watches \`${requests_dir}\` for staged launch requests
+- writes launch results into \`${results_dir}\`
+- archives processed requests into \`${archive_dir}\`
+
+## Windows-Side Files
+
+- Agent Script: \`${guest_agent_script_path}\`
+- Install Helper: \`${guest_agent_install_path}\`
+- Startup Wrapper: \`${guest_agent_cmd_path}\`
+- PowerShell Config: \`${guest_agent_config_path}\`
+
+## Windows-Side Setup
+
+1. Make the workflow share visible inside Windows.
+2. Copy or open this folder from inside the guest.
+3. Run \`Install-LuminaLaunchAgent.ps1\` once as the target Windows user.
+4. Log out and back in, or start \`Run-LuminaLaunchAgent.cmd\` manually.
+5. Use Lumina from the Linux side to stage launch requests.
+
+## Current Limit
+
+- The agent is still a generated workspace-side contract, not a baked Windows service inside the ISO.
+- It gives Lumina a clean guest-side launch path, but the guest still needs this pack installed once.
+EOF
+
+{
+    printf 'LUMINA_WINDOWS_PROFILE_ID=%q\n' "${profile_id}"
+    printf 'LUMINA_WINDOWS_VM_NAME=%q\n' "${vm_name}"
+    printf 'LUMINA_WINDOWS_SHARE_NAME=%q\n' "${share_name}"
+    printf 'LUMINA_WINDOWS_SHARE_PATH=%q\n' "${share_path}"
+    printf 'LUMINA_WINDOWS_REQUESTS_DIR=%q\n' "${requests_dir}"
+    printf 'LUMINA_WINDOWS_RESULTS_DIR=%q\n' "${results_dir}"
+    printf 'LUMINA_WINDOWS_ARCHIVE_DIR=%q\n' "${archive_dir}"
+    printf 'LUMINA_WINDOWS_GUEST_AGENT_DIR=%q\n' "${guest_agent_dir}"
+} > "${guest_agent_env_path}"
+
+touch "${guest_agent_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows Guest Agent Pack\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- VM Name: %s\n' "${vm_name}"
+    printf -- '- Share Name: %s\n' "${share_name}"
+    printf -- '- Share Path: %s\n' "${share_path}"
+    printf -- '- Requests Dir: %s\n' "${requests_dir}"
+    printf -- '- Results Dir: %s\n' "${results_dir}"
+    printf -- '- Guest Agent Marker: %s\n' "${guest_agent_marker}"
+    printf '\n## Generated Files\n'
+    printf -- '- Config: %s\n' "${guest_agent_config_path}"
+    printf -- '- Agent Script: %s\n' "${guest_agent_script_path}"
+    printf -- '- Install Helper: %s\n' "${guest_agent_install_path}"
+    printf -- '- Startup Wrapper: %s\n' "${guest_agent_cmd_path}"
+    printf -- '- Contract Notes: %s\n' "${guest_agent_notes_path}"
+    printf -- '- Env: %s\n' "${guest_agent_env_path}"
+    printf '\n## Related Reports\n'
+    printf -- '- VM Post-Create Report: %s\n' "${vm_postcreate_report}"
+    printf -- '- App Install Starter Report: %s\n' "${app_install_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${guest_agent_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '    Lumina Windows Guest Agent Pack'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Guest agent dir: %s\n' "${guest_agent_dir}"
+printf 'Report: %s\n' "${guest_agent_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${guest_agent_report}" >/dev/null 2>&1 || true
+fi

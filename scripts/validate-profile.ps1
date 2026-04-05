@@ -95,6 +95,8 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-app-install-starter",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-workflow-proof-pass",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-launch-broker",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-guest-agent-pack",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-vm-warm-start",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
@@ -131,6 +133,8 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-app-install-starter",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-workflow-proof-pass",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-launch-broker",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-guest-agent-pack",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-vm-warm-start",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
@@ -450,7 +454,11 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/ahmados-windows-workflow-proof-pass",
         "/usr/local/bin/lumina-windows-workflow-proof-pass",
         "/usr/local/bin/ahmados-windows-launch-broker",
-        "/usr/local/bin/lumina-windows-launch-broker"
+        "/usr/local/bin/lumina-windows-launch-broker",
+        "/usr/local/bin/ahmados-windows-guest-agent-pack",
+        "/usr/local/bin/lumina-windows-guest-agent-pack",
+        "/usr/local/bin/ahmados-windows-vm-warm-start",
+        "/usr/local/bin/lumina-windows-vm-warm-start"
     )) {
         if ($customizeContent -notmatch [regex]::Escape("chmod 755 $requiredChmodTarget")) {
             Add-Error "customize_airootfs.sh does not enforce executable permissions for $requiredChmodTarget"

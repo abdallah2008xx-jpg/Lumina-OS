@@ -67,6 +67,7 @@ vm_creation_marker="${workflow_state_root}/vm-creation-starter-ready.marker"
 vm_postcreate_marker="${workflow_state_root}/vm-postcreate-ready.marker"
 app_install_marker="${workflow_state_root}/app-install-starter-ready.marker"
 workflow_proof_marker="${workflow_state_root}/workflow-proof-ready.marker"
+guest_agent_pack_marker="${workflow_state_root}/guest-agent-pack-ready.marker"
 notes_path="${workflow_state_root}/current-notes.md"
 
 touch "${notes_path}"
@@ -106,6 +107,11 @@ fi
 
 if [[ -f "${vm_postcreate_marker}" ]]; then
     phase="vm-postcreate-ready"
+    status="in-progress"
+fi
+
+if [[ -f "${guest_agent_pack_marker}" ]]; then
+    phase="guest-agent-pack-ready"
     status="in-progress"
 fi
 
@@ -162,6 +168,7 @@ fi
     printf -- '- VM Post-Create Ready: %s\n' "$([[ -f "${vm_postcreate_marker}" ]] && printf yes || printf no)"
     printf -- '- App Install Starter Ready: %s\n' "$([[ -f "${app_install_marker}" ]] && printf yes || printf no)"
     printf -- '- Workflow Proof Ready: %s\n' "$([[ -f "${workflow_proof_marker}" ]] && printf yes || printf no)"
+    printf -- '- Guest Agent Pack Ready: %s\n' "$([[ -f "${guest_agent_pack_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Created: %s\n' "$([[ -f "${vm_created_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Configured: %s\n' "$([[ -f "${vm_configured_marker}" ]] && printf yes || printf no)"
     printf -- '- Apps Installed: %s\n' "$([[ -f "${apps_installed_marker}" ]] && printf yes || printf no)"

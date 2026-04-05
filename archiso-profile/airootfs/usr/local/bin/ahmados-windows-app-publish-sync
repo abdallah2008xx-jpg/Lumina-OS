@@ -1,0 +1,192 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+replace_manifest_field() {
+    local file_path="$1"
+    local field_name="$2"
+    local field_value="$3"
+    local temp_path
+
+    temp_path="$(mktemp)"
+    awk -v field_name="${field_name}" -v field_value="${field_value}" '
+        BEGIN { replaced = 0 }
+        index($0, "- " field_name ": ") == 1 {
+            print "- " field_name ": " field_value
+            replaced = 1
+            next
+        }
+        { print }
+        END {
+            if (!replaced) {
+                print "- " field_name ": " field_value
+            }
+        }
+    ' "${file_path}" > "${temp_path}"
+    mv "${temp_path}" "${file_path}"
+}
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+publish_sync_report="${state_root}/windows-app-publish-sync.md"
+publish_pack_report="${state_root}/windows-guest-app-publish-pack.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-app-registration --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-guest-app-publish-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+registry_root="${workspace_root}/app-registry"
+registry_index_path="${registry_root}/registry-index.tsv"
+workflow_state_root="${workspace_root}/state"
+share_path="${workspace_root}/vm-share"
+workspace_env_path="${workspace_root}/workspace.env"
+vm_create_env_path="${workspace_root}/vm-create.env"
+publish_cache_root="${registry_root}/publish-cache"
+publish_cache_path="${publish_cache_root}/published-apps.tsv"
+publish_sync_marker="${workflow_state_root}/app-publish-sync-ready.marker"
+publish_inventory_path="${share_path}/launch-broker/publish/published-apps.tsv"
+
+mkdir -p "${registry_root}" "${workflow_state_root}" "${publish_cache_root}"
+
+if [[ -f "${workspace_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${workspace_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_DIR:-${share_path}}"
+fi
+
+if [[ -f "${vm_create_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${vm_create_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${share_path}}"
+fi
+
+publish_inventory_path="${share_path}/launch-broker/publish/published-apps.tsv"
+
+published_count=0
+pending_count=0
+published_lines=""
+pending_lines=""
+publish_status="awaiting-publish"
+
+if [[ -f "${publish_inventory_path}" ]]; then
+    cp "${publish_inventory_path}" "${publish_cache_path}"
+    publish_status="synced"
+
+    while IFS='|' read -r app_id app_name publish_state launch_target publish_source published_at; do
+        [[ -z "${app_id}" || "${app_id}" == \#* ]] && continue
+
+        registry_row="$(awk -F'|' -v target="${app_id}" 'NF >= 6 && $1 == target {print; exit}' "${registry_index_path}" || true)"
+        if [[ -z "${registry_row}" ]]; then
+            continue
+        fi
+
+        IFS='|' read -r catalog_id registry_app_name category registration_state preferred_route manifest_path <<< "${registry_row}"
+        [[ -f "${manifest_path}" ]] || continue
+
+        if [[ "${publish_state}" == "published" && -n "${launch_target}" ]]; then
+            replace_manifest_field "${manifest_path}" "Registration State" "published"
+            replace_manifest_field "${manifest_path}" "Suggested Launch Target" "${launch_target}"
+            published_count=$((published_count + 1))
+            published_lines+="- ${registry_app_name}: ${launch_target}\n"
+        else
+            pending_count=$((pending_count + 1))
+            pending_lines+="- ${registry_app_name}: pending publish target\n"
+        fi
+    done < "${publish_inventory_path}"
+
+    {
+        printf '# id|name|category|registration_state|preferred_route|manifest_path\n'
+        while IFS='|' read -r catalog_id app_name category registration_state preferred_route manifest_path; do
+            [[ -z "${catalog_id}" || "${catalog_id}" == \#* ]] && continue
+            next_state="$(awk -F': ' '/^- Registration State:/ {print $2; exit}' "${manifest_path}" 2>/dev/null || true)"
+            if [[ -z "${next_state}" ]]; then
+                next_state="${registration_state}"
+            fi
+            printf '%s|%s|%s|%s|%s|%s\n' \
+                "${catalog_id}" "${app_name}" "${category}" "${next_state}" "${preferred_route}" "${manifest_path}"
+        done < "${registry_index_path}"
+    } > "${registry_index_path}.tmp"
+    mv "${registry_index_path}.tmp" "${registry_index_path}"
+
+    touch "${publish_sync_marker}"
+fi
+
+if [[ -z "${published_lines}" ]]; then
+    published_lines="- No published app targets were synced yet.\n"
+fi
+
+if [[ -z "${pending_lines}" ]]; then
+    pending_lines="- No pending published-app rows remain in this pass.\n"
+fi
+
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows App Publish Sync\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Publish Status: %s\n' "${publish_status}"
+    printf -- '- Published Targets: %s\n' "${published_count}"
+    printf -- '- Pending Published Targets: %s\n' "${pending_count}"
+    printf -- '- Publish Inventory Path: %s\n' "${publish_inventory_path}"
+    printf -- '- Publish Cache Path: %s\n' "${publish_cache_path}"
+    printf -- '- Publish Sync Marker: %s\n' "${publish_sync_marker}"
+    printf '\n## Published Targets\n'
+    printf '%b' "${published_lines}"
+    printf '\n## Pending Targets\n'
+    printf '%b' "${pending_lines}"
+    printf '\n## Related Reports\n'
+    printf -- '- Guest App Publish Pack Report: %s\n' "${publish_pack_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${publish_sync_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '   Lumina Windows App Publish Sync'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Status: %s\n' "${publish_status}"
+printf 'Report: %s\n' "${publish_sync_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${publish_sync_report}" >/dev/null 2>&1 || true
+fi

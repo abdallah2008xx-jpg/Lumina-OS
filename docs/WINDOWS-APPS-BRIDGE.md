@@ -80,6 +80,8 @@ The current phase adds:
 - an app-manifest-hydration layer that fills registered app manifests with real launch targets from guest-side discovery results
 - an app-menu-export layer that promotes registered Windows apps into visible Lumina menu entries instead of keeping them buried in workspace artifacts
 - an installed-app-sync layer that refreshes launch results, guest discovery, manifest hydration, launchers, and menu export in one pass
+- a guest-app-publish-pack layer that prepares a Windows-side publish contract for installed app targets after discovery looks good
+- an app-publish-sync layer that pulls the published Windows app inventory back into Lumina so manifests and launch surfaces can trust it more strongly
 - an app-collections layer that groups Windows app surfaces into Lumina-facing collections instead of leaving everything as individual launchers only
 
 ## Current Limits
@@ -99,6 +101,8 @@ The current phase adds:
 - It can now hydrate the registered app manifests from shared guest-side discovery results when those results exist.
 - It can now export named Windows app launchers into the Lumina application menu after the manifests and app surfaces are ready.
 - It can now run a single installed-app sync pass that refreshes the whole registered-app pipeline instead of forcing each refresh step to be run one by one.
+- It can now generate a Windows-side publish pack so discovered installed apps can be promoted into a stronger shared inventory instead of staying only at the discovery level.
+- It can now sync that published inventory back into Lumina so registered manifests can move from discovered toward published.
 - It can now group the Windows app surfaces into named collections so Lumina can present broader app sets, not just single launchers.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 - Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.

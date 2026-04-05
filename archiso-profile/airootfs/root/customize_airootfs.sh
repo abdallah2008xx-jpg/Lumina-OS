@@ -93,6 +93,10 @@ chmod 755 /usr/local/bin/ahmados-windows-app-menu-export
 chmod 755 /usr/local/bin/lumina-windows-app-menu-export
 chmod 755 /usr/local/bin/ahmados-windows-installed-app-sync
 chmod 755 /usr/local/bin/lumina-windows-installed-app-sync
+chmod 755 /usr/local/bin/ahmados-windows-guest-app-publish-pack
+chmod 755 /usr/local/bin/lumina-windows-guest-app-publish-pack
+chmod 755 /usr/local/bin/ahmados-windows-app-publish-sync
+chmod 755 /usr/local/bin/lumina-windows-app-publish-sync
 chmod 755 /usr/local/bin/ahmados-windows-app-collections
 chmod 755 /usr/local/bin/lumina-windows-app-collections
 chown -R live:live /home/live

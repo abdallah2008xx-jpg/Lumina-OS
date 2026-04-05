@@ -121,6 +121,8 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-manifest-hydration"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-menu-export"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-installed-app-sync"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-guest-app-publish-pack"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-publish-sync"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-collections"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-prep"
@@ -172,6 +174,8 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-manifest-hydration"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-menu-export"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-installed-app-sync"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-guest-app-publish-pack"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-publish-sync"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-collections"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-prep"
@@ -459,6 +463,10 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/lumina-windows-app-menu-export \
         /usr/local/bin/ahmados-windows-installed-app-sync \
         /usr/local/bin/lumina-windows-installed-app-sync \
+        /usr/local/bin/ahmados-windows-guest-app-publish-pack \
+        /usr/local/bin/lumina-windows-guest-app-publish-pack \
+        /usr/local/bin/ahmados-windows-app-publish-sync \
+        /usr/local/bin/lumina-windows-app-publish-sync \
         /usr/local/bin/ahmados-windows-app-collections \
         /usr/local/bin/lumina-windows-app-collections; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then

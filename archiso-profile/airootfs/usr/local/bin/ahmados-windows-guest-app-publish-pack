@@ -1,0 +1,239 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+publish_pack_report="${state_root}/windows-guest-app-publish-pack.md"
+guest_discovery_report="${state_root}/windows-guest-app-discovery.md"
+app_registration_report="${state_root}/windows-app-registration.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-app-registration --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-guest-app-discovery --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+registry_root="${workspace_root}/app-registry"
+registry_index_path="${registry_root}/registry-index.tsv"
+workflow_state_root="${workspace_root}/state"
+share_path="${workspace_root}/vm-share"
+workspace_env_path="${workspace_root}/workspace.env"
+vm_create_env_path="${workspace_root}/vm-create.env"
+guest_publish_root="${workspace_root}/guest-app-publish"
+publish_config_path="${guest_publish_root}/app-publish.config.ps1"
+publish_script_path="${guest_publish_root}/Publish-LuminaRegisteredApps.ps1"
+publish_cmd_path="${guest_publish_root}/Run-LuminaAppPublish.cmd"
+publish_notes_path="${guest_publish_root}/app-publish-notes.md"
+publish_env_path="${guest_publish_root}/app-publish.env"
+publish_marker="${workflow_state_root}/guest-app-publish-pack-ready.marker"
+publish_share_dir="${share_path}/launch-broker/publish"
+publish_inventory_path="${publish_share_dir}/published-apps.tsv"
+publish_summary_path="${publish_share_dir}/published-apps-summary.md"
+discovery_results_path="${share_path}/launch-broker/discovery/registered-apps.tsv"
+
+mkdir -p "${workflow_state_root}" "${guest_publish_root}" "${publish_share_dir}"
+
+if [[ -f "${workspace_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${workspace_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_DIR:-${share_path}}"
+fi
+
+if [[ -f "${vm_create_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${vm_create_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${share_path}}"
+fi
+
+publish_share_dir="${share_path}/launch-broker/publish"
+publish_inventory_path="${publish_share_dir}/published-apps.tsv"
+publish_summary_path="${publish_share_dir}/published-apps-summary.md"
+discovery_results_path="${share_path}/launch-broker/discovery/registered-apps.tsv"
+mkdir -p "${publish_share_dir}"
+
+{
+    printf '$LuminaProfileId = %s\n' "'${profile_id}'"
+    printf '$LuminaRegistryIndexPath = %s\n' "'${registry_index_path}'"
+    printf '$LuminaDiscoveryResultsPath = %s\n' "'${discovery_results_path}'"
+    printf '$LuminaPublishInventoryPath = %s\n' "'${publish_inventory_path}'"
+    printf '$LuminaPublishSummaryPath = %s\n' "'${publish_summary_path}'"
+} > "${publish_config_path}"
+
+cat > "${publish_script_path}" <<'EOF'
+param(
+    [switch]$OpenResults
+)
+
+$ErrorActionPreference = 'Stop'
+$ConfigPath = Join-Path $PSScriptRoot 'app-publish.config.ps1'
+if (-not (Test-Path $ConfigPath)) {
+    throw "Missing app-publish.config.ps1"
+}
+
+. $ConfigPath
+
+function Import-LuminaTsv {
+    param([string]$Path)
+    $rows = @()
+    if (-not (Test-Path $Path)) {
+        return $rows
+    }
+    foreach ($line in Get-Content -Path $Path) {
+        if (-not $line -or $line.StartsWith('#')) {
+            continue
+        }
+        $rows += ,($line -split '\|')
+    }
+    return $rows
+}
+
+$DiscoveryRows = Import-LuminaTsv -Path $LuminaDiscoveryResultsPath
+if (-not (Test-Path (Split-Path -Parent $LuminaPublishInventoryPath))) {
+    New-Item -ItemType Directory -Path (Split-Path -Parent $LuminaPublishInventoryPath) -Force | Out-Null
+}
+
+$Output = New-Object System.Collections.Generic.List[string]
+$Output.Add('# app_id|app_name|publish_state|launch_target|source|published_at')
+$Summary = New-Object System.Collections.Generic.List[string]
+$Summary.Add('# Lumina Windows Published Apps')
+$Summary.Add('')
+$Summary.Add('- Generated At: ' + (Get-Date -Format o))
+
+foreach ($row in $DiscoveryRows) {
+    if ($row.Count -lt 5) {
+        continue
+    }
+
+    $AppId = $row[0]
+    $AppName = $row[1]
+    $DiscoveryState = $row[2]
+    $LaunchTarget = $row[3]
+    $Candidate = $row[4]
+    $Source = 'guest-publish'
+    if ($Candidate) {
+        $Source = $Candidate
+    }
+
+    if ($DiscoveryState -eq 'found' -and $LaunchTarget) {
+        $Output.Add(('{0}|{1}|published|{2}|{3}|{4}' -f $AppId, $AppName, $LaunchTarget, $Source, (Get-Date -Format o)))
+        $Summary.Add(('- {0}: published -> {1}' -f $AppName, $LaunchTarget))
+    }
+    else {
+        $Output.Add(('{0}|{1}|pending||guest-publish|{2}' -f $AppId, $AppName, (Get-Date -Format o)))
+        $Summary.Add(('- {0}: pending publish target' -f $AppName))
+    }
+}
+
+$Output | Set-Content -Path $LuminaPublishInventoryPath -Encoding UTF8
+$Summary | Set-Content -Path $LuminaPublishSummaryPath -Encoding UTF8
+
+Write-Host "Lumina published app inventory:"
+Write-Host (" - " + $LuminaPublishInventoryPath)
+Write-Host (" - " + $LuminaPublishSummaryPath)
+
+if ($OpenResults) {
+    Invoke-Item $LuminaPublishSummaryPath
+}
+EOF
+
+cat > "${publish_cmd_path}" <<'EOF'
+@echo off
+powershell.exe -ExecutionPolicy Bypass -File "%~dp0Publish-LuminaRegisteredApps.ps1" -OpenResults
+EOF
+
+{
+    printf '# %s Guest App Publish Pack\n\n' "${profile_name}"
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Discovery Results Input: %s\n' "${discovery_results_path}"
+    printf -- '- Publish Inventory Output: %s\n' "${publish_inventory_path}"
+    printf -- '- Publish Summary Output: %s\n' "${publish_summary_path}"
+    printf '\n## What This Stage Does\n'
+    printf -- '- gives the Windows side a stable publish contract for installed app targets\n'
+    printf -- '- turns discovery findings into a published inventory that Lumina can trust more strongly\n'
+    printf -- '- writes a predictable published-apps.tsv file into the shared workflow path\n'
+    printf '\n## Windows-Side Use\n'
+    printf -- '- Open the workflow share inside Windows.\n'
+    printf -- '- Run `%s` after the discovery results look good.\n' "${publish_cmd_path}"
+    printf -- '- Return to Lumina and run the publish sync step to absorb the published inventory.\n'
+} > "${publish_notes_path}"
+
+{
+    printf 'LUMINA_WINDOWS_PROFILE_ID=%q\n' "${profile_id}"
+    printf 'LUMINA_WINDOWS_GUEST_PUBLISH_ROOT=%q\n' "${guest_publish_root}"
+    printf 'LUMINA_WINDOWS_GUEST_PUBLISH_SCRIPT=%q\n' "${publish_script_path}"
+    printf 'LUMINA_WINDOWS_GUEST_PUBLISH_RUNNER=%q\n' "${publish_cmd_path}"
+    printf 'LUMINA_WINDOWS_GUEST_PUBLISH_INVENTORY=%q\n' "${publish_inventory_path}"
+    printf 'LUMINA_WINDOWS_GUEST_PUBLISH_SUMMARY=%q\n' "${publish_summary_path}"
+} > "${publish_env_path}"
+
+touch "${publish_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows Guest App Publish Pack\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Publish Config: %s\n' "${publish_config_path}"
+    printf -- '- Publish Script: %s\n' "${publish_script_path}"
+    printf -- '- Publish Runner: %s\n' "${publish_cmd_path}"
+    printf -- '- Publish Notes: %s\n' "${publish_notes_path}"
+    printf -- '- Publish Env: %s\n' "${publish_env_path}"
+    printf -- '- Publish Inventory Path: %s\n' "${publish_inventory_path}"
+    printf -- '- Publish Summary Path: %s\n' "${publish_summary_path}"
+    printf -- '- Guest App Publish Pack Marker: %s\n' "${publish_marker}"
+    printf '\n## Related Reports\n'
+    printf -- '- Guest App Discovery Report: %s\n' "${guest_discovery_report}"
+    printf -- '- App Registration Report: %s\n' "${app_registration_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${publish_pack_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '  Lumina Guest App Publish Pack'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Publish script: %s\n' "${publish_script_path}"
+printf 'Report: %s\n' "${publish_pack_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${publish_pack_report}" >/dev/null 2>&1 || true
+fi

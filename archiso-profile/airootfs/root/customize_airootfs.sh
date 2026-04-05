@@ -89,6 +89,8 @@ chmod 755 /usr/local/bin/ahmados-windows-guest-app-discovery
 chmod 755 /usr/local/bin/lumina-windows-guest-app-discovery
 chmod 755 /usr/local/bin/ahmados-windows-app-manifest-hydration
 chmod 755 /usr/local/bin/lumina-windows-app-manifest-hydration
+chmod 755 /usr/local/bin/ahmados-windows-app-menu-export
+chmod 755 /usr/local/bin/lumina-windows-app-menu-export
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

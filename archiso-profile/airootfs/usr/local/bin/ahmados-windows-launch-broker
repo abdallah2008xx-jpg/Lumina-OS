@@ -5,6 +5,7 @@ selected_profile_id=""
 target_file=""
 open_report=0
 run_next_action=1
+profile_selection_mode="default"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -14,6 +15,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --profile-id)
             selected_profile_id="${2:-}"
+            profile_selection_mode="explicit"
             shift 2
             ;;
         --open-report)
@@ -43,6 +45,7 @@ profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
 profile_report="${state_root}/windows-profile-assistant.md"
 broker_report="${state_root}/windows-launch-broker.md"
 launch_sync_report="${state_root}/windows-launch-results-sync.md"
+compat_report="${state_root}/windows-compat-report.md"
 
 has_gui=0
 if command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
@@ -125,14 +128,21 @@ fi
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="$(guess_profile_id_from_filename "${target_lower_basename}")"
+    if [[ -n "${selected_profile_id}" ]]; then
+        profile_selection_mode="guessed"
+    fi
 fi
 
 if [[ -z "${selected_profile_id}" && ${has_gui} -eq 1 ]]; then
     selected_profile_id="$(choose_profile_with_kdialog)"
+    if [[ -n "${selected_profile_id}" ]]; then
+        profile_selection_mode="interactive"
+    fi
 fi
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="office-productivity"
+    profile_selection_mode="default"
 fi
 
 selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
@@ -142,6 +152,19 @@ if [[ -z "${selected_row}" ]]; then
 fi
 
 IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+resource_summary="$(awk -F': ' '/^- Resource Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+[[ -n "${resource_class}" ]] || resource_class="balanced"
+profile_weight_class="light"
+case "${profile_id}" in
+    adobe-creator|studio-audio|gaming-launchers|restricted-gaming)
+        profile_weight_class="heavy"
+        ;;
+    *)
+        profile_weight_class="light"
+        ;;
+esac
 
 /usr/local/bin/ahmados-windows-onboarding --profile-id "${profile_id}" --skip-compat --auto >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-workflow-hub --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
@@ -222,6 +245,8 @@ fi
 launch_method="documentation-only"
 next_action="Open the workflow hub to continue."
 next_command="/usr/local/bin/lumina-windows-workflow-hub --profile-id ${profile_id}"
+launch_policy="normal"
+policy_note="Lumina can follow the normal workflow path for this file on this machine."
 
 if [[ "${route_mode}" == "linux-first" ]] && ! command -v wine >/dev/null 2>&1; then
     if [[ "${vm_route}" != *"Out of scope"* ]]; then
@@ -245,6 +270,12 @@ elif [[ "${route_mode}" == "linux-first" ]] && command -v wine >/dev/null 2>&1; 
         next_command="wine start /unix \"${target_file}\""
         nohup wine start /unix "${target_file}" >/dev/null 2>&1 &
     fi
+elif [[ "${resource_class}" == "light" && "${profile_weight_class}" == "heavy" && "${profile_selection_mode}" != "explicit" && "${profile_selection_mode}" != "interactive" ]]; then
+    launch_method="profile-review-needed"
+    launch_policy="defer-heavy-on-light"
+    policy_note="Lumina detected a heavier Windows workflow on a light machine and deferred auto-launch so the device stays responsive."
+    next_action="Lumina wants you to review this heavier workflow first instead of auto-starting it on a weak device."
+    next_command="/usr/local/bin/lumina-windows-app-library --profile-id ${profile_id}"
 elif [[ ! -f "${vm_created_marker}" ]]; then
     launch_method="vm-create-needed"
     next_action="Lumina needs to create the Windows workspace VM before this file can move through the hidden Windows path."
@@ -303,6 +334,10 @@ launch_sync_latest_message="$(awk -F': ' '/^- Message:/ {print $2; exit}' "${lau
     printf -- '- Generated At: %s\n' "$(date -Is)"
     printf -- '- Profile: %s\n' "${profile_name}"
     printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Resource Summary: %s\n' "${resource_summary:-unknown}"
+    printf -- '- Profile Weight: %s\n' "${profile_weight_class}"
+    printf -- '- Profile Selection Mode: %s\n' "${profile_selection_mode}"
     printf -- '- Target File: %s\n' "${target_file}"
     printf -- '- Target Kind: %s\n' "${target_kind}"
     printf -- '- Staged Target: %s\n' "${staged_target_path}"
@@ -313,6 +348,7 @@ launch_sync_latest_message="$(awk -F': ' '/^- Message:/ {print $2; exit}' "${lau
     printf '\n## Route Note\n'
     printf -- '- %s\n' "${route_note}"
     printf -- '- %s\n' "${stage_note}"
+    printf -- '- %s\n' "${policy_note}"
     printf '\n## Next Step\n'
     printf -- '- %s\n' "${next_action}"
     printf -- '- Suggested Command: `%s`\n' "${next_command}"
@@ -330,6 +366,10 @@ launch_sync_latest_message="$(awk -F': ' '/^- Message:/ {print $2; exit}' "${lau
     printf -- '- Target Kind: %s\n' "${target_kind}"
     printf -- '- Route Mode: %s\n' "${route_mode}"
     printf -- '- Launch Method: %s\n' "${launch_method}"
+    printf -- '- Launch Policy: %s\n' "${launch_policy}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Profile Weight: %s\n' "${profile_weight_class}"
+    printf -- '- Profile Selection Mode: %s\n' "${profile_selection_mode}"
     printf -- '- VM Name: %s\n' "${vm_name}"
     printf -- '- Request File: %s\n' "${request_markdown_path}"
     printf -- '- Request Env: %s\n' "${request_env_path}"
@@ -360,6 +400,10 @@ if [[ ${has_gui} -eq 1 ]]; then
             kdialog --title "Lumina Windows Launch Broker" \
                 --passivepopup "Lumina is preparing the Windows workspace path for ${target_basename}." 3 2>/dev/null || true
             ;;
+        profile-review-needed)
+            kdialog --title "Lumina Windows Launch Broker" \
+                --passivepopup "Lumina deferred a heavier Windows workflow so this weak device stays smooth." 4 2>/dev/null || true
+            ;;
     esac
 fi
 
@@ -371,6 +415,9 @@ if [[ ${run_next_action} -eq 1 ]]; then
     case "${launch_method}" in
         documentation-only)
             exec /usr/local/bin/ahmados-windows-workflow-hub --profile-id "${profile_id}"
+            ;;
+        profile-review-needed)
+            exec /usr/local/bin/ahmados-windows-app-library --profile-id "${profile_id}"
             ;;
         vm-create-needed)
             exec /usr/local/bin/ahmados-windows-vm-launcher --profile-id "${profile_id}"

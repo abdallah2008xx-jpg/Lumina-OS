@@ -22,6 +22,11 @@ catalog_report="${state_root}/windows-app-catalog.md"
 
 compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
 compatibility_summary="$(awk -F': ' '/^- Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+resource_summary="$(awk -F': ' '/^- Resource Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+[[ -n "${resource_class}" ]] || resource_class="balanced"
+preferred_categories="Creator Apps, Productivity, Audio and Studio, Gaming and Launchers, Utilities"
+deferred_categories="none"
 
 case "${compatibility_tier}" in
     windows-vm-ready|single-gpu-experimental)
@@ -34,6 +39,12 @@ case "${compatibility_tier}" in
         active_profile="Basic"
         ;;
 esac
+
+if [[ "${resource_class}" == "light" ]]; then
+    active_profile="Lightweight"
+    preferred_categories="Productivity, Utilities"
+    deferred_categories="Creator Apps, Audio and Studio, Gaming and Launchers"
+fi
 
 creator_lines=""
 productivity_lines=""
@@ -79,8 +90,13 @@ done < "${catalog_path}"
     printf '# Lumina Windows App Catalog\n\n'
     printf -- '- Generated At: %s\n' "$(date -Is)"
     printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Resource Summary: %s\n' "${resource_summary:-unknown}"
     printf -- '- Active Profile: %s\n' "${active_profile}"
     printf -- '- Summary: %s\n' "${compatibility_summary:-not-available}"
+    printf '\n## Lightweight Bias\n'
+    printf -- '- Preferred Categories: %s\n' "${preferred_categories}"
+    printf -- '- Deferred Categories: %s\n' "${deferred_categories}"
     printf '\n## Creator Apps\n'
     printf '%s' "${creator_lines:-"- No creator app routes are available.\n"}"
     printf '\n## Productivity\n'

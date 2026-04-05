@@ -90,6 +90,7 @@ The current phase adds:
 - a VM cooldown layer that can managed-save or shut down idle Windows workspaces so RAM and CPU pressure drop back down on weaker hardware
 - a lightweight prep path that defers heavier VM-lab probing during session startup on weak machines
 - a lightweight app-selection policy that prefers Productivity and Utilities first on weak machines before creator or gaming stacks
+- a lightweight broker policy that can defer an auto-guessed heavy Windows workflow on weak hardware instead of auto-starting background load blindly
 
 ## Current Limits
 
@@ -118,6 +119,7 @@ The current phase adds:
 - It now supports a cooldown path so an idle Windows workspace can give host resources back instead of lingering forever in the background.
 - It now keeps background prep lighter on weak machines by deferring the heavier VM-lab probing until the user actually needs it.
 - It now biases registered app selection toward lighter categories on weak machines so the default path stays smoother.
+- It now lets the EXE broker pause and redirect an auto-guessed heavy workflow on weak hardware so the default click path stays honest and smoother.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 - Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.
 

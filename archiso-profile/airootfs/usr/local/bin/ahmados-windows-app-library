@@ -34,6 +34,7 @@ collection_menu_export_report="${state_root}/windows-collection-menu-export.md"
 collections_report="${state_root}/windows-app-collections.md"
 state_report="${state_root}/windows-workflow-state.md"
 hub_report="${state_root}/windows-workflow-hub.md"
+compat_report="${state_root}/windows-compat-report.md"
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="adobe-creator"
@@ -63,12 +64,33 @@ collection_menu_dir="${data_root}/applications/lumina-windows-collections/${prof
 mkdir -p "${workflow_state_root}"
 
 declare -A state_counts=()
+declare -A category_counts=()
 app_rows=""
 total_apps=0
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+resource_summary="$(awk -F': ' '/^- Resource Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+[[ -n "${resource_class}" ]] || resource_class="balanced"
+preferred_categories="Creator Apps, Productivity, Audio and Studio, Gaming and Launchers, Utilities"
+deferred_categories="none"
+policy_note="All registered app collections are available, but Lumina should still prefer honest published launch targets."
+
+case "${resource_class}" in
+    light)
+        preferred_categories="Productivity, Utilities"
+        deferred_categories="Creator Apps, Audio and Studio, Gaming and Launchers"
+        policy_note="On light machines, Lumina should bias toward Productivity and Utilities first, and treat heavy creator or gaming stacks as deliberate exceptions."
+        ;;
+    performance)
+        preferred_categories="Creator Apps, Productivity, Audio and Studio, Gaming and Launchers, Utilities"
+        deferred_categories="none"
+        policy_note="This machine can absorb heavier Windows collections, but published launch targets still remain the preferred route."
+        ;;
+esac
 
 while IFS='|' read -r app_id app_name category registration_state preferred_route manifest_path; do
     [[ -z "${app_id}" || "${app_id}" == \#* ]] && continue
     state_counts["${registration_state}"]=$(( ${state_counts["${registration_state}"]:-0} + 1 ))
+    category_counts["${category}"]=$(( ${category_counts["${category}"]:-0} + 1 ))
     total_apps=$((total_apps + 1))
     app_rows+="- ${app_name} | ${category} | ${registration_state}\n"
 done < "${registry_index_path}"
@@ -90,6 +112,11 @@ pending_count="${state_counts["pending"]:-0}"
 [[ -n "${app_rows}" ]] || app_rows="- No app inventory rows exist yet.\n"
 [[ -n "${collection_rows}" ]] || collection_rows="- No collections exist yet.\n"
 
+category_rows=""
+for category_name in "Creator Apps" "Productivity" "Audio and Studio" "Gaming and Launchers" "Utilities"; do
+    category_rows+="- ${category_name}: ${category_counts["${category_name}"]:-0}\n"
+done
+
 touch "${library_marker}"
 /usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
@@ -98,6 +125,8 @@ touch "${library_marker}"
     printf -- '- Generated At: %s\n' "$(date -Is)"
     printf -- '- Profile: %s\n' "${profile_name}"
     printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Resource Summary: %s\n' "${resource_summary:-unknown}"
     printf -- '- Total Apps: %s\n' "${total_apps}"
     printf -- '- Published Apps: %s\n' "${published_count}"
     printf -- '- Discovered Apps: %s\n' "${discovered_count}"
@@ -108,6 +137,12 @@ touch "${library_marker}"
     printf -- '- App Menu Directory: %s\n' "${app_menu_dir}"
     printf -- '- Collection Menu Directory: %s\n' "${collection_menu_dir}"
     printf -- '- App Library Marker: %s\n' "${library_marker}"
+    printf '\n## Lightweight Policy\n'
+    printf -- '- Preferred Categories: %s\n' "${preferred_categories}"
+    printf -- '- Deferred Categories: %s\n' "${deferred_categories}"
+    printf -- '- Note: %s\n' "${policy_note}"
+    printf '\n## Category Counts\n'
+    printf '%b' "${category_rows}"
     printf '\n## App Inventory\n'
     printf '%b' "${app_rows}"
     printf '\n## Collections\n'

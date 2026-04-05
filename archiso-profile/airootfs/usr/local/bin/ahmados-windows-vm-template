@@ -1,0 +1,210 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+templates_root="/usr/share/lumina/windows-apps/vm-templates"
+template_report="${state_root}/windows-vm-template.md"
+profile_report="${state_root}/windows-profile-assistant.md"
+runbook_report="${state_root}/windows-profile-runbook.md"
+bootstrap_report="${state_root}/windows-workflow-bootstrap.md"
+recipe_report="${state_root}/windows-workflow-recipe.md"
+state_report="${state_root}/windows-workflow-state.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-workflow-bootstrap --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-workflow-recipe --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+mkdir -p "${workflow_state_root}"
+
+vm_template_marker="${workflow_state_root}/vm-template-ready.marker"
+template_env_path="${workspace_root}/vm-template.env"
+template_md_path="${workspace_root}/vm-template.md"
+
+recommended_route="$(awk -F': ' '/^- Recommended Route:/ {print $2; exit}' "${profile_report}" 2>/dev/null || true)"
+if [[ -z "${recommended_route}" ]]; then
+    recommended_route="${basic_route}"
+fi
+
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${state_root}/windows-compat-report.md" 2>/dev/null || true)"
+
+route_mode="linux-first"
+if [[ "${recommended_route}" == *"Out of scope"* ]]; then
+    route_mode="out-of-scope"
+elif [[ "${recommended_route}" == *"GPU focus"* ]]; then
+    route_mode="studio-vm"
+elif [[ "${recommended_route}" == *"Windows VM"* ]]; then
+    route_mode="windows-vm"
+fi
+
+template_manifest_path="${templates_root}/${profile_id}.md"
+template_manifest_body="No VM template notes are available for this profile yet."
+if [[ -f "${template_manifest_path}" ]]; then
+    template_manifest_body="$(cat "${template_manifest_path}")"
+fi
+
+vm_name="Lumina-${profile_id//-/_}-vm"
+firmware="OVMF (UEFI)"
+tpm_mode="Enabled"
+secure_boot="Optional"
+machine_type="q35"
+video_model="virtio-gpu"
+cpu_topology="4 vCPU"
+memory_size="8 GiB"
+disk_size="100 GiB"
+share_name="${profile_id//-/_}_share"
+share_path="${workspace_root}/vm-share"
+network_mode="NAT first"
+virtio_mode="Use virtio for disk and net where supported"
+notes_block=""
+
+case "${profile_id}" in
+    adobe-creator)
+        cpu_topology="8 vCPU"
+        memory_size="16 GiB"
+        disk_size="180 GiB"
+        notes_block+="- Prioritize SSD-backed storage and media cache consistency.\n"
+        notes_block+="- Keep fonts, plugins, and export folders stable across the whole Adobe stack.\n"
+        ;;
+    office-productivity)
+        cpu_topology="4 vCPU"
+        memory_size="8 GiB"
+        disk_size="80 GiB"
+        notes_block+="- Keep this VM lightweight and secondary to the Linux-first flow.\n"
+        ;;
+    studio-audio)
+        cpu_topology="8 vCPU"
+        memory_size="16 GiB"
+        disk_size="160 GiB"
+        notes_block+="- Keep sample libraries and plugin directories organized before the first serious session.\n"
+        ;;
+    gaming-launchers)
+        cpu_topology="6 vCPU"
+        memory_size="12 GiB"
+        disk_size="140 GiB"
+        notes_block+="- Treat this VM as a launcher/support layer, not as proof that every title is supported.\n"
+        ;;
+    restricted-gaming)
+        cpu_topology="4 vCPU"
+        memory_size="8 GiB"
+        disk_size="80 GiB"
+        secure_boot="Do not optimize this path as an official supported workflow"
+        notes_block+="- Keep this template only for documentation and guarded experiments.\n"
+        ;;
+esac
+
+if [[ "${route_mode}" == "studio-vm" ]]; then
+    video_model="virtio-gpu or stronger passthrough path later"
+    notes_block+="- This profile may graduate into a stronger graphics path later, but start from a stable VM first.\n"
+fi
+
+{
+    printf 'LUMINA_WINDOWS_VM_NAME=%q\n' "${vm_name}"
+    printf 'LUMINA_WINDOWS_VM_FIRMWARE=%q\n' "${firmware}"
+    printf 'LUMINA_WINDOWS_VM_TPM=%q\n' "${tpm_mode}"
+    printf 'LUMINA_WINDOWS_VM_SECURE_BOOT=%q\n' "${secure_boot}"
+    printf 'LUMINA_WINDOWS_VM_MACHINE_TYPE=%q\n' "${machine_type}"
+    printf 'LUMINA_WINDOWS_VM_VIDEO_MODEL=%q\n' "${video_model}"
+    printf 'LUMINA_WINDOWS_VM_CPU=%q\n' "${cpu_topology}"
+    printf 'LUMINA_WINDOWS_VM_MEMORY=%q\n' "${memory_size}"
+    printf 'LUMINA_WINDOWS_VM_DISK=%q\n' "${disk_size}"
+    printf 'LUMINA_WINDOWS_VM_SHARE_NAME=%q\n' "${share_name}"
+    printf 'LUMINA_WINDOWS_VM_SHARE_PATH=%q\n' "${share_path}"
+    printf 'LUMINA_WINDOWS_VM_NETWORK=%q\n' "${network_mode}"
+    printf 'LUMINA_WINDOWS_VM_VIRTIO=%q\n' "${virtio_mode}"
+} > "${template_env_path}"
+
+{
+    printf '# %s VM Template\n\n' "${profile_name}"
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Recommended Route: %s\n' "${recommended_route}"
+    printf '\n## Suggested VM Shape\n'
+    printf -- '- VM Name: %s\n' "${vm_name}"
+    printf -- '- Firmware: %s\n' "${firmware}"
+    printf -- '- TPM: %s\n' "${tpm_mode}"
+    printf -- '- Secure Boot: %s\n' "${secure_boot}"
+    printf -- '- Machine Type: %s\n' "${machine_type}"
+    printf -- '- Video Model: %s\n' "${video_model}"
+    printf -- '- CPU: %s\n' "${cpu_topology}"
+    printf -- '- Memory: %s\n' "${memory_size}"
+    printf -- '- Disk Size: %s\n' "${disk_size}"
+    printf -- '- Network: %s\n' "${network_mode}"
+    printf -- '- Virtio Guidance: %s\n' "${virtio_mode}"
+    printf '\n## Shared Paths\n'
+    printf -- '- Share Name: %s\n' "${share_name}"
+    printf -- '- Share Path: %s\n' "${share_path}"
+    printf '\n## Template Notes\n'
+    printf '%b' "${notes_block}"
+    printf '\n## Profile Template Reference\n\n'
+    printf '%s\n' "${template_manifest_body}"
+} > "${template_md_path}"
+
+touch "${vm_template_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows VM Template\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Template File: %s\n' "${template_md_path}"
+    printf -- '- Template Env: %s\n' "${template_env_path}"
+    printf -- '- VM Template Marker: %s\n' "${vm_template_marker}"
+    printf '\n## Related Reports\n'
+    printf -- '- Workflow Profile Report: %s\n' "${profile_report}"
+    printf -- '- Workflow Runbook Report: %s\n' "${runbook_report}"
+    printf -- '- Workflow Bootstrap Report: %s\n' "${bootstrap_report}"
+    printf -- '- Workflow Recipe Report: %s\n' "${recipe_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+} > "${template_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '      Lumina Windows VM Template'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Template: %s\n' "${template_md_path}"
+printf 'Report: %s\n' "${template_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${template_report}" >/dev/null 2>&1 || true
+fi

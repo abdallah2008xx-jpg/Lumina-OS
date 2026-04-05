@@ -89,6 +89,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-workflow-hub",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-workflow-action-pack",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-workflow-next-action",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-vm-template",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
@@ -119,6 +120,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-workflow-hub",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-workflow-action-pack",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-workflow-next-action",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-vm-template",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
@@ -141,6 +143,11 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\share\lumina\windows-apps\recipes\studio-audio.md",
     "archiso-profile\airootfs\usr\share\lumina\windows-apps\recipes\gaming-launchers.md",
     "archiso-profile\airootfs\usr\share\lumina\windows-apps\recipes\restricted-gaming.md",
+    "archiso-profile\airootfs\usr\share\lumina\windows-apps\vm-templates\adobe-creator.md",
+    "archiso-profile\airootfs\usr\share\lumina\windows-apps\vm-templates\office-productivity.md",
+    "archiso-profile\airootfs\usr\share\lumina\windows-apps\vm-templates\studio-audio.md",
+    "archiso-profile\airootfs\usr\share\lumina\windows-apps\vm-templates\gaming-launchers.md",
+    "archiso-profile\airootfs\usr\share\lumina\windows-apps\vm-templates\restricted-gaming.md",
     "archiso-profile\airootfs\etc\systemd\system\ahmados-update-markers.service",
     "archiso-profile\airootfs\etc\systemd\system\ahmados-vm-guest-services.service",
     "archiso-profile\airootfs\home\live\.config\autostart\ahmados-firstboot.desktop",
@@ -418,7 +425,9 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/ahmados-windows-workflow-action-pack",
         "/usr/local/bin/lumina-windows-workflow-action-pack",
         "/usr/local/bin/ahmados-windows-workflow-next-action",
-        "/usr/local/bin/lumina-windows-workflow-next-action"
+        "/usr/local/bin/lumina-windows-workflow-next-action",
+        "/usr/local/bin/ahmados-windows-vm-template",
+        "/usr/local/bin/lumina-windows-vm-template"
     )) {
         if ($customizeContent -notmatch [regex]::Escape("chmod 755 $requiredChmodTarget")) {
             Add-Error "customize_airootfs.sh does not enforce executable permissions for $requiredChmodTarget"

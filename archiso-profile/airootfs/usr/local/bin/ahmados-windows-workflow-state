@@ -33,6 +33,7 @@ runbook_report="${state_root}/windows-profile-runbook.md"
 recipe_report="${state_root}/windows-workflow-recipe.md"
 hub_report="${state_root}/windows-workflow-hub.md"
 action_pack_report="${state_root}/windows-workflow-action-pack.md"
+vm_template_report="${state_root}/windows-vm-template.md"
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="adobe-creator"
@@ -57,6 +58,7 @@ checklist_complete_marker="${workflow_state_root}/checklist-complete.marker"
 linux_first_validated_marker="${workflow_state_root}/linux-first-validated.marker"
 launch_recipe_marker="${workflow_state_root}/launch-recipe-ready.marker"
 action_pack_marker="${workflow_state_root}/action-pack-ready.marker"
+vm_template_marker="${workflow_state_root}/vm-template-ready.marker"
 notes_path="${workflow_state_root}/current-notes.md"
 
 touch "${notes_path}"
@@ -81,6 +83,11 @@ fi
 
 if [[ -f "${action_pack_marker}" ]]; then
     phase="action-pack-ready"
+    status="in-progress"
+fi
+
+if [[ -f "${vm_template_marker}" ]]; then
+    phase="vm-template-ready"
     status="in-progress"
 fi
 
@@ -122,6 +129,7 @@ fi
     printf -- '- Bootstrap Ready: %s\n' "$([[ -f "${bootstrap_marker}" ]] && printf yes || printf no)"
     printf -- '- Launch Recipe Ready: %s\n' "$([[ -f "${launch_recipe_marker}" ]] && printf yes || printf no)"
     printf -- '- Action Pack Ready: %s\n' "$([[ -f "${action_pack_marker}" ]] && printf yes || printf no)"
+    printf -- '- VM Template Ready: %s\n' "$([[ -f "${vm_template_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Created: %s\n' "$([[ -f "${vm_created_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Configured: %s\n' "$([[ -f "${vm_configured_marker}" ]] && printf yes || printf no)"
     printf -- '- Apps Installed: %s\n' "$([[ -f "${apps_installed_marker}" ]] && printf yes || printf no)"
@@ -136,6 +144,7 @@ fi
     printf -- '- Workflow Bootstrap Report: %s\n' "${bootstrap_report}"
     printf -- '- Workflow Recipe Report: %s\n' "${recipe_report}"
     printf -- '- Workflow Action Pack Report: %s\n' "${action_pack_report}"
+    printf -- '- VM Template Report: %s\n' "${vm_template_report}"
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
 } > "${state_report}"

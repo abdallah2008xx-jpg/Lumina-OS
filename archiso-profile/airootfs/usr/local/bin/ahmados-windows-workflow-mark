@@ -56,6 +56,9 @@ case "${step_name}" in
     action-pack-ready)
         marker_path="${workflow_state_root}/action-pack-ready.marker"
         ;;
+    vm-template-ready)
+        marker_path="${workflow_state_root}/vm-template-ready.marker"
+        ;;
     *)
         printf 'Unknown workflow step: %s\n' "${step_name}" >&2
         exit 1

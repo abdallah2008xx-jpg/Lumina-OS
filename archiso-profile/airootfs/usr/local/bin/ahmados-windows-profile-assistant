@@ -41,6 +41,7 @@ bootstrap_report="${state_root}/windows-workflow-bootstrap.md"
 state_report="${state_root}/windows-workflow-state.md"
 recipe_report="${state_root}/windows-workflow-recipe.md"
 action_pack_report="${state_root}/windows-workflow-action-pack.md"
+vm_template_report="${state_root}/windows-vm-template.md"
 
 /usr/local/bin/ahmados-windows-apps --no-open >/dev/null 2>&1 || true
 
@@ -117,6 +118,7 @@ default_app_id="${app_id_array[0]}"
 /usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-workflow-recipe --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-workflow-action-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-vm-template --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
 suggested_apps=""
 for app_id in "${app_id_array[@]}"; do
@@ -172,6 +174,7 @@ esac
     printf -- '- Workflow State Report: %s\n' "${state_report}"
     printf -- '- Workflow Recipe Report: %s\n' "${recipe_report}"
     printf -- '- Workflow Action Pack Report: %s\n' "${action_pack_report}"
+    printf -- '- VM Template Report: %s\n' "${vm_template_report}"
     printf -- '- App Assistant Report: %s\n' "${app_assistant_report}"
     printf -- '- App Catalog Report: %s\n' "${catalog_report}"
     printf -- '- Windows Apps Report: %s\n' "${bridge_report}"

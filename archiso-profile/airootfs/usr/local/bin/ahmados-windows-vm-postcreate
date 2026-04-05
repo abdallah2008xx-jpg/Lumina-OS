@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+postcreate_report="${state_root}/windows-vm-postcreate.md"
+vm_creation_report="${state_root}/windows-vm-creation-starter.md"
+vm_template_report="${state_root}/windows-vm-template.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-vm-creation-starter --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+checklists_dir="${workspace_root}/checklists"
+notes_dir="${workspace_root}/notes"
+workflow_state_root="${workspace_root}/state"
+mkdir -p "${checklists_dir}" "${notes_dir}" "${workflow_state_root}"
+
+template_env_path="${workspace_root}/vm-template.env"
+starter_env_path="${workspace_root}/vm-create.env"
+if [[ -f "${template_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${template_env_path}"
+fi
+if [[ -f "${starter_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${starter_env_path}"
+fi
+
+vm_name="${LUMINA_WINDOWS_VM_NAME:-Lumina-${profile_id//-/_}-vm}"
+share_name="${LUMINA_WINDOWS_VM_SHARE_NAME:-${profile_id//-/_}_share}"
+share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${workspace_root}/vm-share}"
+windows_iso_path="${LUMINA_WINDOWS_VM_WINDOWS_ISO:-${workspace_root}/installers/windows.iso}"
+virtio_iso_path="${LUMINA_WINDOWS_VM_VIRTIO_ISO:-${workspace_root}/installers/virtio-win.iso}"
+disk_path="${LUMINA_WINDOWS_VM_DISK_PATH:-${workspace_root}/${vm_name}.qcow2}"
+
+postcreate_marker="${workflow_state_root}/vm-postcreate-ready.marker"
+postcreate_plan_path="${workspace_root}/vm-postcreate-plan.md"
+postcreate_env_path="${workspace_root}/vm-postcreate.env"
+postcreate_checklist_path="${checklists_dir}/vm-postcreate-checklist.md"
+postcreate_notes_path="${notes_dir}/vm-postcreate-notes.md"
+clean_snapshot_name="${vm_name}-clean-install"
+first_user_name="creator"
+
+{
+    printf 'LUMINA_WINDOWS_VM_NAME=%q\n' "${vm_name}"
+    printf 'LUMINA_WINDOWS_VM_SHARE_NAME=%q\n' "${share_name}"
+    printf 'LUMINA_WINDOWS_VM_SHARE_PATH=%q\n' "${share_path}"
+    printf 'LUMINA_WINDOWS_VM_WINDOWS_ISO=%q\n' "${windows_iso_path}"
+    printf 'LUMINA_WINDOWS_VM_VIRTIO_ISO=%q\n' "${virtio_iso_path}"
+    printf 'LUMINA_WINDOWS_VM_DISK_PATH=%q\n' "${disk_path}"
+    printf 'LUMINA_WINDOWS_VM_CLEAN_SNAPSHOT=%q\n' "${clean_snapshot_name}"
+    printf 'LUMINA_WINDOWS_VM_FIRST_USER=%q\n' "${first_user_name}"
+} > "${postcreate_env_path}"
+
+{
+    printf '# %s VM Post-Create Notes\n\n' "${profile_name}"
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Use this file to capture driver issues, share quirks, app installer surprises, and first-boot fixes.\n'
+} > "${postcreate_notes_path}"
+
+{
+    printf '# %s VM Post-Create Checklist\n\n' "${profile_name}"
+    printf -- '- Confirm the VM `%s` boots from the Windows installer before you mark `vm-created`.\n' "${vm_name}"
+    printf -- '- Finish the first Windows setup pass and create the first local user.\n'
+    printf -- '- Attach `%s` and load VirtIO storage/network drivers if the installer needs them.\n' "${virtio_iso_path}"
+    printf -- '- After the desktop appears, validate that networking works from inside Windows.\n'
+    printf -- '- Validate the shared path `%s` is visible from the guest side.\n' "${share_name}"
+    printf -- '- Install the guest-display stack you plan to rely on before you mark `vm-configured`.\n'
+    printf -- '- Create a clean snapshot named `%s` after the base Windows setup feels stable.\n' "${clean_snapshot_name}"
+    printf -- '- Record any quirks in `%s`.\n' "${postcreate_notes_path}"
+    printf -- '- Only mark `vm-configured` after networking, storage, share access, and the clean snapshot all feel repeatable.\n'
+} > "${postcreate_checklist_path}"
+
+{
+    printf '# %s VM Post-Create Workflow\n\n' "${profile_name}"
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- VM Name: %s\n' "${vm_name}"
+    printf -- '- Windows ISO: %s\n' "${windows_iso_path}"
+    printf -- '- VirtIO ISO: %s\n' "${virtio_iso_path}"
+    printf -- '- Disk Path: %s\n' "${disk_path}"
+    printf -- '- Share Name: %s\n' "${share_name}"
+    printf -- '- Share Path: %s\n' "${share_path}"
+    printf '\n## First Boot Flow\n'
+    printf -- '1. Boot the VM from the Windows installer and finish the base setup.\n'
+    printf -- '2. Keep the Lumina-side share path ready, but do not depend on it until the guest can see it cleanly.\n'
+    printf -- '3. Install VirtIO drivers only when the guest actually needs storage or network help.\n'
+    printf -- '4. Take a clean snapshot after the first stable Windows desktop appears.\n'
+    printf '\n## Configuration Gates\n'
+    printf -- '- `vm-created`: the VM exists and you have successfully reached installation media.\n'
+    printf -- '- `vm-configured`: Windows first boot, drivers, networking, share validation, and the clean snapshot are all complete.\n'
+    printf -- '- `apps-installed`: the core app stack for this workflow is present and launches.\n'
+    printf '\n## Files Generated For This Stage\n'
+    printf -- '- Post-Create Env: %s\n' "${postcreate_env_path}"
+    printf -- '- Post-Create Checklist: %s\n' "${postcreate_checklist_path}"
+    printf -- '- Post-Create Notes: %s\n' "${postcreate_notes_path}"
+    printf '\n## Operator Notes\n'
+    printf -- '- Keep this stage boring and repeatable. Avoid custom tweaks before the base guest feels clean.\n'
+    printf -- '- Use the snapshot `%s` as the rollback point before heavy app installs.\n' "${clean_snapshot_name}"
+    printf -- '- If the share path or drivers fight you, note the issue before moving on.\n'
+} > "${postcreate_plan_path}"
+
+touch "${postcreate_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows VM Post-Create Workflow\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Post-Create Plan: %s\n' "${postcreate_plan_path}"
+    printf -- '- Post-Create Env: %s\n' "${postcreate_env_path}"
+    printf -- '- Post-Create Checklist: %s\n' "${postcreate_checklist_path}"
+    printf -- '- Post-Create Notes: %s\n' "${postcreate_notes_path}"
+    printf -- '- Post-Create Marker: %s\n' "${postcreate_marker}"
+    printf '\n## Related Reports\n'
+    printf -- '- VM Creation Starter Report: %s\n' "${vm_creation_report}"
+    printf -- '- VM Template Report: %s\n' "${vm_template_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${postcreate_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '     Lumina Windows VM Post-Create'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Post-create plan: %s\n' "${postcreate_plan_path}"
+printf 'Report: %s\n' "${postcreate_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${postcreate_report}" >/dev/null 2>&1 || true
+fi

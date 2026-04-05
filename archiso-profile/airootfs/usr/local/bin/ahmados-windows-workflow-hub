@@ -43,6 +43,7 @@ action_pack_report="${state_root}/windows-workflow-action-pack.md"
 next_action_report="${state_root}/windows-workflow-next-action.md"
 vm_template_report="${state_root}/windows-vm-template.md"
 vm_creation_report="${state_root}/windows-vm-creation-starter.md"
+vm_postcreate_report="${state_root}/windows-vm-postcreate.md"
 
 if [[ ${list_only} -eq 1 ]]; then
     awk -F'|' 'NF >= 3 && $1 !~ /^#/ {printf "%s\t%s\t%s\n", $1, $2, $3}' "${profiles_path}"
@@ -87,6 +88,7 @@ IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studi
 /usr/local/bin/ahmados-windows-workflow-action-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-vm-template --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-vm-creation-starter --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-vm-postcreate --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
 workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
 workflow_state_root="${workspace_root}/state"
@@ -96,6 +98,7 @@ launch_recipe_marker="${workflow_state_root}/launch-recipe-ready.marker"
 action_pack_marker="${workflow_state_root}/action-pack-ready.marker"
 vm_template_marker="${workflow_state_root}/vm-template-ready.marker"
 vm_creation_marker="${workflow_state_root}/vm-creation-starter-ready.marker"
+vm_postcreate_marker="${workflow_state_root}/vm-postcreate-ready.marker"
 vm_created_marker="${workflow_state_root}/vm-created.marker"
 vm_configured_marker="${workflow_state_root}/vm-configured.marker"
 apps_installed_marker="${workflow_state_root}/apps-installed.marker"
@@ -145,6 +148,10 @@ elif [[ "${route_mode}" != "out-of-scope" && ! -f "${vm_creation_marker}" ]]; th
     next_action="Generate the VM creation starter"
     next_command="/usr/local/bin/lumina-windows-vm-creation-starter --profile-id ${profile_id}"
     operator_note="This prepares the actual creation plan, env, checklist, and starter command skeleton before the VM exists."
+elif [[ "${route_mode}" != "out-of-scope" && ! -f "${vm_postcreate_marker}" ]]; then
+    next_action="Generate the VM post-create workflow"
+    next_command="/usr/local/bin/lumina-windows-vm-postcreate --profile-id ${profile_id}"
+    operator_note="This prepares the first-boot, VirtIO, share-validation, and snapshot guidance before the VM gets treated as configured."
 elif [[ "${route_mode}" == "out-of-scope" ]]; then
     next_action="Keep this workflow documented, not promised"
     next_command="xdg-open '${recipe_report}'"
@@ -158,9 +165,9 @@ elif [[ "${route_mode}" != "linux-first" && ! -f "${vm_created_marker}" ]]; then
     next_command="/usr/local/bin/lumina-windows-workflow-mark --profile-id ${profile_id} --step vm-created"
     operator_note="Create one clean VM per workflow instead of mixing unrelated app stacks together."
 elif [[ "${route_mode}" != "linux-first" && ! -f "${vm_configured_marker}" ]]; then
-    next_action="Configure the Windows workspace and shared paths"
-    next_command="/usr/local/bin/lumina-windows-workflow-mark --profile-id ${profile_id} --step vm-configured"
-    operator_note="Do this only after the VM, shared folders, and base settings feel clean and predictable."
+    next_action="Follow the VM post-create workflow"
+    next_command="xdg-open '${vm_postcreate_report}'"
+    operator_note="Use the post-create plan to get through first boot, drivers, share validation, and the clean snapshot before you mark the VM as configured."
 elif [[ "${route_mode}" != "linux-first" && ! -f "${apps_installed_marker}" ]]; then
     next_action="Install the core app stack for this workflow"
     next_command="/usr/local/bin/lumina-windows-workflow-mark --profile-id ${profile_id} --step apps-installed"
@@ -196,6 +203,7 @@ fi
     printf -- '- Action Pack Ready: %s\n' "$([[ -f "${action_pack_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Template Ready: %s\n' "$([[ -f "${vm_template_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Creation Starter Ready: %s\n' "$([[ -f "${vm_creation_marker}" ]] && printf yes || printf no)"
+    printf -- '- VM Post-Create Ready: %s\n' "$([[ -f "${vm_postcreate_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Created: %s\n' "$([[ -f "${vm_created_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Configured: %s\n' "$([[ -f "${vm_configured_marker}" ]] && printf yes || printf no)"
     printf -- '- Apps Installed: %s\n' "$([[ -f "${apps_installed_marker}" ]] && printf yes || printf no)"
@@ -210,6 +218,7 @@ fi
     printf -- '- Workflow Next Action Report: %s\n' "${next_action_report}"
     printf -- '- VM Template Report: %s\n' "${vm_template_report}"
     printf -- '- VM Creation Starter Report: %s\n' "${vm_creation_report}"
+    printf -- '- VM Post-Create Report: %s\n' "${vm_postcreate_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
     printf -- '- Windows Apps Bridge Report: %s\n' "${bridge_report}"
     printf -- '- Windows Compatibility Report: %s\n' "${compat_report}"

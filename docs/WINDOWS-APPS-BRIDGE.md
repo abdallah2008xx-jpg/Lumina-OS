@@ -55,6 +55,7 @@ The current phase adds:
 - a next-action launcher that opens or runs the most sensible step for the current workflow state
 - a VM template layer that defines a concrete Windows workspace shape before the actual VM gets created
 - a VM creation starter layer that turns the VM template into paths, env files, checklists, and a starter command skeleton
+- a VM post-create layer that guides the first boot, VirtIO, share validation, and clean-snapshot stage after the VM exists
 - a hidden session-start prep step that warms the Windows Apps path without opening an extra desktop
 
 ## Future Target

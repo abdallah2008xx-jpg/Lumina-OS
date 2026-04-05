@@ -50,6 +50,9 @@ case "${step_name}" in
     linux-first-validated)
         marker_path="${workflow_state_root}/linux-first-validated.marker"
         ;;
+    launch-recipe-ready)
+        marker_path="${workflow_state_root}/launch-recipe-ready.marker"
+        ;;
     *)
         printf 'Unknown workflow step: %s\n' "${step_name}" >&2
         exit 1

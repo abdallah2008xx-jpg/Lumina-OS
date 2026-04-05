@@ -1,0 +1,225 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+recipes_root="/usr/share/lumina/windows-apps/recipes"
+recipe_report="${state_root}/windows-workflow-recipe.md"
+profile_report="${state_root}/windows-profile-assistant.md"
+runbook_report="${state_root}/windows-profile-runbook.md"
+bootstrap_report="${state_root}/windows-workflow-bootstrap.md"
+state_report="${state_root}/windows-workflow-state.md"
+compat_report="${state_root}/windows-compat-report.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-profile-runbook --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-workflow-bootstrap --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+env_path="${workspace_root}/workspace.env"
+checklists_dir="${workspace_root}/checklists"
+mkdir -p "${workflow_state_root}" "${checklists_dir}"
+
+if [[ -f "${env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${env_path}"
+fi
+
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+current_phase="$(awk -F': ' '/^- Current Phase:/ {print $2; exit}' "${state_report}" 2>/dev/null || true)"
+workflow_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${state_report}" 2>/dev/null || true)"
+recommended_route="${basic_route}"
+case "${compatibility_tier}" in
+    windows-vm-ready|single-gpu-experimental)
+        recommended_route="${vm_route}"
+        ;;
+    full-passthrough-candidate)
+        recommended_route="${studio_route}"
+        ;;
+esac
+
+vm_name="${LUMINA_WINDOWS_VM_NAME:-Lumina-${profile_id//-/_}-vm}"
+share_name="${LUMINA_WINDOWS_SHARE_NAME:-${profile_id//-/_}_share}"
+installers_dir="${LUMINA_WINDOWS_INSTALLERS_DIR:-${workspace_root}/installers}"
+imports_dir="${LUMINA_WINDOWS_IMPORTS_DIR:-${workspace_root}/imports}"
+exports_dir="${LUMINA_WINDOWS_EXPORTS_DIR:-${workspace_root}/exports}"
+vm_share_dir="${LUMINA_WINDOWS_VM_SHARE_DIR:-${workspace_root}/vm-share}"
+notes_dir="${LUMINA_WINDOWS_NOTES_DIR:-${workspace_root}/notes}"
+checklists_dir="${LUMINA_WINDOWS_CHECKLIST_DIR:-${workspace_root}/checklists}"
+
+recipe_manifest_path="${recipes_root}/${profile_id}.md"
+recipe_manifest_body="No launch recipe is available for this profile yet."
+if [[ -f "${recipe_manifest_path}" ]]; then
+    recipe_manifest_body="$(cat "${recipe_manifest_path}")"
+fi
+
+launch_sequence=""
+validation_sequence=""
+shutdown_sequence=""
+
+case "${recommended_route}" in
+    *"Windows VM"* )
+        launch_sequence+="- Open Lumina first, then review `${workspace_root}/workspace-summary.md` before touching the Windows side.\n"
+        launch_sequence+="- Start the Windows workspace using the suggested VM name `${vm_name}` and attach the share `${share_name}` mapped to `${vm_share_dir}`.\n"
+        launch_sequence+="- Launch only the apps tied to this workflow inside the same Windows workspace so caches, fonts, and settings stay predictable.\n"
+        validation_sequence+="- Confirm the shared folders are visible from both sides before starting real work.\n"
+        validation_sequence+="- Keep the first launch small: one installer path, one app family, one export back to Lumina.\n"
+        shutdown_sequence+="- Close the heavy Windows apps first, wait for file sync/export work to finish, then shut down the Windows workspace cleanly.\n"
+        shutdown_sequence+="- Move the final deliverables into `${exports_dir}` before ending the session.\n"
+        ;;
+    *"GPU focus"* )
+        launch_sequence+="- Start from the same clean Lumina workspace, but treat `${vm_name}` as the high-performance lane for this profile.\n"
+        launch_sequence+="- Verify the fastest storage path is in use before opening the heaviest app in the stack.\n"
+        launch_sequence+="- Keep GPU-oriented work in one focused pass instead of mixing many unrelated tasks in the same session.\n"
+        validation_sequence+="- Validate one demanding export, render, or playback path early in the session.\n"
+        validation_sequence+="- Keep notes about graphics behavior and IO speed in `${notes_dir}`.\n"
+        shutdown_sequence+="- Export or render final outputs back into `${exports_dir}` and record any plugin or driver notes before shutdown.\n"
+        shutdown_sequence+="- Shut down the Windows workspace only after the heavy tasks have fully stopped.\n"
+        ;;
+    *"Out of scope"* )
+        launch_sequence+="- Stay on the Lumina side first and document the unsupported demand before promising any Windows path.\n"
+        launch_sequence+="- Use `${notes_dir}` to separate what is officially supported from what is only being explored.\n"
+        validation_sequence+="- Do not treat unsupported anti-cheat or stealth-sensitive workflows as part of the supported recipe.\n"
+        shutdown_sequence+="- Close the exploration cleanly and keep the notes in `${notes_dir}` for future review.\n"
+        ;;
+    * )
+        launch_sequence+="- Start inside Lumina and open the Linux-first tools for this workflow before escalating to the Windows side.\n"
+        launch_sequence+="- Keep installers in `${installers_dir}` and staged imports in `${imports_dir}` so the workflow stays organized even if Windows is never needed.\n"
+        validation_sequence+="- Validate the Linux-first route first and only mark `linux-first-validated` once it feels genuinely workable.\n"
+        shutdown_sequence+="- Keep final exports in `${exports_dir}` and capture any remaining blockers in `${notes_dir}`.\n"
+        ;;
+esac
+
+case "${profile_id}" in
+    adobe-creator)
+        launch_sequence+="- Start Creative Cloud first inside the Windows workspace, then open Photoshop or Illustrator before moving into Premiere Pro or After Effects.\n"
+        validation_sequence+="- Confirm fonts, plugins, and media assets resolve correctly from `${vm_share_dir}`.\n"
+        shutdown_sequence+="- Export final assets back into `${exports_dir}` and keep plugin or font notes in `${notes_dir}`.\n"
+        ;;
+    office-productivity)
+        launch_sequence+="- Keep the browser, notes, and file manager on the Lumina side and only start the Windows workspace if the office app really needs it.\n"
+        validation_sequence+="- Make one save/export roundtrip between `${imports_dir}` and `${exports_dir}` before trusting the workflow.\n"
+        shutdown_sequence+="- Move meeting notes and final documents into `${exports_dir}` so the Linux side remains the source of truth.\n"
+        ;;
+    studio-audio)
+        launch_sequence+="- Open the project notes first, then bring the DAW or plugin host up inside the Windows workspace only after the share path is ready.\n"
+        validation_sequence+="- Validate one sample library path and one plugin chain before committing to a long studio session.\n"
+        shutdown_sequence+="- Export stems or renders into `${exports_dir}` and document stable plugin combinations in `${notes_dir}`.\n"
+        ;;
+    gaming-launchers)
+        launch_sequence+="- Try the Linux-native launcher route first, then use the Windows workspace only for launchers or tools that still resist the Linux path.\n"
+        validation_sequence+="- Separate `launcher starts` from `game is supported` in `${notes_dir}` so the claims stay accurate.\n"
+        shutdown_sequence+="- Close launchers cleanly and keep caches or imported installers organized under `${installers_dir}` and `${imports_dir}`.\n"
+        ;;
+    restricted-gaming)
+        launch_sequence+="- Treat this workflow as a notes-driven investigation, not as a supported launch path.\n"
+        validation_sequence+="- Record exactly what failed and why, but do not frame unsupported titles as part of the official recipe.\n"
+        shutdown_sequence+="- Leave the workspace in a clean state and preserve investigation notes only.\n"
+        ;;
+esac
+
+daily_recipe_path="${checklists_dir}/daily-launch-recipe.md"
+launch_recipe_marker="${workflow_state_root}/launch-recipe-ready.marker"
+
+{
+    printf '# %s Daily Launch Recipe\n\n' "${profile_name}"
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Recommended Route: %s\n' "${recommended_route}"
+    printf -- '- Suggested VM Name: %s\n' "${vm_name}"
+    printf -- '- Suggested Share Name: %s\n' "${share_name}"
+    printf '\n## Workspace Paths\n'
+    printf -- '- Installers: %s\n' "${installers_dir}"
+    printf -- '- Imports: %s\n' "${imports_dir}"
+    printf -- '- Exports: %s\n' "${exports_dir}"
+    printf -- '- VM Share: %s\n' "${vm_share_dir}"
+    printf -- '- Notes: %s\n' "${notes_dir}"
+    printf '\n## Daily Start Sequence\n'
+    printf '%b' "${launch_sequence}"
+    printf '\n## Validation Points\n'
+    printf '%b' "${validation_sequence}"
+    printf '\n## Session Shutdown\n'
+    printf '%b' "${shutdown_sequence}"
+    printf '\n## Reference Recipe\n\n'
+    printf '%s\n' "${recipe_manifest_body}"
+} > "${daily_recipe_path}"
+
+touch "${launch_recipe_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+current_phase="$(awk -F': ' '/^- Current Phase:/ {print $2; exit}' "${state_report}" 2>/dev/null || true)"
+workflow_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${state_report}" 2>/dev/null || true)"
+
+{
+    printf '# Lumina Windows Workflow Recipe\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Recommended Route: %s\n' "${recommended_route}"
+    printf -- '- Current Phase: %s\n' "${current_phase:-unknown}"
+    printf -- '- Workflow Status: %s\n' "${workflow_status:-unknown}"
+    printf -- '- Daily Launch Recipe: %s\n' "${daily_recipe_path}"
+    printf -- '- Launch Recipe Marker: %s\n' "${launch_recipe_marker}"
+    printf '\n## Why This Exists\n'
+    printf -- '- This layer turns the workflow into a daily operating rhythm, not just a compatibility verdict.\n'
+    printf -- '- Lumina stays visible while the Windows side follows a repeatable recipe behind it.\n'
+    printf '\n## Quick Start\n'
+    printf -- '- Open the workspace summary first: %s\n' "${workspace_root}/workspace-summary.md"
+    printf -- '- Follow the runbook next: %s\n' "${runbook_report}"
+    printf -- '- Use the daily launch recipe here: %s\n' "${daily_recipe_path}"
+    printf '\n## Related Reports\n'
+    printf -- '- Profile Assistant Report: %s\n' "${profile_report}"
+    printf -- '- Workflow Runbook Report: %s\n' "${runbook_report}"
+    printf -- '- Workflow Bootstrap Report: %s\n' "${bootstrap_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+} > "${recipe_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '    Lumina Windows Workflow Recipe'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Recipe: %s\n' "${daily_recipe_path}"
+printf 'Report: %s\n' "${recipe_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${recipe_report}" >/dev/null 2>&1 || true
+fi

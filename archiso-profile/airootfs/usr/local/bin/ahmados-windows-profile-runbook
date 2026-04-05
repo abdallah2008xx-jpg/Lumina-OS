@@ -32,6 +32,7 @@ bridge_report="${state_root}/windows-apps-bridge.md"
 catalog_report="${state_root}/windows-app-catalog.md"
 profile_report="${state_root}/windows-profile-assistant.md"
 lab_report="${state_root}/windows-vm-lab.md"
+recipe_report="${state_root}/windows-workflow-recipe.md"
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="adobe-creator"
@@ -105,6 +106,7 @@ esac
     printf -- '- App Catalog Report: %s\n' "${catalog_report}"
     printf -- '- Compatibility Report: %s\n' "${compat_report}"
     printf -- '- Advanced Lab Report: %s\n' "${lab_report}"
+    printf -- '- Workflow Recipe Report: %s\n' "${recipe_report}"
 } > "${runbook_report}"
 
 printf '%s\n' '========================================'

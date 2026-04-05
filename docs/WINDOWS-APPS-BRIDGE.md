@@ -49,6 +49,7 @@ The current phase adds:
 - a workflow runbook layer that turns each broader profile into an actionable starter plan
 - a workspace bootstrap layer that creates Lumina-side folders, checklists, and naming conventions for the chosen workflow
 - a tracked workflow state layer that records where the user is inside the selected Windows workflow
+- a workflow recipe layer that turns each selected profile into a repeatable daily launch and shutdown rhythm
 - a hidden session-start prep step that warms the Windows Apps path without opening an extra desktop
 
 ## Future Target

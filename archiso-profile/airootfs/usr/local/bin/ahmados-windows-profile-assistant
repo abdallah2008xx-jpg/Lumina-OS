@@ -45,6 +45,7 @@ vm_template_report="${state_root}/windows-vm-template.md"
 vm_creation_report="${state_root}/windows-vm-creation-starter.md"
 vm_postcreate_report="${state_root}/windows-vm-postcreate.md"
 app_install_report="${state_root}/windows-app-install-starter.md"
+workflow_proof_report="${state_root}/windows-workflow-proof-pass.md"
 
 /usr/local/bin/ahmados-windows-apps --no-open >/dev/null 2>&1 || true
 
@@ -184,6 +185,7 @@ esac
     printf -- '- VM Creation Starter Report: %s\n' "${vm_creation_report}"
     printf -- '- VM Post-Create Report: %s\n' "${vm_postcreate_report}"
     printf -- '- App Install Starter Report: %s\n' "${app_install_report}"
+    printf -- '- Workflow Proof Pass Report: %s\n' "${workflow_proof_report}"
     printf -- '- App Assistant Report: %s\n' "${app_assistant_report}"
     printf -- '- App Catalog Report: %s\n' "${catalog_report}"
     printf -- '- Windows Apps Report: %s\n' "${bridge_report}"

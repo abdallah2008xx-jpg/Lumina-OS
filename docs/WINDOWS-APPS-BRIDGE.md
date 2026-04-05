@@ -57,6 +57,7 @@ The current phase adds:
 - a VM creation starter layer that turns the VM template into paths, env files, checklists, and a starter command skeleton
 - a VM post-create layer that guides the first boot, VirtIO, share validation, and clean-snapshot stage after the VM exists
 - an app-install starter layer that turns each workflow profile into a first-pass software install plan instead of leaving app setup ad-hoc
+- a workflow proof-pass layer that verifies real launch/save/export behavior before a workflow is considered genuinely usable
 - a hidden session-start prep step that warms the Windows Apps path without opening an extra desktop
 
 ## Future Target

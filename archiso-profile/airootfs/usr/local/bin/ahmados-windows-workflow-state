@@ -37,6 +37,7 @@ vm_template_report="${state_root}/windows-vm-template.md"
 vm_creation_report="${state_root}/windows-vm-creation-starter.md"
 vm_postcreate_report="${state_root}/windows-vm-postcreate.md"
 app_install_report="${state_root}/windows-app-install-starter.md"
+workflow_proof_report="${state_root}/windows-workflow-proof-pass.md"
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="adobe-creator"
@@ -65,6 +66,7 @@ vm_template_marker="${workflow_state_root}/vm-template-ready.marker"
 vm_creation_marker="${workflow_state_root}/vm-creation-starter-ready.marker"
 vm_postcreate_marker="${workflow_state_root}/vm-postcreate-ready.marker"
 app_install_marker="${workflow_state_root}/app-install-starter-ready.marker"
+workflow_proof_marker="${workflow_state_root}/workflow-proof-ready.marker"
 notes_path="${workflow_state_root}/current-notes.md"
 
 touch "${notes_path}"
@@ -132,6 +134,11 @@ if [[ -f "${apps_installed_marker}" ]]; then
     status="in-progress"
 fi
 
+if [[ -f "${apps_installed_marker}" && -f "${workflow_proof_marker}" ]]; then
+    phase="workflow-proof-ready"
+    status="in-progress"
+fi
+
 if [[ -f "${checklist_complete_marker}" ]]; then
     phase="workflow-ready"
     status="ready-for-next-stage"
@@ -154,6 +161,7 @@ fi
     printf -- '- VM Creation Starter Ready: %s\n' "$([[ -f "${vm_creation_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Post-Create Ready: %s\n' "$([[ -f "${vm_postcreate_marker}" ]] && printf yes || printf no)"
     printf -- '- App Install Starter Ready: %s\n' "$([[ -f "${app_install_marker}" ]] && printf yes || printf no)"
+    printf -- '- Workflow Proof Ready: %s\n' "$([[ -f "${workflow_proof_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Created: %s\n' "$([[ -f "${vm_created_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Configured: %s\n' "$([[ -f "${vm_configured_marker}" ]] && printf yes || printf no)"
     printf -- '- Apps Installed: %s\n' "$([[ -f "${apps_installed_marker}" ]] && printf yes || printf no)"
@@ -172,6 +180,7 @@ fi
     printf -- '- VM Creation Starter Report: %s\n' "${vm_creation_report}"
     printf -- '- VM Post-Create Report: %s\n' "${vm_postcreate_report}"
     printf -- '- App Install Starter Report: %s\n' "${app_install_report}"
+    printf -- '- Workflow Proof Pass Report: %s\n' "${workflow_proof_report}"
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
 } > "${state_report}"

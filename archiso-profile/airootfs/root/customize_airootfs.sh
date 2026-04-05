@@ -53,6 +53,8 @@ chmod 755 /usr/local/bin/ahmados-windows-vm-postcreate
 chmod 755 /usr/local/bin/lumina-windows-vm-postcreate
 chmod 755 /usr/local/bin/ahmados-windows-app-install-starter
 chmod 755 /usr/local/bin/lumina-windows-app-install-starter
+chmod 755 /usr/local/bin/ahmados-windows-workflow-proof-pass
+chmod 755 /usr/local/bin/lumina-windows-workflow-proof-pass
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+catalog_path="/usr/share/lumina/windows-apps/catalog.tsv"
+proof_report="${state_root}/windows-workflow-proof-pass.md"
+app_install_report="${state_root}/windows-app-install-starter.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-app-install-starter --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+checklists_dir="${workspace_root}/checklists"
+notes_dir="${workspace_root}/notes"
+workflow_state_root="${workspace_root}/state"
+mkdir -p "${checklists_dir}" "${notes_dir}" "${workflow_state_root}"
+
+proof_marker="${workflow_state_root}/workflow-proof-ready.marker"
+proof_plan_path="${workspace_root}/workflow-proof-plan.md"
+proof_env_path="${workspace_root}/workflow-proof.env"
+proof_checklist_path="${checklists_dir}/workflow-proof-checklist.md"
+proof_notes_path="${notes_dir}/workflow-proof-notes.md"
+
+IFS=',' read -r -a app_id_array <<< "${app_ids}"
+proof_targets=""
+
+for app_id in "${app_id_array[@]}"; do
+    app_row="$(awk -F'|' -v target="${app_id}" 'NF >= 7 && $1 == target {print; exit}' "${catalog_path}" || true)"
+    if [[ -z "${app_row}" ]]; then
+        continue
+    fi
+
+    IFS='|' read -r catalog_id app_name category basic_path vm_path studio_path catalog_notes <<< "${app_row}"
+    proof_targets+="- ${app_name}: launch it, open a real asset or sample, save or export once, then confirm the output lands where you expect.\n"
+done
+
+if [[ -z "${proof_targets}" ]]; then
+    proof_targets="- No concrete proof targets were resolved from the profile yet.\n"
+fi
+
+{
+    printf 'LUMINA_WINDOWS_PROFILE_ID=%q\n' "${profile_id}"
+    printf 'LUMINA_WINDOWS_PROFILE_NAME=%q\n' "${profile_name}"
+    printf 'LUMINA_WINDOWS_PROOF_CHECKLIST=%q\n' "${proof_checklist_path}"
+    printf 'LUMINA_WINDOWS_PROOF_NOTES=%q\n' "${proof_notes_path}"
+} > "${proof_env_path}"
+
+{
+    printf '# %s Workflow Proof Notes\n\n' "${profile_name}"
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Capture sign-in issues, export problems, crashes, missing plugins, share-path surprises, and latency notes here.\n'
+} > "${proof_notes_path}"
+
+{
+    printf '# %s Workflow Proof Checklist\n\n' "${profile_name}"
+    printf -- '- Confirm `apps-installed` is genuinely complete before you run this proof pass.\n'
+    printf -- '- Launch each core app and reach one realistic task, not just the splash screen.\n'
+    printf -- '- Open or import one real sample project, document, or asset.\n'
+    printf -- '- Save or export once, then confirm the result lands in the expected Lumina-visible path.\n'
+    printf -- '- Record every issue in `%s`.\n' "${proof_notes_path}"
+    printf -- '- Only mark `checklist-complete` after the first realistic proof pass feels repeatable, not lucky.\n'
+} > "${proof_checklist_path}"
+
+{
+    printf '# %s Workflow Proof Pass\n\n' "${profile_name}"
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf '\n## Proof Targets\n'
+    printf '%b' "${proof_targets}"
+    printf '\n## Proof Rhythm\n'
+    printf -- '1. Start from the app-install baseline that already launches cleanly.\n'
+    printf -- '2. Run one realistic task in each core app instead of collecting empty “it opens” wins.\n'
+    printf -- '3. Save or export once and verify the output from the Lumina side.\n'
+    printf -- '4. Write the friction down before you forget it.\n'
+    printf '\n## Files Generated For This Stage\n'
+    printf -- '- Proof Env: %s\n' "${proof_env_path}"
+    printf -- '- Proof Checklist: %s\n' "${proof_checklist_path}"
+    printf -- '- Proof Notes: %s\n' "${proof_notes_path}"
+    printf '\n## Operator Notes\n'
+    printf -- '- This is the stage where a workflow proves it is usable, not just installed.\n'
+    printf -- '- Do not close the checklist until save/export/share behavior feels trustworthy.\n'
+} > "${proof_plan_path}"
+
+touch "${proof_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows Workflow Proof Pass\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Proof Plan: %s\n' "${proof_plan_path}"
+    printf -- '- Proof Env: %s\n' "${proof_env_path}"
+    printf -- '- Proof Checklist: %s\n' "${proof_checklist_path}"
+    printf -- '- Proof Notes: %s\n' "${proof_notes_path}"
+    printf -- '- Proof Marker: %s\n' "${proof_marker}"
+    printf '\n## Related Reports\n'
+    printf -- '- App Install Starter Report: %s\n' "${app_install_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${proof_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '   Lumina Windows Workflow Proof Pass'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Proof plan: %s\n' "${proof_plan_path}"
+printf 'Report: %s\n' "${proof_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${proof_report}" >/dev/null 2>&1 || true
+fi

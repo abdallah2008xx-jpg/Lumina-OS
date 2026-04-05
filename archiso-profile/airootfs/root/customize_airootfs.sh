@@ -99,6 +99,10 @@ chmod 755 /usr/local/bin/ahmados-windows-app-publish-sync
 chmod 755 /usr/local/bin/lumina-windows-app-publish-sync
 chmod 755 /usr/local/bin/ahmados-windows-app-collections
 chmod 755 /usr/local/bin/lumina-windows-app-collections
+chmod 755 /usr/local/bin/ahmados-windows-collection-menu-export
+chmod 755 /usr/local/bin/lumina-windows-collection-menu-export
+chmod 755 /usr/local/bin/ahmados-windows-app-library
+chmod 755 /usr/local/bin/lumina-windows-app-library
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

@@ -45,6 +45,8 @@ installed_app_sync_report="${state_root}/windows-installed-app-sync.md"
 guest_app_publish_pack_report="${state_root}/windows-guest-app-publish-pack.md"
 app_publish_sync_report="${state_root}/windows-app-publish-sync.md"
 app_collections_report="${state_root}/windows-app-collections.md"
+collection_menu_export_report="${state_root}/windows-collection-menu-export.md"
+app_library_report="${state_root}/windows-app-library.md"
 workflow_proof_report="${state_root}/windows-workflow-proof-pass.md"
 launch_sync_report="${state_root}/windows-launch-results-sync.md"
 guest_onboarding_report="${state_root}/windows-guest-onboarding.md"
@@ -86,6 +88,8 @@ installed_app_sync_marker="${workflow_state_root}/installed-app-sync-ready.marke
 guest_app_publish_pack_marker="${workflow_state_root}/guest-app-publish-pack-ready.marker"
 app_publish_sync_marker="${workflow_state_root}/app-publish-sync-ready.marker"
 app_collections_marker="${workflow_state_root}/app-collections-ready.marker"
+collection_menu_export_marker="${workflow_state_root}/collection-menu-export-ready.marker"
+app_library_marker="${workflow_state_root}/app-library-ready.marker"
 workflow_proof_marker="${workflow_state_root}/workflow-proof-ready.marker"
 guest_agent_pack_marker="${workflow_state_root}/guest-agent-pack-ready.marker"
 launch_result_seen_marker="${workflow_state_root}/launch-result-seen.marker"
@@ -211,6 +215,16 @@ if [[ -f "${app_collections_marker}" ]]; then
     status="in-progress"
 fi
 
+if [[ -f "${collection_menu_export_marker}" ]]; then
+    phase="collection-menu-export-ready"
+    status="in-progress"
+fi
+
+if [[ -f "${app_library_marker}" ]]; then
+    phase="app-library-ready"
+    status="in-progress"
+fi
+
 if [[ -f "${linux_first_validated_marker}" ]]; then
     phase="linux-first-validated"
     status="ready-for-review"
@@ -266,6 +280,8 @@ fi
     printf -- '- Guest App Publish Pack Ready: %s\n' "$([[ -f "${guest_app_publish_pack_marker}" ]] && printf yes || printf no)"
     printf -- '- App Publish Sync Ready: %s\n' "$([[ -f "${app_publish_sync_marker}" ]] && printf yes || printf no)"
     printf -- '- App Collections Ready: %s\n' "$([[ -f "${app_collections_marker}" ]] && printf yes || printf no)"
+    printf -- '- Collection Menu Export Ready: %s\n' "$([[ -f "${collection_menu_export_marker}" ]] && printf yes || printf no)"
+    printf -- '- App Library Ready: %s\n' "$([[ -f "${app_library_marker}" ]] && printf yes || printf no)"
     printf -- '- Workflow Proof Ready: %s\n' "$([[ -f "${workflow_proof_marker}" ]] && printf yes || printf no)"
     printf -- '- Guest Agent Pack Ready: %s\n' "$([[ -f "${guest_agent_pack_marker}" ]] && printf yes || printf no)"
     printf -- '- Guest Onboarding Ready: %s\n' "$([[ -f "${guest_onboarding_marker}" ]] && printf yes || printf no)"
@@ -300,6 +316,8 @@ fi
     printf -- '- Guest App Publish Pack Report: %s\n' "${guest_app_publish_pack_report}"
     printf -- '- App Publish Sync Report: %s\n' "${app_publish_sync_report}"
     printf -- '- App Collections Report: %s\n' "${app_collections_report}"
+    printf -- '- Collection Menu Export Report: %s\n' "${collection_menu_export_report}"
+    printf -- '- App Library Report: %s\n' "${app_library_report}"
     printf -- '- Workflow Proof Pass Report: %s\n' "${workflow_proof_report}"
     printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
     printf -- '- Guest Onboarding Report: %s\n' "${guest_onboarding_report}"

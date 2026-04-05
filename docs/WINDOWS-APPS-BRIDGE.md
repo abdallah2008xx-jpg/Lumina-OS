@@ -83,6 +83,8 @@ The current phase adds:
 - a guest-app-publish-pack layer that prepares a Windows-side publish contract for installed app targets after discovery looks good
 - an app-publish-sync layer that pulls the published Windows app inventory back into Lumina so manifests and launch surfaces can trust it more strongly
 - an app-collections layer that groups Windows app surfaces into Lumina-facing collections instead of leaving everything as individual launchers only
+- a collection-menu-export layer that promotes those named Windows app collections into the Lumina menu
+- an app-library layer that gives Lumina one product-facing view for published apps, discovered apps, and collections together
 
 ## Current Limits
 
@@ -104,6 +106,8 @@ The current phase adds:
 - It can now generate a Windows-side publish pack so discovered installed apps can be promoted into a stronger shared inventory instead of staying only at the discovery level.
 - It can now sync that published inventory back into Lumina so registered manifests can move from discovered toward published.
 - It can now group the Windows app surfaces into named collections so Lumina can present broader app sets, not just single launchers.
+- It can now export those named collections into the Lumina menu instead of leaving them trapped inside workspace files.
+- It can now generate a single app-library view so the user can reason about published apps, discovered apps, and collections from one Lumina-facing surface.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 - Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.
 

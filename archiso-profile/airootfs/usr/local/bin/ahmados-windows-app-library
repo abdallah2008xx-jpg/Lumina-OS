@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+data_root="${XDG_DATA_HOME:-$HOME/.local/share}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+library_report="${state_root}/windows-app-library.md"
+app_publish_sync_report="${state_root}/windows-app-publish-sync.md"
+app_menu_export_report="${state_root}/windows-app-menu-export.md"
+collection_menu_export_report="${state_root}/windows-collection-menu-export.md"
+collections_report="${state_root}/windows-app-collections.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-app-publish-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-app-menu-export --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-collection-menu-export --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+registry_root="${workspace_root}/app-registry"
+registry_index_path="${registry_root}/registry-index.tsv"
+collections_index_path="${registry_root}/collections.tsv"
+workflow_state_root="${workspace_root}/state"
+library_marker="${workflow_state_root}/app-library-ready.marker"
+app_menu_dir="${data_root}/applications/lumina-windows-apps/${profile_id}"
+collection_menu_dir="${data_root}/applications/lumina-windows-collections/${profile_id}"
+
+mkdir -p "${workflow_state_root}"
+
+declare -A state_counts=()
+app_rows=""
+total_apps=0
+
+while IFS='|' read -r app_id app_name category registration_state preferred_route manifest_path; do
+    [[ -z "${app_id}" || "${app_id}" == \#* ]] && continue
+    state_counts["${registration_state}"]=$(( ${state_counts["${registration_state}"]:-0} + 1 ))
+    total_apps=$((total_apps + 1))
+    app_rows+="- ${app_name} | ${category} | ${registration_state}\n"
+done < "${registry_index_path}"
+
+collection_rows=""
+collection_count=0
+while IFS='|' read -r collection_id collection_name app_count ready_count launcher_script launcher_desktop; do
+    [[ -z "${collection_id}" || "${collection_id}" == \#* ]] && continue
+    collection_count=$((collection_count + 1))
+    collection_rows+="- ${collection_name}: ${ready_count}/${app_count} ready\n"
+done < "${collections_index_path}"
+
+published_count="${state_counts["published"]:-0}"
+discovered_count="${state_counts["discovered"]:-0}"
+planned_count="${state_counts["planned"]:-0}"
+not_found_count="${state_counts["not-found"]:-0}"
+pending_count="${state_counts["pending"]:-0}"
+
+[[ -n "${app_rows}" ]] || app_rows="- No app inventory rows exist yet.\n"
+[[ -n "${collection_rows}" ]] || collection_rows="- No collections exist yet.\n"
+
+touch "${library_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows App Library\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Total Apps: %s\n' "${total_apps}"
+    printf -- '- Published Apps: %s\n' "${published_count}"
+    printf -- '- Discovered Apps: %s\n' "${discovered_count}"
+    printf -- '- Planned Apps: %s\n' "${planned_count}"
+    printf -- '- Pending Apps: %s\n' "${pending_count}"
+    printf -- '- Not Found Apps: %s\n' "${not_found_count}"
+    printf -- '- Collections: %s\n' "${collection_count}"
+    printf -- '- App Menu Directory: %s\n' "${app_menu_dir}"
+    printf -- '- Collection Menu Directory: %s\n' "${collection_menu_dir}"
+    printf -- '- App Library Marker: %s\n' "${library_marker}"
+    printf '\n## App Inventory\n'
+    printf '%b' "${app_rows}"
+    printf '\n## Collections\n'
+    printf '%b' "${collection_rows}"
+    printf '\n## Related Reports\n'
+    printf -- '- App Publish Sync Report: %s\n' "${app_publish_sync_report}"
+    printf -- '- App Menu Export Report: %s\n' "${app_menu_export_report}"
+    printf -- '- Collection Menu Export Report: %s\n' "${collection_menu_export_report}"
+    printf -- '- App Collections Report: %s\n' "${collections_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${library_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '     Lumina Windows App Library'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Apps: %s\n' "${total_apps}"
+printf 'Collections: %s\n' "${collection_count}"
+printf 'Report: %s\n' "${library_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${library_report}" >/dev/null 2>&1 || true
+fi

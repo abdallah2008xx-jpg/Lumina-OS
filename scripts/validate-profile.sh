@@ -124,6 +124,8 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-guest-app-publish-pack"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-publish-sync"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-collections"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-collection-menu-export"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-library"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
@@ -177,6 +179,8 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-guest-app-publish-pack"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-publish-sync"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-collections"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-collection-menu-export"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-library"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
@@ -468,7 +472,11 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/ahmados-windows-app-publish-sync \
         /usr/local/bin/lumina-windows-app-publish-sync \
         /usr/local/bin/ahmados-windows-app-collections \
-        /usr/local/bin/lumina-windows-app-collections; do
+        /usr/local/bin/lumina-windows-app-collections \
+        /usr/local/bin/ahmados-windows-collection-menu-export \
+        /usr/local/bin/lumina-windows-collection-menu-export \
+        /usr/local/bin/ahmados-windows-app-library \
+        /usr/local/bin/lumina-windows-app-library; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
             add_error "customize_airootfs.sh does not enforce executable permissions for ${required_chmod_target}"
         fi

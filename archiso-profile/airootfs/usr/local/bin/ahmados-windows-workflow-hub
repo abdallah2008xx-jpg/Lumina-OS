@@ -1,0 +1,202 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+list_only=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        --list)
+            list_only=1
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+hub_report="${state_root}/windows-workflow-hub.md"
+bridge_report="${state_root}/windows-apps-bridge.md"
+compat_report="${state_root}/windows-compat-report.md"
+profile_report="${state_root}/windows-profile-assistant.md"
+runbook_report="${state_root}/windows-profile-runbook.md"
+bootstrap_report="${state_root}/windows-workflow-bootstrap.md"
+state_report="${state_root}/windows-workflow-state.md"
+recipe_report="${state_root}/windows-workflow-recipe.md"
+
+if [[ ${list_only} -eq 1 ]]; then
+    awk -F'|' 'NF >= 3 && $1 !~ /^#/ {printf "%s\t%s\t%s\n", $1, $2, $3}' "${profiles_path}"
+    exit 0
+fi
+
+choose_profile_with_kdialog() {
+    local entries=()
+
+    while IFS='|' read -r profile_id profile_name focus _; do
+        [[ -z "${profile_id}" || "${profile_id}" == \#* ]] && continue
+        entries+=("${profile_id}" "${profile_name} - ${focus}")
+    done < "${profiles_path}"
+
+    if [[ ${#entries[@]} -eq 0 ]]; then
+        return 1
+    fi
+
+    kdialog --title "Lumina Windows Apps" \
+        --menu "Choose the Windows workflow you want Lumina to guide from one place." \
+        "${entries[@]}" 2>/dev/null || return 1
+}
+
+if [[ -z "${selected_profile_id}" ]] && command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}" ]]; then
+    selected_profile_id="$(choose_profile_with_kdialog || true)"
+fi
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-apps --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-profile-assistant --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+
+bootstrap_marker="${workflow_state_root}/bootstrap-ready.marker"
+launch_recipe_marker="${workflow_state_root}/launch-recipe-ready.marker"
+vm_created_marker="${workflow_state_root}/vm-created.marker"
+vm_configured_marker="${workflow_state_root}/vm-configured.marker"
+apps_installed_marker="${workflow_state_root}/apps-installed.marker"
+checklist_complete_marker="${workflow_state_root}/checklist-complete.marker"
+linux_first_validated_marker="${workflow_state_root}/linux-first-validated.marker"
+
+experience_mode="$(awk -F': ' '/^- Experience Mode:/ {print $2; exit}' "${bridge_report}" 2>/dev/null || true)"
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+recommended_route="$(awk -F': ' '/^- Recommended Route:/ {print $2; exit}' "${profile_report}" 2>/dev/null || true)"
+current_phase="$(awk -F': ' '/^- Current Phase:/ {print $2; exit}' "${state_report}" 2>/dev/null || true)"
+workflow_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${state_report}" 2>/dev/null || true)"
+
+if [[ -z "${recommended_route}" ]]; then
+    recommended_route="${basic_route}"
+fi
+
+route_mode="linux-first"
+if [[ "${recommended_route}" == *"Out of scope"* ]]; then
+    route_mode="out-of-scope"
+elif [[ "${recommended_route}" == *"GPU focus"* ]]; then
+    route_mode="studio-vm"
+elif [[ "${recommended_route}" == *"Windows VM"* ]]; then
+    route_mode="windows-vm"
+fi
+
+next_action="Review the workflow reports"
+next_command="xdg-open '${profile_report}'"
+operator_note="Stay Lumina-first and move only one layer at a time."
+
+if [[ ! -f "${bootstrap_marker}" ]]; then
+    next_action="Prepare the Lumina-side workspace"
+    next_command="/usr/local/bin/lumina-windows-workflow-bootstrap --profile-id ${profile_id}"
+    operator_note="Create the folders, names, and checklists first so the workflow has a stable home."
+elif [[ ! -f "${launch_recipe_marker}" ]]; then
+    next_action="Generate the daily launch recipe"
+    next_command="/usr/local/bin/lumina-windows-workflow-recipe --profile-id ${profile_id}"
+    operator_note="This turns the workflow from setup notes into a repeatable operating rhythm."
+elif [[ "${route_mode}" == "out-of-scope" ]]; then
+    next_action="Keep this workflow documented, not promised"
+    next_command="xdg-open '${recipe_report}'"
+    operator_note="Do not market unsupported anti-cheat or stealth-sensitive paths as solved."
+elif [[ "${route_mode}" == "linux-first" && ! -f "${linux_first_validated_marker}" ]]; then
+    next_action="Validate the Linux-first route"
+    next_command="/usr/local/bin/lumina-windows-workflow-mark --profile-id ${profile_id} --step linux-first-validated"
+    operator_note="Only mark this after one realistic workflow pass feels good enough on the Lumina side."
+elif [[ "${route_mode}" != "linux-first" && ! -f "${vm_created_marker}" ]]; then
+    next_action="Create the Windows workspace VM"
+    next_command="/usr/local/bin/lumina-windows-workflow-mark --profile-id ${profile_id} --step vm-created"
+    operator_note="Create one clean VM per workflow instead of mixing unrelated app stacks together."
+elif [[ "${route_mode}" != "linux-first" && ! -f "${vm_configured_marker}" ]]; then
+    next_action="Configure the Windows workspace and shared paths"
+    next_command="/usr/local/bin/lumina-windows-workflow-mark --profile-id ${profile_id} --step vm-configured"
+    operator_note="Do this only after the VM, shared folders, and base settings feel clean and predictable."
+elif [[ "${route_mode}" != "linux-first" && ! -f "${apps_installed_marker}" ]]; then
+    next_action="Install the core app stack for this workflow"
+    next_command="/usr/local/bin/lumina-windows-workflow-mark --profile-id ${profile_id} --step apps-installed"
+    operator_note="Install the smallest complete stack first, then expand only after one app family proves stable."
+elif [[ ! -f "${checklist_complete_marker}" ]]; then
+    next_action="Complete the first-session checklist"
+    next_command="/usr/local/bin/lumina-windows-workflow-mark --profile-id ${profile_id} --step checklist-complete"
+    operator_note="Use the checklist to confirm the workflow is genuinely repeatable, not just technically possible."
+else
+    next_action="Workflow ready for the next stage"
+    next_command="xdg-open '${recipe_report}'"
+    operator_note="At this point the workflow has a stable Lumina-side home, a repeatable rhythm, and a tracked state."
+fi
+
+{
+    printf '# Lumina Windows Workflow Hub\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Focus: %s\n' "${focus}"
+    printf -- '- Experience Mode: %s\n' "${experience_mode:-unknown}"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Recommended Route: %s\n' "${recommended_route}"
+    printf -- '- Current Phase: %s\n' "${current_phase:-unknown}"
+    printf -- '- Workflow Status: %s\n' "${workflow_status:-unknown}"
+    printf '\n## Next Action\n'
+    printf -- '- %s\n' "${next_action}"
+    printf -- '- Suggested Command: `%s`\n' "${next_command}"
+    printf -- '- Operator Note: %s\n' "${operator_note}"
+    printf '\n## Marker Snapshot\n'
+    printf -- '- Bootstrap Ready: %s\n' "$([[ -f "${bootstrap_marker}" ]] && printf yes || printf no)"
+    printf -- '- Launch Recipe Ready: %s\n' "$([[ -f "${launch_recipe_marker}" ]] && printf yes || printf no)"
+    printf -- '- VM Created: %s\n' "$([[ -f "${vm_created_marker}" ]] && printf yes || printf no)"
+    printf -- '- VM Configured: %s\n' "$([[ -f "${vm_configured_marker}" ]] && printf yes || printf no)"
+    printf -- '- Apps Installed: %s\n' "$([[ -f "${apps_installed_marker}" ]] && printf yes || printf no)"
+    printf -- '- Linux-First Validated: %s\n' "$([[ -f "${linux_first_validated_marker}" ]] && printf yes || printf no)"
+    printf -- '- Checklist Complete: %s\n' "$([[ -f "${checklist_complete_marker}" ]] && printf yes || printf no)"
+    printf '\n## Core Reports\n'
+    printf -- '- Workflow Profile Report: %s\n' "${profile_report}"
+    printf -- '- Workflow Runbook Report: %s\n' "${runbook_report}"
+    printf -- '- Workflow Bootstrap Report: %s\n' "${bootstrap_report}"
+    printf -- '- Workflow Recipe Report: %s\n' "${recipe_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Windows Apps Bridge Report: %s\n' "${bridge_report}"
+    printf -- '- Windows Compatibility Report: %s\n' "${compat_report}"
+    printf '\n## Workspace Root\n'
+    printf -- '- %s\n' "${workspace_root}"
+} > "${hub_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '      Lumina Windows Workflow Hub'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Next action: %s\n' "${next_action}"
+printf 'Report: %s\n' "${hub_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${hub_report}" >/dev/null 2>&1 || true
+fi

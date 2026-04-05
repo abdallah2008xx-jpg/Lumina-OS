@@ -31,6 +31,7 @@ profile_report="${state_root}/windows-profile-assistant.md"
 bootstrap_report="${state_root}/windows-workflow-bootstrap.md"
 runbook_report="${state_root}/windows-profile-runbook.md"
 recipe_report="${state_root}/windows-workflow-recipe.md"
+hub_report="${state_root}/windows-workflow-hub.md"
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="adobe-creator"
@@ -126,6 +127,7 @@ fi
     printf -- '- Workflow Runbook Report: %s\n' "${runbook_report}"
     printf -- '- Workflow Bootstrap Report: %s\n' "${bootstrap_report}"
     printf -- '- Workflow Recipe Report: %s\n' "${recipe_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
 } > "${state_report}"
 

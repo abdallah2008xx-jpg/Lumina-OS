@@ -2,8 +2,8 @@
 Type=Application
 Version=1.0
 Name=Lumina Windows Apps
-Comment=Open the guided Lumina Windows app assistant
-Exec=/usr/local/bin/lumina-windows-profile-assistant
+Comment=Open the Lumina Windows workflow hub
+Exec=/usr/local/bin/lumina-windows-workflow-hub
 Icon=applications-other
 Terminal=false
 Categories=Qt;KDE;System;Utility;

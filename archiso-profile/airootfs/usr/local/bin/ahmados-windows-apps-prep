@@ -17,26 +17,42 @@ catalog_report="${state_root}/windows-app-catalog.md"
 lab_report="${state_root}/windows-vm-lab.md"
 
 /usr/local/bin/ahmados-windows-compat-check >/dev/null 2>&1 || true
-/usr/local/bin/ahmados-windows-vm-lab --no-open --no-launch >/dev/null 2>&1 || true
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+if [[ -z "${resource_class}" ]]; then
+    resource_class="balanced"
+fi
+
+vm_lab_prep="full"
+if [[ "${resource_class}" == "light" ]]; then
+    vm_lab_prep="deferred"
+fi
+
+if [[ "${vm_lab_prep}" == "full" ]]; then
+    /usr/local/bin/ahmados-windows-vm-lab --no-open --no-launch >/dev/null 2>&1 || true
+fi
 /usr/local/bin/ahmados-windows-apps-catalog --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-apps --no-open >/dev/null 2>&1 || true
 
-compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
 experience_mode="$(awk -F': ' '/^- Experience Mode:/ {print $2; exit}' "${bridge_report}" 2>/dev/null || true)"
 
 libvirt_probe="not-attempted"
-if command -v virsh >/dev/null 2>&1; then
+if [[ "${vm_lab_prep}" == "full" ]] && command -v virsh >/dev/null 2>&1; then
     if virsh -c qemu:///system list --all >/dev/null 2>&1; then
         libvirt_probe="ready"
     else
         libvirt_probe="attention"
     fi
+elif [[ "${vm_lab_prep}" == "deferred" ]]; then
+    libvirt_probe="deferred-lightweight"
 fi
 
 {
     printf '# Lumina Windows Apps Background Prep\n\n'
     printf -- '- Generated At: %s\n' "$(date -Is)"
     printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- VM Lab Prep: %s\n' "${vm_lab_prep}"
     printf -- '- Experience Mode: %s\n' "${experience_mode:-unknown}"
     printf -- '- libvirt Probe: %s\n' "${libvirt_probe}"
     printf -- '- Goal: Keep the Windows Apps path warm in the background without opening extra windows.\n'
@@ -48,4 +64,7 @@ fi
     printf '\n## Behavior\n'
     printf -- '- This prep step does not open a VM or a second desktop by itself.\n'
     printf -- '- It only prepares the Windows Apps path so the visible experience can feel faster and more integrated later.\n'
+    if [[ "${vm_lab_prep}" == "deferred" ]]; then
+        printf -- '- On light machines, Lumina defers the heavier VM-lab prep so the session stays responsive.\n'
+    fi
 } > "${prep_report}"

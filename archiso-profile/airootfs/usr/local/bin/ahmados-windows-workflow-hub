@@ -173,7 +173,19 @@ next_command="xdg-open '${profile_report}'"
 operator_note="Stay Lumina-first and move only one layer at a time."
 runtime_guard_note=""
 
-if [[ ! -f "${bootstrap_marker}" ]]; then
+if [[ "${resource_class}" == "light" && "${route_mode}" != "linux-first" && -f "${vm_created_marker}" && "${warm_start_status}" == "already-running" && ! -f "${launch_request_pending_marker}" ]]; then
+    next_action="Cool down the idle Windows workspace"
+    next_command="/usr/local/bin/lumina-windows-vm-runner --profile-id ${profile_id} --cooldown"
+    operator_note="This Windows workspace is already warm on a light machine and no launch is pending, so reclaiming resources is the smoothest next move."
+elif [[ "${resource_class}" == "light" && "${route_mode}" == "linux-first" && ! -f "${linux_first_validated_marker}" ]]; then
+    next_action="Validate the Linux-first route"
+    next_command="/usr/local/bin/lumina-windows-workflow-mark --profile-id ${profile_id} --step linux-first-validated"
+    operator_note="This machine is light, so the safest next move is to prove the Linux-first route before expanding Windows background load."
+elif [[ "${resource_class}" == "light" && "${pressure_state}" == "guarded-lightweight" && "${workflow_guard}" == "single-workflow" ]]; then
+    next_action="Review the lightweight app library"
+    next_command="/usr/local/bin/lumina-windows-app-library --profile-id ${profile_id}"
+    operator_note="Lightweight guard is active, so Lumina should keep the user on lighter app sets before adding more Windows load."
+elif [[ ! -f "${bootstrap_marker}" ]]; then
     next_action="Prepare the Lumina-side workspace"
     next_command="/usr/local/bin/lumina-windows-workflow-bootstrap --profile-id ${profile_id}"
     operator_note="Create the folders, names, and checklists first so the workflow has a stable home."

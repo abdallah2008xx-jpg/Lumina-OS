@@ -29,6 +29,8 @@ profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
 next_action_report="${state_root}/windows-workflow-next-action.md"
 hub_report="${state_root}/windows-workflow-hub.md"
 profile_report="${state_root}/windows-profile-assistant.md"
+compat_report="${state_root}/windows-compat-report.md"
+vm_warm_start_report="${state_root}/windows-vm-warm-start.md"
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="adobe-creator"
@@ -107,9 +109,17 @@ checklist_complete_marker="${workflow_state_root}/checklist-complete.marker"
 linux_first_validated_marker="${workflow_state_root}/linux-first-validated.marker"
 
 recommended_route="$(awk -F': ' '/^- Recommended Route:/ {print $2; exit}' "${profile_report}" 2>/dev/null || true)"
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+resource_summary="$(awk -F': ' '/^- Resource Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+warm_start_status="$(awk -F': ' '/^- Warm Start Status:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
+pressure_state="$(awk -F': ' '/^- Pressure State:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
+workflow_guard="$(awk -F': ' '/^- Workflow Guard:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
 if [[ -z "${recommended_route}" ]]; then
     recommended_route="${basic_route}"
 fi
+[[ -n "${resource_class}" ]] || resource_class="balanced"
+[[ -n "${pressure_state}" ]] || pressure_state="unknown"
+[[ -n "${workflow_guard}" ]] || workflow_guard="unknown"
 
 route_mode="linux-first"
 if [[ "${recommended_route}" == *"Out of scope"* ]]; then
@@ -126,7 +136,25 @@ action_target="${hub_report}"
 action_command="xdg-open \"${hub_report}\""
 action_reason="The workflow hub is the safest fallback when no stronger action is needed."
 
-if [[ ! -f "${bootstrap_marker}" ]]; then
+if [[ "${resource_class}" == "light" && "${route_mode}" != "linux-first" && -f "${vm_created_marker}" && "${warm_start_status}" == "already-running" && ! -f "${launch_request_pending_marker}" ]]; then
+    action_label="Cool down the idle Windows workspace"
+    action_kind="command"
+    action_target="/usr/local/bin/lumina-windows-vm-runner --profile-id ${profile_id} --cooldown"
+    action_command="/usr/local/bin/lumina-windows-vm-runner --profile-id ${profile_id} --cooldown"
+    action_reason="This Windows workspace is already warm on a light machine and no launch is pending, so reclaiming resources is the smoothest next move."
+elif [[ "${resource_class}" == "light" && "${route_mode}" == "linux-first" && ! -f "${linux_first_validated_marker}" ]]; then
+    action_label="Validate the Linux-first route first"
+    action_kind="command"
+    action_target="/usr/local/bin/lumina-windows-workflow-mark --profile-id ${profile_id} --step linux-first-validated"
+    action_command="/usr/local/bin/lumina-windows-workflow-mark --profile-id ${profile_id} --step linux-first-validated"
+    action_reason="This machine is light, so the smoothest next move is to validate the Linux-first path before expanding Windows background load."
+elif [[ "${resource_class}" == "light" && "${pressure_state}" == "guarded-lightweight" && "${workflow_guard}" == "single-workflow" ]]; then
+    action_label="Review the lightweight app library first"
+    action_kind="command"
+    action_target="/usr/local/bin/lumina-windows-app-library --profile-id ${profile_id}"
+    action_command="/usr/local/bin/lumina-windows-app-library --profile-id ${profile_id}"
+    action_reason="Lightweight guard is active, so Lumina should review the lighter published app set before scheduling more Windows load."
+elif [[ ! -f "${bootstrap_marker}" ]]; then
     action_label="Prepare the Lumina workspace"
     action_kind="command"
     action_target="/usr/local/bin/lumina-windows-workflow-bootstrap --profile-id ${profile_id}"
@@ -314,6 +342,11 @@ fi
     printf -- '- Profile: %s\n' "${profile_name}"
     printf -- '- Profile Id: %s\n' "${profile_id}"
     printf -- '- Recommended Route: %s\n' "${recommended_route}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Resource Summary: %s\n' "${resource_summary:-unknown}"
+    printf -- '- Warm Start Status: %s\n' "${warm_start_status:-not-run}"
+    printf -- '- Pressure State: %s\n' "${pressure_state}"
+    printf -- '- Workflow Guard: %s\n' "${workflow_guard}"
     printf '\n## Selected Action\n'
     printf -- '- Label: %s\n' "${action_label}"
     printf -- '- Kind: %s\n' "${action_kind}"

@@ -56,6 +56,7 @@ workflow_state_report="${state_root}/windows-workflow-state.md"
 vm_template_report="${state_root}/windows-vm-template.md"
 vm_creation_report="${state_root}/windows-vm-creation-starter.md"
 vm_postcreate_report="${state_root}/windows-vm-postcreate.md"
+app_install_report="${state_root}/windows-app-install-starter.md"
 
 bootstrap_marker="${workflow_state_root}/bootstrap-ready.marker"
 launch_recipe_marker="${workflow_state_root}/launch-recipe-ready.marker"
@@ -63,6 +64,7 @@ action_pack_marker="${workflow_state_root}/action-pack-ready.marker"
 vm_template_marker="${workflow_state_root}/vm-template-ready.marker"
 vm_creation_marker="${workflow_state_root}/vm-creation-starter-ready.marker"
 vm_postcreate_marker="${workflow_state_root}/vm-postcreate-ready.marker"
+app_install_marker="${workflow_state_root}/app-install-starter-ready.marker"
 vm_created_marker="${workflow_state_root}/vm-created.marker"
 vm_configured_marker="${workflow_state_root}/vm-configured.marker"
 apps_installed_marker="${workflow_state_root}/apps-installed.marker"
@@ -125,6 +127,12 @@ elif [[ "${route_mode}" != "out-of-scope" && ! -f "${vm_postcreate_marker}" ]]; 
     action_target="/usr/local/bin/lumina-windows-vm-postcreate --profile-id ${profile_id}"
     action_command="/usr/local/bin/lumina-windows-vm-postcreate --profile-id ${profile_id}"
     action_reason="The post-create workflow prepares the first-boot, drivers, share-validation, and clean-snapshot stage before the VM gets marked as configured."
+elif [[ "${route_mode}" != "out-of-scope" && ! -f "${app_install_marker}" ]]; then
+    action_label="Generate the app install starter"
+    action_kind="command"
+    action_target="/usr/local/bin/lumina-windows-app-install-starter --profile-id ${profile_id}"
+    action_command="/usr/local/bin/lumina-windows-app-install-starter --profile-id ${profile_id}"
+    action_reason="The app install starter prepares the first core software pass before the workflow gets marked as apps-installed."
 elif [[ "${route_mode}" == "out-of-scope" ]]; then
     action_label="Open workflow notes"
     action_kind="path"
@@ -150,11 +158,11 @@ elif [[ "${route_mode}" != "linux-first" && ! -f "${vm_configured_marker}" ]]; t
     action_command="xdg-open \"${vm_postcreate_plan_path}\""
     action_reason="This is the stage where first boot, drivers, share validation, and the clean snapshot should be handled carefully."
 elif [[ "${route_mode}" != "linux-first" && ! -f "${apps_installed_marker}" ]]; then
-    action_label="Open the workflow runbook"
+    action_label="Open the app install plan"
     action_kind="path"
-    action_target="${runbook_report}"
-    action_command="xdg-open \"${runbook_report}\""
-    action_reason="The app stack should follow the documented runbook instead of ad-hoc installs."
+    action_target="${state_root}/windows-app-install-starter.md"
+    action_command="xdg-open \"${state_root}/windows-app-install-starter.md\""
+    action_reason="The first core software pass should follow the app install plan instead of going straight into ad-hoc installs."
 elif [[ ! -f "${checklist_complete_marker}" ]]; then
     action_label="Open the first-session checklist"
     action_kind="path"
@@ -181,6 +189,7 @@ fi
     printf -- '- VM Template Report: %s\n' "${vm_template_report}"
     printf -- '- VM Creation Starter Report: %s\n' "${vm_creation_report}"
     printf -- '- VM Post-Create Report: %s\n' "${vm_postcreate_report}"
+    printf -- '- App Install Starter Report: %s\n' "${app_install_report}"
 } > "${next_action_report}"
 
 if [[ ${perform_open} -eq 1 ]]; then

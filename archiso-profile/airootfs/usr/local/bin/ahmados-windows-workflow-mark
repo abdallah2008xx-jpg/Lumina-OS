@@ -65,6 +65,9 @@ case "${step_name}" in
     vm-postcreate-ready)
         marker_path="${workflow_state_root}/vm-postcreate-ready.marker"
         ;;
+    app-install-starter-ready)
+        marker_path="${workflow_state_root}/app-install-starter-ready.marker"
+        ;;
     *)
         printf 'Unknown workflow step: %s\n' "${step_name}" >&2
         exit 1

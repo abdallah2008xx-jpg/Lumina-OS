@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+catalog_path="/usr/share/lumina/windows-apps/catalog.tsv"
+install_report="${state_root}/windows-app-install-starter.md"
+postcreate_report="${state_root}/windows-vm-postcreate.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-vm-postcreate --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+checklists_dir="${workspace_root}/checklists"
+notes_dir="${workspace_root}/notes"
+installers_dir="${workspace_root}/installers"
+workflow_state_root="${workspace_root}/state"
+mkdir -p "${checklists_dir}" "${notes_dir}" "${installers_dir}" "${workflow_state_root}"
+
+install_marker="${workflow_state_root}/app-install-starter-ready.marker"
+install_plan_path="${workspace_root}/app-install-plan.md"
+install_env_path="${workspace_root}/app-install.env"
+install_checklist_path="${checklists_dir}/app-install-checklist.md"
+install_notes_path="${notes_dir}/app-install-notes.md"
+
+IFS=',' read -r -a app_id_array <<< "${app_ids}"
+app_lines=""
+install_targets=""
+
+for app_id in "${app_id_array[@]}"; do
+    app_row="$(awk -F'|' -v target="${app_id}" 'NF >= 7 && $1 == target {print; exit}' "${catalog_path}" || true)"
+    if [[ -z "${app_row}" ]]; then
+        continue
+    fi
+
+    IFS='|' read -r catalog_id app_name category basic_path vm_path studio_path catalog_notes <<< "${app_row}"
+    app_lines+="- ${app_name} (${catalog_id})\n"
+    install_targets+="- ${app_name}: ${catalog_notes}\n"
+done
+
+if [[ -z "${app_lines}" ]]; then
+    app_lines="- No concrete app targets were resolved from the profile yet.\n"
+fi
+
+if [[ -z "${install_targets}" ]]; then
+    install_targets="- No install notes are available yet.\n"
+fi
+
+{
+    printf 'LUMINA_WINDOWS_PROFILE_ID=%q\n' "${profile_id}"
+    printf 'LUMINA_WINDOWS_PROFILE_NAME=%q\n' "${profile_name}"
+    printf 'LUMINA_WINDOWS_APP_IDS=%q\n' "${app_ids}"
+    printf 'LUMINA_WINDOWS_INSTALLERS_DIR=%q\n' "${installers_dir}"
+    printf 'LUMINA_WINDOWS_INSTALL_NOTES=%q\n' "${install_notes_path}"
+} > "${install_env_path}"
+
+{
+    printf '# %s App Install Notes\n\n' "${profile_name}"
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Use this file to record installer versions, plugin choices, login quirks, and export/import path notes.\n'
+} > "${install_notes_path}"
+
+{
+    printf '# %s App Install Checklist\n\n' "${profile_name}"
+    printf -- '- Confirm `vm-configured` is genuinely complete before you start the core app stack.\n'
+    printf -- '- Place the trusted installer files inside `%s`.\n' "${installers_dir}"
+    printf -- '- Install the smallest complete stack for this workflow first.\n'
+    printf -- '- Launch each core app once and confirm it opens, signs in if needed, and sees the shared project path.\n'
+    printf -- '- Write any quirks or license/login steps into `%s`.\n' "${install_notes_path}"
+    printf -- '- Only mark `apps-installed` after the core workflow launches cleanly and the first export/save path behaves.\n'
+} > "${install_checklist_path}"
+
+{
+    printf '# %s App Install Starter\n\n' "${profile_name}"
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Installers Directory: %s\n' "${installers_dir}"
+    printf '\n## Core Targets\n'
+    printf '%b' "${app_lines}"
+    printf '\n## Install Notes By App\n'
+    printf '%b' "${install_targets}"
+    printf '\n## Install Rhythm\n'
+    printf -- '1. Start from the clean snapshot that follows the base Windows setup.\n'
+    printf -- '2. Install only the smallest app set that proves the workflow.\n'
+    printf -- '3. Launch each app once and validate sign-in, file open, save, and export behavior.\n'
+    printf -- '4. Record every quirk before adding more apps or plugins.\n'
+    printf '\n## Files Generated For This Stage\n'
+    printf -- '- App Install Env: %s\n' "${install_env_path}"
+    printf -- '- App Install Checklist: %s\n' "${install_checklist_path}"
+    printf -- '- App Install Notes: %s\n' "${install_notes_path}"
+    printf '\n## Operator Notes\n'
+    printf -- '- Treat this stage like a baseline capture, not a full production image bake.\n'
+    printf -- '- Keep installer versions, plugin choices, and login dependencies visible in the notes file.\n'
+} > "${install_plan_path}"
+
+touch "${install_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows App Install Starter\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- App Install Plan: %s\n' "${install_plan_path}"
+    printf -- '- App Install Env: %s\n' "${install_env_path}"
+    printf -- '- App Install Checklist: %s\n' "${install_checklist_path}"
+    printf -- '- App Install Notes: %s\n' "${install_notes_path}"
+    printf -- '- App Install Marker: %s\n' "${install_marker}"
+    printf '\n## Related Reports\n'
+    printf -- '- VM Post-Create Report: %s\n' "${postcreate_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${install_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '   Lumina Windows App Install Starter'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'App install plan: %s\n' "${install_plan_path}"
+printf 'Report: %s\n' "${install_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${install_report}" >/dev/null 2>&1 || true
+fi

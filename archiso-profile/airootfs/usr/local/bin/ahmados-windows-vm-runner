@@ -30,6 +30,10 @@ while [[ $# -gt 0 ]]; do
             action="snapshot"
             shift
             ;;
+        --cooldown)
+            action="cooldown"
+            shift
+            ;;
         --status)
             action="status"
             shift
@@ -84,14 +88,21 @@ IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studi
 
 workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
 workflow_state_root="${workspace_root}/state"
+runtime_root="${state_root}/windows-runtime"
+runtime_lock_path="${runtime_root}/active-workflow.env"
+mkdir -p "${runtime_root}"
 
 # Resolve VM name from env or default
 vm_name="Lumina-${profile_id//-/_}-vm"
 starter_env_path="${workspace_root}/vm-create.env"
+resource_class="balanced"
+efficiency_mode="balanced"
 if [[ -f "${starter_env_path}" ]]; then
     # shellcheck disable=SC1090
     source "${starter_env_path}"
     vm_name="${LUMINA_WINDOWS_VM_NAME:-${vm_name}}"
+    resource_class="${LUMINA_WINDOWS_VM_RESOURCE_CLASS:-${resource_class}}"
+    efficiency_mode="${LUMINA_WINDOWS_VM_EFFICIENCY_MODE:-${efficiency_mode}}"
 fi
 
 connect_uri="qemu:///system"
@@ -198,6 +209,36 @@ do_stop() {
     fi
 }
 
+do_cooldown() {
+    ensure_libvirtd
+    local state
+    state="$(get_vm_state)"
+
+    case "${state}" in
+        running|paused|in\ shutdown|pmsuspended)
+            printf 'Cooling down VM "%s"...\n' "${vm_name}"
+            if virsh --connect "${connect_uri}" managedsave "${vm_name}" >/dev/null 2>&1; then
+                printf 'VM "%s" moved to managed-save state to reclaim host resources.\n' "${vm_name}"
+                rm -f "${runtime_lock_path}"
+                if [[ ${has_gui} -eq 1 ]]; then
+                    kdialog --title "Lumina VM Runner" \
+                        --passivepopup "VM \"${vm_name}\" cooled down to reclaim resources." 4 2>/dev/null || true
+                fi
+            else
+                printf 'Managed-save failed, falling back to clean shutdown...\n'
+                virsh --connect "${connect_uri}" shutdown "${vm_name}" >/dev/null 2>&1 || true
+                rm -f "${runtime_lock_path}"
+            fi
+            ;;
+        *)
+            printf 'VM "%s" does not need cooldown (state: %s).\n' "${vm_name}" "${state}"
+            if [[ "${state}" != "running" ]]; then
+                rm -f "${runtime_lock_path}"
+            fi
+            ;;
+    esac
+}
+
 do_connect() {
     ensure_libvirtd
     local state
@@ -290,6 +331,7 @@ case "${action}" in
     stop)    do_stop ;;
     connect) do_connect ;;
     snapshot) do_snapshot ;;
+    cooldown) do_cooldown ;;
     status)  do_status ;;
     auto)    do_auto ;;
 esac
@@ -306,9 +348,12 @@ current_state="$(get_vm_state 2>/dev/null || echo 'unknown')"
     printf -- '- VM Name: %s\n' "${vm_name}"
     printf -- '- VM State: %s\n' "${current_state}"
     printf -- '- Last Action: %s\n' "${action}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Efficiency Mode: %s\n' "${efficiency_mode}"
     printf '\n## Quick Commands\n'
     printf -- '- Start:    lumina-windows-vm-runner --profile-id %s --start\n' "${profile_id}"
     printf -- '- Stop:     lumina-windows-vm-runner --profile-id %s --stop\n' "${profile_id}"
+    printf -- '- Cooldown: lumina-windows-vm-runner --profile-id %s --cooldown\n' "${profile_id}"
     printf -- '- Connect:  lumina-windows-vm-runner --profile-id %s --connect\n' "${profile_id}"
     printf -- '- Snapshot: lumina-windows-vm-runner --profile-id %s --snapshot\n' "${profile_id}"
     printf -- '- Status:   lumina-windows-vm-runner --profile-id %s --status\n' "${profile_id}"

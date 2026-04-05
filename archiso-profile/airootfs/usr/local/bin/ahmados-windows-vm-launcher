@@ -87,6 +87,8 @@ share_path="${workspace_root}/vm-share"
 cpu_count="4"
 memory_mb="8192"
 disk_gb="100"
+resource_class="balanced"
+efficiency_mode="balanced"
 
 if [[ -f "${starter_env_path}" ]]; then
     # shellcheck disable=SC1090
@@ -97,6 +99,11 @@ if [[ -f "${starter_env_path}" ]]; then
     virtio_iso_path="${LUMINA_WINDOWS_VM_VIRTIO_ISO:-${virtio_iso_path}}"
     share_name="${LUMINA_WINDOWS_VM_SHARE_NAME:-${share_name}}"
     share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${share_path}}"
+    cpu_count="${LUMINA_WINDOWS_VM_CPU_COUNT:-${cpu_count}}"
+    memory_mb="${LUMINA_WINDOWS_VM_MEMORY_MIB:-${memory_mb}}"
+    disk_gb="${LUMINA_WINDOWS_VM_DISK_GIB:-${disk_gb}}"
+    resource_class="${LUMINA_WINDOWS_VM_RESOURCE_CLASS:-${resource_class}}"
+    efficiency_mode="${LUMINA_WINDOWS_VM_EFFICIENCY_MODE:-${efficiency_mode}}"
 fi
 
 vm_created_marker="${workflow_state_root}/vm-created.marker"
@@ -168,6 +175,8 @@ summary_text="VM Name: ${vm_name}
 CPU: ${cpu_count} vCPUs
 Memory: $((memory_mb / 1024)) GiB
 Disk: ${disk_gb} GiB
+Resource Class: ${resource_class}
+Efficiency Mode: ${efficiency_mode}
 Windows ISO: ${windows_iso_path}
 Share: ${share_name} → ${share_path}"
 
@@ -290,6 +299,11 @@ fi
     printf -- '- Profile Id: %s\n' "${profile_id}"
     printf -- '- VM Name: %s\n' "${vm_name}"
     printf -- '- VM Created: yes\n'
+    printf -- '- CPU Count: %s\n' "${cpu_count}"
+    printf -- '- Memory (MiB): %s\n' "${memory_mb}"
+    printf -- '- Disk (GiB): %s\n' "${disk_gb}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Efficiency Mode: %s\n' "${efficiency_mode}"
     printf -- '- Disk Path: %s\n' "${disk_path}"
     printf -- '- Windows ISO: %s\n' "${windows_iso_path}"
     printf -- '- Share: %s → %s\n' "${share_name}" "${share_path}"

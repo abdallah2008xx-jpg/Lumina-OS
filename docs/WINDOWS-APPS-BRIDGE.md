@@ -87,6 +87,7 @@ The current phase adds:
 - an app-library layer that gives Lumina one product-facing view for published apps, discovered apps, and collections together
 - a lightweight resource-tuning layer that classifies hosts as `light`, `balanced`, or `performance` and shrinks Windows VM budgets automatically on weaker hardware
 - a runtime guard layer that keeps weak machines in a `single-workflow` mode so hidden Windows workspaces do not pile up and cause stutter
+- a VM cooldown layer that can managed-save or shut down idle Windows workspaces so RAM and CPU pressure drop back down on weaker hardware
 
 ## Current Limits
 
@@ -112,6 +113,7 @@ The current phase adds:
 - It can now generate a single app-library view so the user can reason about published apps, discovered apps, and collections from one Lumina-facing surface.
 - It now classifies weaker hosts and biases Windows workflows toward smaller VM shapes, lower background pressure, and Linux-first routes where possible.
 - It now defers a second hidden Windows workflow on `light` machines instead of pretending every staged launch should run immediately.
+- It now supports a cooldown path so an idle Windows workspace can give host resources back instead of lingering forever in the background.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 - Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.
 

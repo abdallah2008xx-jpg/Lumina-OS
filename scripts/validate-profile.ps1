@@ -88,6 +88,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-workflow-recipe",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-workflow-hub",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-workflow-action-pack",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-workflow-next-action",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
@@ -117,6 +118,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-workflow-recipe",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-workflow-hub",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-workflow-action-pack",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-workflow-next-action",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
@@ -414,7 +416,9 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/ahmados-windows-workflow-hub",
         "/usr/local/bin/lumina-windows-workflow-hub",
         "/usr/local/bin/ahmados-windows-workflow-action-pack",
-        "/usr/local/bin/lumina-windows-workflow-action-pack"
+        "/usr/local/bin/lumina-windows-workflow-action-pack",
+        "/usr/local/bin/ahmados-windows-workflow-next-action",
+        "/usr/local/bin/lumina-windows-workflow-next-action"
     )) {
         if ($customizeContent -notmatch [regex]::Escape("chmod 755 $requiredChmodTarget")) {
             Add-Error "customize_airootfs.sh does not enforce executable permissions for $requiredChmodTarget"

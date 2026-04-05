@@ -40,6 +40,7 @@ bootstrap_report="${state_root}/windows-workflow-bootstrap.md"
 state_report="${state_root}/windows-workflow-state.md"
 recipe_report="${state_root}/windows-workflow-recipe.md"
 action_pack_report="${state_root}/windows-workflow-action-pack.md"
+next_action_report="${state_root}/windows-workflow-next-action.md"
 
 if [[ ${list_only} -eq 1 ]]; then
     awk -F'|' 'NF >= 3 && $1 !~ /^#/ {printf "%s\t%s\t%s\n", $1, $2, $3}' "${profiles_path}"
@@ -190,6 +191,7 @@ fi
     printf -- '- Workflow Bootstrap Report: %s\n' "${bootstrap_report}"
     printf -- '- Workflow Recipe Report: %s\n' "${recipe_report}"
     printf -- '- Workflow Action Pack Report: %s\n' "${action_pack_report}"
+    printf -- '- Workflow Next Action Report: %s\n' "${next_action_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
     printf -- '- Windows Apps Bridge Report: %s\n' "${bridge_report}"
     printf -- '- Windows Compatibility Report: %s\n' "${compat_report}"

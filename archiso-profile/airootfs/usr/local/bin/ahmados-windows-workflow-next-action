@@ -1,0 +1,178 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+perform_open=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            perform_open=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+next_action_report="${state_root}/windows-workflow-next-action.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+profile_report="${state_root}/windows-profile-assistant.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-workflow-hub --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+notes_dir="${workspace_root}/notes"
+actions_dir="${workspace_root}/actions"
+daily_recipe_path="${workspace_root}/checklists/daily-launch-recipe.md"
+checklist_path="${workspace_root}/checklists/first-session-checklist.md"
+runbook_report="${state_root}/windows-profile-runbook.md"
+workflow_state_report="${state_root}/windows-workflow-state.md"
+
+bootstrap_marker="${workflow_state_root}/bootstrap-ready.marker"
+launch_recipe_marker="${workflow_state_root}/launch-recipe-ready.marker"
+action_pack_marker="${workflow_state_root}/action-pack-ready.marker"
+vm_created_marker="${workflow_state_root}/vm-created.marker"
+vm_configured_marker="${workflow_state_root}/vm-configured.marker"
+apps_installed_marker="${workflow_state_root}/apps-installed.marker"
+checklist_complete_marker="${workflow_state_root}/checklist-complete.marker"
+linux_first_validated_marker="${workflow_state_root}/linux-first-validated.marker"
+
+recommended_route="$(awk -F': ' '/^- Recommended Route:/ {print $2; exit}' "${profile_report}" 2>/dev/null || true)"
+if [[ -z "${recommended_route}" ]]; then
+    recommended_route="${basic_route}"
+fi
+
+route_mode="linux-first"
+if [[ "${recommended_route}" == *"Out of scope"* ]]; then
+    route_mode="out-of-scope"
+elif [[ "${recommended_route}" == *"GPU focus"* ]]; then
+    route_mode="studio-vm"
+elif [[ "${recommended_route}" == *"Windows VM"* ]]; then
+    route_mode="windows-vm"
+fi
+
+action_label="Open workflow hub"
+action_kind="report"
+action_target="${hub_report}"
+action_command="xdg-open \"${hub_report}\""
+action_reason="The workflow hub is the safest fallback when no stronger action is needed."
+
+if [[ ! -f "${bootstrap_marker}" ]]; then
+    action_label="Prepare the Lumina workspace"
+    action_kind="command"
+    action_target="/usr/local/bin/lumina-windows-workflow-bootstrap --profile-id ${profile_id}"
+    action_command="/usr/local/bin/lumina-windows-workflow-bootstrap --profile-id ${profile_id}"
+    action_reason="The workspace must exist before the rest of the workflow can become repeatable."
+elif [[ ! -f "${launch_recipe_marker}" ]]; then
+    action_label="Generate the daily launch recipe"
+    action_kind="command"
+    action_target="/usr/local/bin/lumina-windows-workflow-recipe --profile-id ${profile_id}"
+    action_command="/usr/local/bin/lumina-windows-workflow-recipe --profile-id ${profile_id}"
+    action_reason="The recipe turns setup data into a usable daily routine."
+elif [[ ! -f "${action_pack_marker}" ]]; then
+    action_label="Generate the workspace action pack"
+    action_kind="command"
+    action_target="/usr/local/bin/lumina-windows-workflow-action-pack --profile-id ${profile_id}"
+    action_command="/usr/local/bin/lumina-windows-workflow-action-pack --profile-id ${profile_id}"
+    action_reason="The action pack gives the workflow clickable helpers instead of raw commands."
+elif [[ "${route_mode}" == "out-of-scope" ]]; then
+    action_label="Open workflow notes"
+    action_kind="path"
+    action_target="${notes_dir}"
+    action_command="xdg-open \"${notes_dir}\""
+    action_reason="Unsupported workflows should move through clear notes, not hidden promises."
+elif [[ "${route_mode}" == "linux-first" && ! -f "${linux_first_validated_marker}" ]]; then
+    action_label="Open the daily launch recipe"
+    action_kind="path"
+    action_target="${daily_recipe_path}"
+    action_command="xdg-open \"${daily_recipe_path}\""
+    action_reason="Linux-first workflows should start from the documented rhythm before any marker is closed."
+elif [[ "${route_mode}" != "linux-first" && ! -f "${vm_created_marker}" ]]; then
+    action_label="Open Lumina Windows VM Lab"
+    action_kind="command"
+    action_target="/usr/local/bin/lumina-windows-vm-lab"
+    action_command="/usr/local/bin/lumina-windows-vm-lab"
+    action_reason="The next real step is creating the Windows workspace itself."
+elif [[ "${route_mode}" != "linux-first" && ! -f "${vm_configured_marker}" ]]; then
+    action_label="Open the workflow action pack"
+    action_kind="path"
+    action_target="${actions_dir}"
+    action_command="xdg-open \"${actions_dir}\""
+    action_reason="At this stage the operator usually needs the helper scripts and shared-path actions close at hand."
+elif [[ "${route_mode}" != "linux-first" && ! -f "${apps_installed_marker}" ]]; then
+    action_label="Open the workflow runbook"
+    action_kind="path"
+    action_target="${runbook_report}"
+    action_command="xdg-open \"${runbook_report}\""
+    action_reason="The app stack should follow the documented runbook instead of ad-hoc installs."
+elif [[ ! -f "${checklist_complete_marker}" ]]; then
+    action_label="Open the first-session checklist"
+    action_kind="path"
+    action_target="${checklist_path}"
+    action_command="xdg-open \"${checklist_path}\""
+    action_reason="The last practical gate is finishing the checklist cleanly."
+fi
+
+{
+    printf '# Lumina Windows Workflow Next Action\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Recommended Route: %s\n' "${recommended_route}"
+    printf '\n## Selected Action\n'
+    printf -- '- Label: %s\n' "${action_label}"
+    printf -- '- Kind: %s\n' "${action_kind}"
+    printf -- '- Target: %s\n' "${action_target}"
+    printf -- '- Reason: %s\n' "${action_reason}"
+    printf '\n## Reference Reports\n'
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+    printf -- '- Workflow State Report: %s\n' "${workflow_state_report}"
+    printf -- '- Workflow Runbook Report: %s\n' "${runbook_report}"
+} > "${next_action_report}"
+
+if [[ ${perform_open} -eq 1 ]]; then
+    case "${action_kind}" in
+        command)
+            eval "${action_command}" >/dev/null 2>&1 || true
+            ;;
+        path|report)
+            if command -v xdg-open >/dev/null 2>&1; then
+                xdg-open "${action_target}" >/dev/null 2>&1 || true
+            fi
+            ;;
+    esac
+fi
+
+printf '%s\n' '========================================'
+printf '%s\n' '    Lumina Windows Workflow Next Action'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Action: %s\n' "${action_label}"
+printf 'Report: %s\n' "${next_action_report}"
+printf '\n'

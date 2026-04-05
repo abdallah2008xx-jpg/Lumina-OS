@@ -42,6 +42,7 @@ mkdir -p "${state_root}"
 profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
 profile_report="${state_root}/windows-profile-assistant.md"
 broker_report="${state_root}/windows-launch-broker.md"
+launch_sync_report="${state_root}/windows-launch-results-sync.md"
 
 has_gui=0
 if command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
@@ -290,6 +291,12 @@ share_request_env_path="${share_launch_requests_dir}/request-${request_id}.env"
     printf 'LUMINA_WINDOWS_REQUEST_ID=%q\n' "${request_id}"
 } > "${share_request_env_path}"
 
+/usr/local/bin/ahmados-windows-launch-results-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+launch_sync_pending_requests="$(awk -F': ' '/^- Pending Requests:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+launch_sync_imported_results="$(awk -F': ' '/^- Imported Results Count:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+launch_sync_latest_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+launch_sync_latest_message="$(awk -F': ' '/^- Message:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+
 {
     printf '# Lumina Windows Launch Request\n\n'
     printf -- '- Request Id: %s\n' "${request_id}"
@@ -329,6 +336,11 @@ share_request_env_path="${share_launch_requests_dir}/request-${request_id}.env"
     printf -- '- Shared Request Env: %s\n' "${share_request_env_path}"
     printf -- '- Share Path: %s\n' "${share_path}"
     printf -- '- Staged Target: %s\n' "${staged_target_path}"
+    printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
+    printf -- '- Pending Requests: %s\n' "${launch_sync_pending_requests:-unknown}"
+    printf -- '- Imported Results Count: %s\n' "${launch_sync_imported_results:-unknown}"
+    printf -- '- Latest Launch Status: %s\n' "${launch_sync_latest_status:-unknown}"
+    printf -- '- Latest Launch Message: %s\n' "${launch_sync_latest_message:-unknown}"
     printf '\n## Next Step\n'
     printf -- '- %s\n' "${next_action}"
     printf -- '- Suggested Command: `%s`\n' "${next_command}"

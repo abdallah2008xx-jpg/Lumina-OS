@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --open-report)
+            open_report=1
+            shift
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+launch_sync_report="${state_root}/windows-launch-results-sync.md"
+broker_report="${state_root}/windows-launch-broker.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+share_path="${workspace_root}/vm-share"
+workspace_env_path="${workspace_root}/workspace.env"
+vm_create_env_path="${workspace_root}/vm-create.env"
+
+if [[ -f "${workspace_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${workspace_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_DIR:-${share_path}}"
+fi
+
+if [[ -f "${vm_create_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${vm_create_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${share_path}}"
+fi
+
+share_launch_root="${share_path}/launch-broker"
+requests_dir="${share_launch_root}/requests"
+results_dir="${share_launch_root}/results"
+archive_dir="${share_launch_root}/archive"
+imported_results_dir="${workspace_root}/launch-results"
+imported_archive_dir="${workspace_root}/launch-results/archive"
+mkdir -p "${workflow_state_root}" "${requests_dir}" "${results_dir}" "${archive_dir}" "${imported_results_dir}" "${imported_archive_dir}"
+
+launch_result_seen_marker="${workflow_state_root}/launch-result-seen.marker"
+launch_request_pending_marker="${workflow_state_root}/launch-request-pending.marker"
+
+pending_requests=0
+shared_results_count=0
+imported_results_count=0
+new_results_count=0
+archived_requests_count=0
+latest_result_path=""
+latest_result_status="none"
+latest_result_message="none"
+
+pending_requests="$(find "${requests_dir}" -maxdepth 1 -type f -name 'request-*.env' 2>/dev/null | wc -l | tr -d ' ')"
+shared_results_count="$(find "${results_dir}" -maxdepth 1 -type f -name 'result-*.md' 2>/dev/null | wc -l | tr -d ' ')"
+archived_requests_count="$(find "${archive_dir}" -maxdepth 1 -type f -name 'request-*.env' 2>/dev/null | wc -l | tr -d ' ')"
+
+while IFS= read -r -d '' result_path; do
+    result_basename="$(basename "${result_path}")"
+    imported_path="${imported_results_dir}/${result_basename}"
+
+    if [[ ! -f "${imported_path}" ]] || ! cmp -s "${result_path}" "${imported_path}"; then
+        cp -f "${result_path}" "${imported_path}"
+        new_results_count=$((new_results_count + 1))
+    fi
+
+    if [[ -z "${latest_result_path}" || "${result_path}" -nt "${latest_result_path}" ]]; then
+        latest_result_path="${result_path}"
+    fi
+done < <(find "${results_dir}" -maxdepth 1 -type f -name 'result-*.md' -print0 2>/dev/null)
+
+imported_results_count="$(find "${imported_results_dir}" -maxdepth 1 -type f -name 'result-*.md' 2>/dev/null | wc -l | tr -d ' ')"
+
+if [[ -n "${latest_result_path}" && -f "${latest_result_path}" ]]; then
+    latest_result_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${latest_result_path}" 2>/dev/null || true)"
+    latest_result_message="$(awk -F': ' '/^- Message:/ {print $2; exit}' "${latest_result_path}" 2>/dev/null || true)"
+    [[ -n "${latest_result_status}" ]] || latest_result_status="unknown"
+    [[ -n "${latest_result_message}" ]] || latest_result_message="No message captured."
+fi
+
+if [[ "${pending_requests}" -gt 0 ]]; then
+    touch "${launch_request_pending_marker}"
+else
+    rm -f "${launch_request_pending_marker}"
+fi
+
+if [[ "${imported_results_count}" -gt 0 ]]; then
+    touch "${launch_result_seen_marker}"
+else
+    rm -f "${launch_result_seen_marker}"
+fi
+
+{
+    printf '# Lumina Windows Launch Results Sync\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Share Path: %s\n' "${share_path}"
+    printf -- '- Requests Dir: %s\n' "${requests_dir}"
+    printf -- '- Results Dir: %s\n' "${results_dir}"
+    printf -- '- Imported Results Dir: %s\n' "${imported_results_dir}"
+    printf -- '- Archived Requests Dir: %s\n' "${archive_dir}"
+    printf -- '- Pending Requests: %s\n' "${pending_requests}"
+    printf -- '- Shared Results Count: %s\n' "${shared_results_count}"
+    printf -- '- Imported Results Count: %s\n' "${imported_results_count}"
+    printf -- '- New Results Imported: %s\n' "${new_results_count}"
+    printf -- '- Archived Requests Count: %s\n' "${archived_requests_count}"
+    printf -- '- Launch Result Seen Marker: %s\n' "$([[ -f "${launch_result_seen_marker}" ]] && printf yes || printf no)"
+    printf -- '- Launch Request Pending Marker: %s\n' "$([[ -f "${launch_request_pending_marker}" ]] && printf yes || printf no)"
+    printf '\n## Latest Result\n'
+    printf -- '- Result File: %s\n' "${latest_result_path:-none}"
+    printf -- '- Status: %s\n' "${latest_result_status}"
+    printf -- '- Message: %s\n' "${latest_result_message}"
+    printf '\n## Operator Notes\n'
+    printf -- '- If pending requests stay above zero and imported results stay at zero, the guest-side launch agent is probably not installed or not running.\n'
+    printf -- '- If imported results appear here, Lumina now has proof that the Windows side consumed a staged launch request.\n'
+    printf -- '- Broker Report: %s\n' "${broker_report}"
+} > "${launch_sync_report}"
+
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+printf '%s\n' '========================================'
+printf '%s\n' '  Lumina Windows Launch Results Sync'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Pending requests: %s\n' "${pending_requests}"
+printf 'Imported results: %s\n' "${imported_results_count}"
+printf 'Report: %s\n' "${launch_sync_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${launch_sync_report}" >/dev/null 2>&1 || true
+fi

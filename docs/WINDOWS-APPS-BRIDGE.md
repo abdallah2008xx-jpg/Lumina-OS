@@ -68,13 +68,16 @@ The current phase adds:
 - a staged launch-request layer that copies unsupported Windows launch files into the workflow share and opens the right VM path honestly
 - a guest-agent pack that generates the Windows-side launch consumer and startup helper for the selected workflow
 - a warm-start VM layer that starts the Windows workspace quietly and reports whether pending launch requests are ready to be consumed
+- a launch-results sync layer that imports shared guest results back into Lumina workflow state so staged EXE requests are no longer a blind queue
 
 ## Current Limits
 
 - Lumina now owns the `.exe` and `.msi` entry point on the desktop side.
 - It can select a workflow, prepare a workspace, stage the launch request, and open the right VM tools.
 - It can also generate the guest-side launch agent pack and a quiet warm-start path for the VM.
+- It can now sync launch result files back into the Lumina workflow and mark whether a request is still pending or already consumed by the guest.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
+- Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.
 
 ## Future Target
 

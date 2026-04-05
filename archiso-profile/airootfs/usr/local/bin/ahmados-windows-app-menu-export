@@ -58,6 +58,8 @@ menu_export_marker="${workflow_state_root}/app-menu-export-ready.marker"
 
 mkdir -p "${export_dir}" "${workflow_state_root}"
 
+find "${export_dir}" -maxdepth 1 -type f -name "lumina-windows-${profile_id}-*.desktop" -delete 2>/dev/null || true
+
 export_count=0
 export_lines=""
 

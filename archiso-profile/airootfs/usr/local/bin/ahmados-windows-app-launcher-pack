@@ -52,6 +52,8 @@ launchers_dir="${registry_root}/launchers"
 workflow_state_root="${workspace_root}/state"
 mkdir -p "${launchers_dir}" "${workflow_state_root}"
 
+find "${launchers_dir}" -maxdepth 1 -type f \( -name 'launch-*.sh' -o -name '*.desktop' \) -delete 2>/dev/null || true
+
 launcher_pack_marker="${workflow_state_root}/app-launcher-pack-ready.marker"
 generated_count=0
 generated_lines=""

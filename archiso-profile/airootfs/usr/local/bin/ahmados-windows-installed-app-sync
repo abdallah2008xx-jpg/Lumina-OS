@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+sync_report="${state_root}/windows-installed-app-sync.md"
+launch_sync_report="${state_root}/windows-launch-results-sync.md"
+guest_discovery_report="${state_root}/windows-guest-app-discovery.md"
+manifest_hydration_report="${state_root}/windows-app-manifest-hydration.md"
+launcher_pack_report="${state_root}/windows-app-launcher-pack.md"
+app_surfaces_report="${state_root}/windows-app-surfaces.md"
+app_menu_export_report="${state_root}/windows-app-menu-export.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+sync_marker="${workflow_state_root}/installed-app-sync-ready.marker"
+mkdir -p "${workflow_state_root}"
+
+/usr/local/bin/ahmados-windows-launch-results-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-guest-app-discovery --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-app-manifest-hydration --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-app-launcher-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-app-surfaces --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-app-menu-export --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+hydration_status="$(awk -F': ' '/^- Hydration Status:/ {print $2; exit}' "${manifest_hydration_report}" 2>/dev/null || true)"
+imported_results="$(awk -F': ' '/^- Imported Results Count:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+exported_launchers="$(awk -F': ' '/^- Exported Launchers:/ {print $2; exit}' "${app_menu_export_report}" 2>/dev/null || true)"
+
+[[ -n "${hydration_status}" ]] || hydration_status="unknown"
+[[ -n "${imported_results}" ]] || imported_results="0"
+[[ -n "${exported_launchers}" ]] || exported_launchers="0"
+
+touch "${sync_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows Installed App Sync\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Sync Marker: %s\n' "${sync_marker}"
+    printf -- '- Imported Launch Results: %s\n' "${imported_results}"
+    printf -- '- Hydration Status: %s\n' "${hydration_status}"
+    printf -- '- Exported Menu Launchers: %s\n' "${exported_launchers}"
+    printf '\n## Sync Flow\n'
+    printf -- '1. Sync launch results from the shared Windows workspace.\n'
+    printf -- '2. Generate or refresh the guest app discovery pack.\n'
+    printf -- '3. Hydrate registered manifests from discovery results.\n'
+    printf -- '4. Rebuild workspace launchers and app surfaces.\n'
+    printf -- '5. Re-export the Windows app launchers into the Lumina application menu.\n'
+    printf '\n## Related Reports\n'
+    printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
+    printf -- '- Guest App Discovery Report: %s\n' "${guest_discovery_report}"
+    printf -- '- App Manifest Hydration Report: %s\n' "${manifest_hydration_report}"
+    printf -- '- App Launcher Pack Report: %s\n' "${launcher_pack_report}"
+    printf -- '- App Surfaces Report: %s\n' "${app_surfaces_report}"
+    printf -- '- App Menu Export Report: %s\n' "${app_menu_export_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${sync_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '   Lumina Windows Installed App Sync'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Hydration: %s\n' "${hydration_status}"
+printf 'Exported menu launchers: %s\n' "${exported_launchers}"
+printf 'Report: %s\n' "${sync_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${sync_report}" >/dev/null 2>&1 || true
+fi

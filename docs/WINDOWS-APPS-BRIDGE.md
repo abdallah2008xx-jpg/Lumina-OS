@@ -72,6 +72,8 @@ The current phase adds:
 - a launch-session layer that chains broker, warm-start, and results-sync together when the user simply clicks a Windows launch file
 - a guest-onboarding layer that turns the generated guest agent pack into a concrete Windows-side install checklist and success gate
 - an app-registration layer that turns installed app sets into named manifests so later proof passes and launch flows target known apps instead of raw setup steps
+- an app-launcher-pack layer that turns registered apps into concrete launchers instead of leaving them as manifests only
+- a registered-app launch layer that stages named app requests through the Windows workspace instead of relying only on raw `.exe` clicks
 
 ## Current Limits
 
@@ -82,6 +84,8 @@ The current phase adds:
 - Desktop-side `.exe` clicks now enter a full launch session flow instead of stopping at the raw broker layer.
 - It can now define the exact Windows-side onboarding step required before a staged request can honestly become hands-free.
 - It can now generate named app manifests for each workflow so installed Windows apps become trackable entities inside Lumina.
+- It can now generate registered-app launchers that target known Windows app manifests rather than relying only on raw `.exe` clicks.
+- It can now stage named registered-app launch requests through the same Lumina workflow path instead of treating every Windows app launch like an anonymous file.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 - Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.
 

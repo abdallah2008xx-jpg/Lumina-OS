@@ -1,0 +1,190 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+selected_app_id=""
+open_report=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --app-id)
+            selected_app_id="${2:-}"
+            shift 2
+            ;;
+        --open-report)
+            open_report=1
+            shift
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+if [[ -z "${selected_profile_id}" || -z "${selected_app_id}" ]]; then
+    printf 'Usage: %s --profile-id <id> --app-id <app-id>\n' "$0" >&2
+    exit 1
+fi
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+launch_report="${state_root}/windows-registered-app-launch.md"
+warm_start_report="${state_root}/windows-vm-warm-start.md"
+launch_sync_report="${state_root}/windows-launch-results-sync.md"
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+registry_root="${workspace_root}/app-registry"
+registry_index_path="${registry_root}/registry-index.tsv"
+share_path="${workspace_root}/vm-share"
+vm_name="Lumina-${profile_id//-/_}-vm"
+workspace_env_path="${workspace_root}/workspace.env"
+vm_create_env_path="${workspace_root}/vm-create.env"
+vm_created_marker="${workflow_state_root}/vm-created.marker"
+vm_configured_marker="${workflow_state_root}/vm-configured.marker"
+
+if [[ -f "${workspace_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${workspace_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_DIR:-${share_path}}"
+fi
+
+if [[ -f "${vm_create_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${vm_create_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${share_path}}"
+    vm_name="${LUMINA_WINDOWS_VM_NAME:-${vm_name}}"
+fi
+
+if [[ ! -f "${registry_index_path}" ]]; then
+    /usr/local/bin/ahmados-windows-app-registration --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+fi
+
+app_row="$(awk -F'|' -v target="${selected_app_id}" 'NF >= 6 && $1 == target {print; exit}' "${registry_index_path}" || true)"
+if [[ -z "${app_row}" ]]; then
+    printf 'Unknown registered app id: %s\n' "${selected_app_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r app_id app_name app_category registration_state preferred_route manifest_path <<< "${app_row}"
+launch_target="$(awk -F': ' '/^- Suggested Launch Target:/ {print $2; exit}' "${manifest_path}" 2>/dev/null || true)"
+if [[ -z "${launch_target}" || "${launch_target}" == "<fill after install>" ]]; then
+    launch_target=""
+fi
+
+launch_outcome="needs-manifest-target"
+launch_note="The app manifest still needs the real Windows launch target."
+pending_requests="0"
+guest_launch_status="not-run"
+guest_launch_message="The app launch request was not sent."
+
+share_launch_root="${share_path}/launch-broker"
+share_launch_requests_dir="${share_launch_root}/requests"
+mkdir -p "${share_launch_requests_dir}"
+request_id="$(date +%Y%m%d-%H%M%S)-${selected_app_id//[^A-Za-z0-9_-]/_}-$$"
+share_request_env_path="${share_launch_requests_dir}/request-${request_id}.env"
+
+if [[ ! -f "${vm_created_marker}" ]]; then
+    launch_outcome="vm-missing"
+    launch_note="The Windows VM still needs to be created before registered apps can launch."
+elif [[ ! -f "${vm_configured_marker}" ]]; then
+    launch_outcome="vm-needs-config"
+    launch_note="The Windows VM exists, but the post-create configuration step is not complete yet."
+elif [[ -z "${launch_target}" ]]; then
+    launch_outcome="manifest-missing-target"
+    launch_note="Fill the real Windows launch target inside the app manifest before using this app launcher."
+else
+    {
+        printf 'LUMINA_WINDOWS_PROFILE_ID=%q\n' "${profile_id}"
+        printf 'LUMINA_WINDOWS_PROFILE_NAME=%q\n' "${profile_name}"
+        printf 'LUMINA_WINDOWS_REQUEST_ID=%q\n' "${request_id}"
+        printf 'LUMINA_WINDOWS_TARGET_KIND=%q\n' "registered-app"
+        printf 'LUMINA_WINDOWS_REGISTERED_APP_ID=%q\n' "${app_id}"
+        printf 'LUMINA_WINDOWS_REGISTERED_APP_NAME=%q\n' "${app_name}"
+        printf 'LUMINA_WINDOWS_REGISTERED_LAUNCH_TARGET=%q\n' "${launch_target}"
+        printf 'LUMINA_WINDOWS_VM_NAME=%q\n' "${vm_name}"
+        printf 'LUMINA_WINDOWS_SHARE_PATH=%q\n' "${share_path}"
+    } > "${share_request_env_path}"
+
+    /usr/local/bin/ahmados-windows-vm-warm-start --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+    /usr/local/bin/ahmados-windows-launch-results-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+    pending_requests="$(awk -F': ' '/^- Pending Requests:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+    guest_launch_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+    guest_launch_message="$(awk -F': ' '/^- Message:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+
+    if [[ "${pending_requests:-0}" != "0" && ( -z "${guest_launch_status}" || "${guest_launch_status}" == "none" ) ]]; then
+        launch_outcome="waiting-for-guest-agent"
+        launch_note="The registered app request is queued, but the Windows guest still needs to consume it."
+    else
+        launch_outcome="registered-launch-staged"
+        launch_note="Lumina sent a named registered-app request and synced back the latest guest-side launch feedback."
+    fi
+fi
+
+{
+    printf '# Lumina Windows Registered App Launch\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- App Id: %s\n' "${app_id}"
+    printf -- '- App Name: %s\n' "${app_name}"
+    printf -- '- Registration State: %s\n' "${registration_state}"
+    printf -- '- Manifest Path: %s\n' "${manifest_path}"
+    printf -- '- Windows Launch Target: %s\n' "${launch_target:-missing}"
+    printf -- '- VM Name: %s\n' "${vm_name}"
+    printf -- '- Launch Outcome: %s\n' "${launch_outcome}"
+    printf -- '- Pending Requests: %s\n' "${pending_requests:-unknown}"
+    printf -- '- Guest Launch Status: %s\n' "${guest_launch_status:-unknown}"
+    printf -- '- Guest Launch Message: %s\n' "${guest_launch_message:-unknown}"
+    printf '\n## Launch Note\n'
+    printf -- '- %s\n' "${launch_note}"
+    printf '\n## Related Reports\n'
+    printf -- '- VM Warm Start Report: %s\n' "${warm_start_report}"
+    printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
+} > "${launch_report}"
+
+if command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    case "${launch_outcome}" in
+        registered-launch-staged)
+            kdialog --title "Lumina Windows Apps" --passivepopup "Lumina launched the registered app request for ${app_name}." 3 2>/dev/null || true
+            ;;
+        waiting-for-guest-agent)
+            kdialog --title "Lumina Windows Apps" --passivepopup "Registered app queued. Finish the guest-agent setup once to make this hands-free." 4 2>/dev/null || true
+            ;;
+    esac
+fi
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${launch_report}" >/dev/null 2>&1 || true
+fi
+
+printf '%s\n' '========================================'
+printf '%s\n' ' Lumina Windows Registered App Launch'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'App: %s\n' "${app_name}"
+printf 'Outcome: %s\n' "${launch_outcome}"
+printf 'Report: %s\n' "${launch_report}"
+printf '\n'

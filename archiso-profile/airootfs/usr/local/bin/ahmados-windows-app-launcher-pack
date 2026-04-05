@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+launcher_pack_report="${state_root}/windows-app-launcher-pack.md"
+registration_report="${state_root}/windows-app-registration.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-app-registration --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+registry_root="${workspace_root}/app-registry"
+registry_index_path="${registry_root}/registry-index.tsv"
+launchers_dir="${registry_root}/launchers"
+workflow_state_root="${workspace_root}/state"
+mkdir -p "${launchers_dir}" "${workflow_state_root}"
+
+launcher_pack_marker="${workflow_state_root}/app-launcher-pack-ready.marker"
+generated_count=0
+generated_lines=""
+
+while IFS='|' read -r app_id app_name app_category registration_state preferred_route manifest_path; do
+    [[ "${app_id}" == \#* || -z "${app_id}" ]] && continue
+
+    launcher_script_path="${launchers_dir}/launch-${app_id}.sh"
+    launcher_desktop_path="${launchers_dir}/${app_id}.desktop"
+
+    cat > "${launcher_script_path}" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+exec /usr/local/bin/lumina-windows-registered-app-launch --profile-id ${profile_id} --app-id ${app_id}
+EOF
+    chmod 755 "${launcher_script_path}"
+
+    cat > "${launcher_desktop_path}" <<EOF
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=${app_name} (Lumina Windows)
+Comment=Launch the registered Windows app through Lumina Windows Apps
+Exec=/usr/local/bin/lumina-windows-registered-app-launch --profile-id ${profile_id} --app-id ${app_id}
+Icon=application-x-ms-dos-executable
+Terminal=false
+Categories=Utility;System;
+StartupNotify=true
+EOF
+
+    generated_count=$((generated_count + 1))
+    generated_lines+="- ${app_name}: ${launcher_script_path} | ${launcher_desktop_path}\n"
+done < "${registry_index_path}"
+
+if [[ -z "${generated_lines}" ]]; then
+    generated_lines="- No launchers were generated because the registry index is empty.\n"
+fi
+
+touch "${launcher_pack_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows App Launcher Pack\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Launchers Directory: %s\n' "${launchers_dir}"
+    printf -- '- Generated Launchers: %s\n' "${generated_count}"
+    printf -- '- Launcher Pack Marker: %s\n' "${launcher_pack_marker}"
+    printf '\n## Generated Launchers\n'
+    printf '%b' "${generated_lines}"
+    printf '\n## Related Reports\n'
+    printf -- '- App Registration Report: %s\n' "${registration_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${launcher_pack_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '   Lumina Windows App Launcher Pack'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Launchers: %s\n' "${generated_count}"
+printf 'Report: %s\n' "${launcher_pack_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${launcher_pack_report}" >/dev/null 2>&1 || true
+fi

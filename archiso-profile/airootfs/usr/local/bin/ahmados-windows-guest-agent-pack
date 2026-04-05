@@ -151,8 +151,23 @@ function Process-LuminaRequest {
     $RequestId = $Request['LUMINA_WINDOWS_REQUEST_ID']
     $TargetKind = $Request['LUMINA_WINDOWS_TARGET_KIND']
     $TargetPath = $Request['LUMINA_WINDOWS_STAGED_TARGET']
+    $RegisteredLaunchTarget = $Request['LUMINA_WINDOWS_REGISTERED_LAUNCH_TARGET']
+    $RegisteredAppName = $Request['LUMINA_WINDOWS_REGISTERED_APP_NAME']
 
     if (-not $RequestId) {
+        return
+    }
+
+    if ($TargetKind -eq 'registered-app') {
+        if (-not $RegisteredLaunchTarget) {
+            Write-LuminaResult -RequestId $RequestId -Status 'missing-registered-target' -Message "Registered app launch target is missing."
+            Move-Item -LiteralPath $RequestPath -Destination (Join-Path $LuminaArchiveDir ([IO.Path]::GetFileName($RequestPath))) -Force
+            return
+        }
+
+        Start-Process -FilePath $RegisteredLaunchTarget
+        Write-LuminaResult -RequestId $RequestId -Status 'started-registered-app' -Message "Started registered app: $RegisteredAppName ($RegisteredLaunchTarget)"
+        Move-Item -LiteralPath $RequestPath -Destination (Join-Path $LuminaArchiveDir ([IO.Path]::GetFileName($RequestPath))) -Force
         return
     }
 

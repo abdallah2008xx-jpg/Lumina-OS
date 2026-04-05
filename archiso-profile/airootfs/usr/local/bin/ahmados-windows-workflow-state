@@ -38,6 +38,7 @@ vm_creation_report="${state_root}/windows-vm-creation-starter.md"
 vm_postcreate_report="${state_root}/windows-vm-postcreate.md"
 app_install_report="${state_root}/windows-app-install-starter.md"
 app_registration_report="${state_root}/windows-app-registration.md"
+app_launcher_pack_report="${state_root}/windows-app-launcher-pack.md"
 workflow_proof_report="${state_root}/windows-workflow-proof-pass.md"
 launch_sync_report="${state_root}/windows-launch-results-sync.md"
 guest_onboarding_report="${state_root}/windows-guest-onboarding.md"
@@ -70,6 +71,7 @@ vm_creation_marker="${workflow_state_root}/vm-creation-starter-ready.marker"
 vm_postcreate_marker="${workflow_state_root}/vm-postcreate-ready.marker"
 app_install_marker="${workflow_state_root}/app-install-starter-ready.marker"
 app_registration_marker="${workflow_state_root}/app-registration-ready.marker"
+app_launcher_pack_marker="${workflow_state_root}/app-launcher-pack-ready.marker"
 workflow_proof_marker="${workflow_state_root}/workflow-proof-ready.marker"
 guest_agent_pack_marker="${workflow_state_root}/guest-agent-pack-ready.marker"
 launch_result_seen_marker="${workflow_state_root}/launch-result-seen.marker"
@@ -148,6 +150,11 @@ if [[ -f "${app_registration_marker}" ]]; then
     status="in-progress"
 fi
 
+if [[ -f "${app_launcher_pack_marker}" ]]; then
+    phase="app-launcher-pack-ready"
+    status="in-progress"
+fi
+
 if [[ -f "${linux_first_validated_marker}" ]]; then
     phase="linux-first-validated"
     status="ready-for-review"
@@ -196,6 +203,7 @@ fi
     printf -- '- VM Post-Create Ready: %s\n' "$([[ -f "${vm_postcreate_marker}" ]] && printf yes || printf no)"
     printf -- '- App Install Starter Ready: %s\n' "$([[ -f "${app_install_marker}" ]] && printf yes || printf no)"
     printf -- '- App Registration Ready: %s\n' "$([[ -f "${app_registration_marker}" ]] && printf yes || printf no)"
+    printf -- '- App Launcher Pack Ready: %s\n' "$([[ -f "${app_launcher_pack_marker}" ]] && printf yes || printf no)"
     printf -- '- Workflow Proof Ready: %s\n' "$([[ -f "${workflow_proof_marker}" ]] && printf yes || printf no)"
     printf -- '- Guest Agent Pack Ready: %s\n' "$([[ -f "${guest_agent_pack_marker}" ]] && printf yes || printf no)"
     printf -- '- Guest Onboarding Ready: %s\n' "$([[ -f "${guest_onboarding_marker}" ]] && printf yes || printf no)"
@@ -221,6 +229,7 @@ fi
     printf -- '- VM Post-Create Report: %s\n' "${vm_postcreate_report}"
     printf -- '- App Install Starter Report: %s\n' "${app_install_report}"
     printf -- '- App Registration Report: %s\n' "${app_registration_report}"
+    printf -- '- App Launcher Pack Report: %s\n' "${app_launcher_pack_report}"
     printf -- '- Workflow Proof Pass Report: %s\n' "${workflow_proof_report}"
     printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
     printf -- '- Guest Onboarding Report: %s\n' "${guest_onboarding_report}"

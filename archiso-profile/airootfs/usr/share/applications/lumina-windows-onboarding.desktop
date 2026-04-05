@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Lumina Windows Apps Setup
+Comment=Set up Windows app workflows on Lumina-OS
+Exec=/usr/local/bin/lumina-windows-onboarding
+Icon=preferences-system
+Terminal=false
+Categories=System;Utility;

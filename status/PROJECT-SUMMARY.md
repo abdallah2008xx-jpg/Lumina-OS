@@ -26,6 +26,10 @@ This file gives one fast answer to two questions:
 - a Windows VM Lab launcher now converts that compatibility result into a real quickstart path for Adobe and Windows app workflows
 - a user-facing `Lumina Windows Apps` launcher now gives this feature a cleaner one-system product surface
 - a hidden session-start prep step now warms the Windows Apps path automatically after login
+- an interactive Windows Apps onboarding flow now replaces the multi-report manual setup with one guided kdialog experience that checks hardware, asks the user's goal, and prepares the entire workspace automatically
+- a one-command VM launcher now creates a real Windows VM using `virt-install` with ISO detection, prerequisite checks, and auto-opens `virt-manager`
+- a daily VM runner now manages start, stop, connect, and snapshot operations for the Windows workspace VM from one entry point
+- an automated VM auto-configure tool now checks networking, shares, and snapshots and offers to mark the VM as configured through a guided dialog
 - live-session defaults, firstboot reporting, smoke checks, and diagnostics export are implemented
 - compatibility-preserving `lumina-*` runtime aliases now front the main live-session commands while older `ahmados-*` command names stay available underneath
 

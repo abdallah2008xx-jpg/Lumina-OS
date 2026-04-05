@@ -1,0 +1,315 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Lumina Windows VM Launcher
+# Creates a real Windows VM with one command instead of requiring
+# the user to read the creation starter report and run virt-install manually.
+
+selected_profile_id=""
+dry_run=0
+force=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --dry-run)
+            dry_run=1
+            shift
+            ;;
+        --force)
+            force=1
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+launcher_report="${state_root}/windows-vm-launcher.md"
+
+has_gui=0
+if command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    has_gui=1
+fi
+
+if [[ -z "${selected_profile_id}" ]]; then
+    if [[ ${has_gui} -eq 1 ]]; then
+        entries=()
+        while IFS='|' read -r pid pname pfocus _; do
+            [[ -z "${pid}" || "${pid}" == \#* ]] && continue
+            entries+=("${pid}" "${pname} — ${pfocus}")
+        done < "${profiles_path}"
+        if [[ ${#entries[@]} -gt 0 ]]; then
+            selected_profile_id="$(kdialog --title "Lumina VM Launcher" \
+                --menu "Which workflow VM do you want to create?" \
+                "${entries[@]}" 2>/dev/null || true)"
+        fi
+    fi
+    if [[ -z "${selected_profile_id}" ]]; then
+        selected_profile_id="adobe-creator"
+    fi
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown profile: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+# Ensure creation starter has run so env files exist
+/usr/local/bin/ahmados-windows-vm-creation-starter --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+starter_env_path="${workspace_root}/vm-create.env"
+template_env_path="${workspace_root}/vm-template.env"
+mkdir -p "${workflow_state_root}"
+
+# Load env
+vm_name="Lumina-${profile_id//-/_}-vm"
+disk_path="${workspace_root}/${vm_name}.qcow2"
+windows_iso_path="${workspace_root}/installers/windows.iso"
+virtio_iso_path="${workspace_root}/installers/virtio-win.iso"
+share_name="${profile_id//-/_}_share"
+share_path="${workspace_root}/vm-share"
+cpu_count="4"
+memory_mb="8192"
+disk_gb="100"
+
+if [[ -f "${starter_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${starter_env_path}"
+    vm_name="${LUMINA_WINDOWS_VM_NAME:-${vm_name}}"
+    disk_path="${LUMINA_WINDOWS_VM_DISK_PATH:-${disk_path}}"
+    windows_iso_path="${LUMINA_WINDOWS_VM_WINDOWS_ISO:-${windows_iso_path}}"
+    virtio_iso_path="${LUMINA_WINDOWS_VM_VIRTIO_ISO:-${virtio_iso_path}}"
+    share_name="${LUMINA_WINDOWS_VM_SHARE_NAME:-${share_name}}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${share_path}}"
+fi
+
+vm_created_marker="${workflow_state_root}/vm-created.marker"
+
+# ---------------------------------------------------------------
+# Check if VM already exists
+# ---------------------------------------------------------------
+if [[ ${force} -eq 0 ]]; then
+    if virsh --connect qemu:///system dominfo "${vm_name}" >/dev/null 2>&1; then
+        printf 'VM "%s" already exists.\n' "${vm_name}"
+        if [[ ${has_gui} -eq 1 ]]; then
+            kdialog --title "Lumina VM Launcher" \
+                --sorry "VM \"${vm_name}\" already exists.\n\nUse 'lumina-windows-vm-runner' to manage it." 2>/dev/null || true
+        fi
+        touch "${vm_created_marker}"
+        exit 0
+    fi
+fi
+
+# ---------------------------------------------------------------
+# Check Windows ISO
+# ---------------------------------------------------------------
+if [[ ! -f "${windows_iso_path}" ]]; then
+    printf 'Windows ISO not found at: %s\n' "${windows_iso_path}"
+    if [[ ${has_gui} -eq 1 ]]; then
+        user_iso="$(kdialog --title "Lumina VM Launcher" \
+            --getopenfilename "${HOME}" "*.iso|ISO Images" 2>/dev/null || true)"
+        if [[ -n "${user_iso}" && -f "${user_iso}" ]]; then
+            mkdir -p "${workspace_root}/installers"
+            ln -sf "${user_iso}" "${windows_iso_path}"
+            printf 'Linked Windows ISO: %s\n' "${user_iso}"
+        else
+            kdialog --title "Lumina VM Launcher" \
+                --error "A Windows ISO is required to create the VM.\n\nPlace it at:\n${windows_iso_path}" 2>/dev/null || true
+            exit 1
+        fi
+    else
+        printf 'Place your Windows ISO at: %s\n' "${windows_iso_path}" >&2
+        exit 1
+    fi
+fi
+
+# ---------------------------------------------------------------
+# Check VirtIO ISO (optional but recommended)
+# ---------------------------------------------------------------
+virtio_cdrom_args=()
+if [[ -f "${virtio_iso_path}" ]]; then
+    virtio_cdrom_args=(--disk "path=${virtio_iso_path},device=cdrom,bus=sata")
+    printf 'VirtIO drivers ISO found.\n'
+elif [[ ${has_gui} -eq 1 ]]; then
+    response="$(kdialog --title "Lumina VM Launcher" \
+        --yesno "VirtIO drivers ISO not found.\n\nVirtIO drivers improve VM performance significantly.\nDo you want to select a virtio-win.iso file?" 2>/dev/null && echo "yes" || echo "no")"
+    if [[ "${response}" == "yes" ]]; then
+        user_virtio="$(kdialog --title "Lumina VM Launcher" \
+            --getopenfilename "${HOME}" "*.iso|ISO Images" 2>/dev/null || true)"
+        if [[ -n "${user_virtio}" && -f "${user_virtio}" ]]; then
+            mkdir -p "${workspace_root}/installers"
+            ln -sf "${user_virtio}" "${virtio_iso_path}"
+            virtio_cdrom_args=(--disk "path=${virtio_iso_path},device=cdrom,bus=sata")
+            printf 'Linked VirtIO ISO: %s\n' "${user_virtio}"
+        fi
+    fi
+fi
+
+# ---------------------------------------------------------------
+# Confirm before creation
+# ---------------------------------------------------------------
+summary_text="VM Name: ${vm_name}
+CPU: ${cpu_count} vCPUs
+Memory: $((memory_mb / 1024)) GiB
+Disk: ${disk_gb} GiB
+Windows ISO: ${windows_iso_path}
+Share: ${share_name} → ${share_path}"
+
+if [[ ${has_gui} -eq 1 && ${dry_run} -eq 0 ]]; then
+    kdialog --title "Lumina VM Launcher — Confirm" \
+        --yesno "Create Windows VM with these settings?\n\n${summary_text}" 2>/dev/null \
+        || { printf 'User cancelled.\n'; exit 0; }
+fi
+
+printf '\n'
+printf '%s\n' '========================================'
+printf '%s\n' '      Creating Windows VM...'
+printf '%s\n' '========================================'
+printf '\n%s\n\n' "${summary_text}"
+
+if [[ ${dry_run} -eq 1 ]]; then
+    printf '[DRY RUN] Would execute virt-install with the above settings.\n'
+    exit 0
+fi
+
+# ---------------------------------------------------------------
+# Check prerequisites
+# ---------------------------------------------------------------
+for cmd in virt-install virsh; do
+    if ! command -v "${cmd}" >/dev/null 2>&1; then
+        printf 'Required command not found: %s\n' "${cmd}" >&2
+        if [[ ${has_gui} -eq 1 ]]; then
+            kdialog --title "Lumina VM Launcher" \
+                --error "Required command '${cmd}' is not installed." 2>/dev/null || true
+        fi
+        exit 1
+    fi
+done
+
+# Ensure libvirtd is running
+if ! virsh --connect qemu:///system list >/dev/null 2>&1; then
+    printf 'Starting libvirtd...\n'
+    sudo systemctl start libvirtd.service 2>/dev/null || true
+    sleep 2
+fi
+
+# Ensure default network
+if ! virsh --connect qemu:///system net-info default >/dev/null 2>&1; then
+    virsh --connect qemu:///system net-start default 2>/dev/null || true
+fi
+
+# ---------------------------------------------------------------
+# Create the VM
+# ---------------------------------------------------------------
+mkdir -p "${share_path}"
+
+virt_install_args=(
+    --connect qemu:///system
+    --name "${vm_name}"
+    --memory "${memory_mb}"
+    --vcpus "${cpu_count}"
+    --cpu host-passthrough
+    --machine q35
+    --os-variant win11
+    --boot uefi
+    --disk "path=${disk_path},size=${disk_gb},format=qcow2,bus=virtio"
+    --cdrom "${windows_iso_path}"
+    "${virtio_cdrom_args[@]}"
+    --network network=default,model=virtio
+    --graphics spice
+    --channel spicevmc
+    --tpm backend.type=emulator,backend.version=2.0,model=tpm-crb
+    --noautoconsole
+)
+
+# Try virtiofs share; fall back to 9p if virtiofs is not available
+virt_install_args+=(--filesystem "source=${share_path},target=${share_name},driver.type=virtiofs")
+
+if virt-install "${virt_install_args[@]}" 2>&1; then
+    printf '\n✓ VM "%s" created successfully.\n' "${vm_name}"
+    date -Is > "${vm_created_marker}"
+    /usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+else
+    # Retry without virtiofs in case it fails
+    printf 'Retrying without virtiofs...\n'
+    virt_install_args_fallback=(
+        --connect qemu:///system
+        --name "${vm_name}"
+        --memory "${memory_mb}"
+        --vcpus "${cpu_count}"
+        --cpu host-passthrough
+        --machine q35
+        --os-variant win11
+        --boot uefi
+        --disk "path=${disk_path},size=${disk_gb},format=qcow2,bus=virtio"
+        --cdrom "${windows_iso_path}"
+        "${virtio_cdrom_args[@]}"
+        --network network=default,model=virtio
+        --graphics spice
+        --channel spicevmc
+        --tpm backend.type=emulator,backend.version=2.0,model=tpm-crb
+        --noautoconsole
+    )
+    if virt-install "${virt_install_args_fallback[@]}" 2>&1; then
+        printf '\n✓ VM "%s" created successfully (without virtiofs share).\n' "${vm_name}"
+        date -Is > "${vm_created_marker}"
+        /usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+    else
+        printf '\n✗ VM creation failed.\n' >&2
+        if [[ ${has_gui} -eq 1 ]]; then
+            kdialog --title "Lumina VM Launcher" \
+                --error "VM creation failed.\n\nCheck the terminal output for details." 2>/dev/null || true
+        fi
+        exit 1
+    fi
+fi
+
+# ---------------------------------------------------------------
+# Generate report
+# ---------------------------------------------------------------
+{
+    printf '# Lumina Windows VM Launcher\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- VM Name: %s\n' "${vm_name}"
+    printf -- '- VM Created: yes\n'
+    printf -- '- Disk Path: %s\n' "${disk_path}"
+    printf -- '- Windows ISO: %s\n' "${windows_iso_path}"
+    printf -- '- Share: %s → %s\n' "${share_name}" "${share_path}"
+    printf '\n## Next Steps\n'
+    printf -- '1. Open virt-manager and complete Windows installation\n'
+    printf -- '2. Install VirtIO drivers inside the guest\n'
+    printf -- '3. Validate networking and shared folder access\n'
+    printf -- '4. Take a clean snapshot\n'
+    printf -- '5. Run: lumina-windows-auto-configure --profile-id %s\n' "${profile_id}"
+} > "${launcher_report}"
+
+# Open virt-manager pointing at the new VM
+if command -v virt-manager >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    printf 'Opening virt-manager...\n'
+    virt-manager --connect qemu:///system --show-domain-console "${vm_name}" >/dev/null 2>&1 &
+fi
+
+if [[ ${has_gui} -eq 1 ]]; then
+    kdialog --title "Lumina VM Launcher — Done!" \
+        --msgbox "VM \"${vm_name}\" created!\n\nComplete the Windows installation in virt-manager.\nThen run:\n  lumina-windows-auto-configure --profile-id ${profile_id}" 2>/dev/null || true
+fi
+
+printf '\nReport: %s\n' "${launcher_report}"

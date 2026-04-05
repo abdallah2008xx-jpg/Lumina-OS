@@ -59,6 +59,10 @@ The current phase adds:
 - an app-install starter layer that turns each workflow profile into a first-pass software install plan instead of leaving app setup ad-hoc
 - a workflow proof-pass layer that verifies real launch/save/export behavior before a workflow is considered genuinely usable
 - a hidden session-start prep step that warms the Windows Apps path without opening an extra desktop
+- an interactive onboarding layer that replaces reading multiple reports with one guided kdialog-based flow
+- a VM launcher layer that creates a real Windows VM with one command instead of requiring manual virt-install execution
+- a VM runner layer that manages daily VM operations (start, stop, connect, snapshot) from one entry point
+- an auto-configure layer that checks VM networking, shares, and snapshots and offers to mark the VM as configured
 
 ## Future Target
 

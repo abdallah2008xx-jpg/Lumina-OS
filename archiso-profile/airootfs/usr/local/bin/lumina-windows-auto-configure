@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec /usr/local/bin/ahmados-windows-auto-configure "$@"

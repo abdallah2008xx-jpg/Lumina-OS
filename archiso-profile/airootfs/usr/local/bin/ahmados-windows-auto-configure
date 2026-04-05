@@ -1,0 +1,269 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Lumina Windows Auto Configure
+# Replaces the manual postcreate-checklist with automated checks
+# and guided marker placement.
+
+selected_profile_id=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+configure_report="${state_root}/windows-auto-configure.md"
+
+has_gui=0
+if command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    has_gui=1
+fi
+
+# ---------------------------------------------------------------
+# Resolve profile
+# ---------------------------------------------------------------
+if [[ -z "${selected_profile_id}" ]]; then
+    if [[ ${has_gui} -eq 1 ]]; then
+        entries=()
+        while IFS='|' read -r pid pname pfocus _; do
+            [[ -z "${pid}" || "${pid}" == \#* ]] && continue
+            entries+=("${pid}" "${pname} — ${pfocus}")
+        done < "${profiles_path}"
+        if [[ ${#entries[@]} -gt 0 ]]; then
+            selected_profile_id="$(kdialog --title "Lumina Auto Configure" \
+                --menu "Which Windows workspace to configure?" \
+                "${entries[@]}" 2>/dev/null || true)"
+        fi
+    fi
+    if [[ -z "${selected_profile_id}" ]]; then
+        selected_profile_id="adobe-creator"
+    fi
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown profile: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+mkdir -p "${workflow_state_root}"
+
+# Resolve VM name
+vm_name="Lumina-${profile_id//-/_}-vm"
+starter_env_path="${workspace_root}/vm-create.env"
+if [[ -f "${starter_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${starter_env_path}"
+    vm_name="${LUMINA_WINDOWS_VM_NAME:-${vm_name}}"
+fi
+
+share_name="${LUMINA_WINDOWS_VM_SHARE_NAME:-${profile_id//-/_}_share}"
+share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${workspace_root}/vm-share}"
+connect_uri="qemu:///system"
+
+vm_configured_marker="${workflow_state_root}/vm-configured.marker"
+vm_created_marker="${workflow_state_root}/vm-created.marker"
+
+# ---------------------------------------------------------------
+# Ensure libvirtd
+# ---------------------------------------------------------------
+if ! virsh --connect "${connect_uri}" list >/dev/null 2>&1; then
+    sudo systemctl start libvirtd.service 2>/dev/null || true
+    sleep 2
+fi
+
+# ---------------------------------------------------------------
+# Run automated checks
+# ---------------------------------------------------------------
+check_results=()
+all_pass=1
+
+run_check() {
+    local label="$1"
+    local result="$2"
+    local detail="$3"
+
+    if [[ "${result}" == "pass" ]]; then
+        check_results+=("✓ ${label}: ${detail}")
+        printf '  ✓ %s: %s\n' "${label}" "${detail}"
+    elif [[ "${result}" == "warn" ]]; then
+        check_results+=("⚠ ${label}: ${detail}")
+        printf '  ⚠ %s: %s\n' "${label}" "${detail}"
+    else
+        check_results+=("✗ ${label}: ${detail}")
+        printf '  ✗ %s: %s\n' "${label}" "${detail}"
+        all_pass=0
+    fi
+}
+
+printf '\n'
+printf '%s\n' '========================================'
+printf '%s\n' '   Lumina Auto Configure — Checking'
+printf '%s\n' '========================================'
+printf '\n'
+
+# Check 1: VM exists
+vm_state="$(virsh --connect "${connect_uri}" domstate "${vm_name}" 2>/dev/null || echo "not-found")"
+if [[ "${vm_state}" == "not-found" ]]; then
+    run_check "VM exists" "fail" "VM '${vm_name}' not found"
+else
+    run_check "VM exists" "pass" "State: ${vm_state}"
+fi
+
+# Check 2: VM is running
+if [[ "${vm_state}" == "running" ]]; then
+    run_check "VM running" "pass" "VM is active"
+elif [[ "${vm_state}" != "not-found" ]]; then
+    run_check "VM running" "warn" "VM exists but is ${vm_state} — start it for full checks"
+fi
+
+# Check 3: Network connectivity inside guest
+guest_ip="not-detected"
+if [[ "${vm_state}" == "running" ]]; then
+    ip_output="$(virsh --connect "${connect_uri}" domifaddr "${vm_name}" --source agent 2>/dev/null || \
+                 virsh --connect "${connect_uri}" domifaddr "${vm_name}" 2>/dev/null || true)"
+    if [[ -n "${ip_output}" ]] && echo "${ip_output}" | grep -qE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
+        guest_ip="$(echo "${ip_output}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n1)"
+        run_check "Guest networking" "pass" "IP: ${guest_ip}"
+    else
+        run_check "Guest networking" "warn" "No IP detected yet — guest may still be booting"
+    fi
+else
+    run_check "Guest networking" "warn" "Cannot check — VM is not running"
+fi
+
+# Check 4: Share path exists on host
+if [[ -d "${share_path}" ]]; then
+    run_check "Host share path" "pass" "${share_path}"
+else
+    run_check "Host share path" "fail" "Missing: ${share_path}"
+    mkdir -p "${share_path}"
+    run_check "Host share path (fixed)" "pass" "Created ${share_path}"
+fi
+
+# Check 5: Snapshots
+snap_count="$(virsh --connect "${connect_uri}" snapshot-list "${vm_name}" --name 2>/dev/null | wc -l || echo 0)"
+snap_count="$((snap_count + 0))"
+if [[ ${snap_count} -gt 0 ]]; then
+    run_check "Clean snapshot" "pass" "${snap_count} snapshot(s) found"
+else
+    if [[ "${vm_state}" != "not-found" ]]; then
+        run_check "Clean snapshot" "warn" "No snapshots yet — take one after setup is clean"
+    fi
+fi
+
+# Check 6: VM created marker
+if [[ -f "${vm_created_marker}" ]]; then
+    run_check "VM created marker" "pass" "Set"
+else
+    if [[ "${vm_state}" != "not-found" ]]; then
+        run_check "VM created marker" "pass" "Setting now"
+        date -Is > "${vm_created_marker}"
+    else
+        run_check "VM created marker" "fail" "VM does not exist"
+    fi
+fi
+
+# ---------------------------------------------------------------
+# Summary and decision
+# ---------------------------------------------------------------
+printf '\n'
+
+manual_steps=()
+if [[ "${vm_state}" == "not-found" ]]; then
+    manual_steps+=("Create the VM first: lumina-windows-vm-launcher --profile-id ${profile_id}")
+fi
+if [[ ${snap_count} -eq 0 && "${vm_state}" != "not-found" ]]; then
+    manual_steps+=("Take a clean snapshot after Windows setup is stable")
+fi
+manual_steps+=("Install VirtIO guest drivers inside Windows if not done")
+manual_steps+=("Verify the shared folder is visible from inside Windows")
+
+if [[ ${#manual_steps[@]} -gt 0 ]]; then
+    printf 'Remaining manual steps:\n'
+    for step in "${manual_steps[@]}"; do
+        printf '  → %s\n' "${step}"
+    done
+    printf '\n'
+fi
+
+# ---------------------------------------------------------------
+# Ask about vm-configured marker
+# ---------------------------------------------------------------
+if [[ ! -f "${vm_configured_marker}" && "${vm_state}" != "not-found" ]]; then
+    if [[ ${has_gui} -eq 1 ]]; then
+        remaining_text=""
+        for step in "${manual_steps[@]}"; do
+            remaining_text="${remaining_text}\n• ${step}"
+        done
+
+        response="$(kdialog --title "Lumina Auto Configure" \
+            --yesno "Check results:\n$(printf '%s\n' "${check_results[@]}")\n\nRemaining steps:${remaining_text}\n\nHave you completed all setup steps?\nMark VM as configured?" 2>/dev/null && echo "yes" || echo "no")"
+        if [[ "${response}" == "yes" ]]; then
+            date -Is > "${vm_configured_marker}"
+            printf '✓ VM marked as configured.\n'
+            /usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+            # Offer to generate the app install starter
+            apps_installed_marker="${workflow_state_root}/apps-installed.marker"
+            if [[ ! -f "${apps_installed_marker}" ]]; then
+                kdialog --title "Lumina Auto Configure" \
+                    --msgbox "VM configured!\n\nNext step: Install your apps.\nRun: lumina-windows-app-install-starter --profile-id ${profile_id}" 2>/dev/null || true
+            fi
+        fi
+    else
+        printf 'To mark the VM as configured, run:\n'
+        printf '  lumina-windows-workflow-mark --profile-id %s --step vm-configured\n\n' "${profile_id}"
+    fi
+elif [[ -f "${vm_configured_marker}" ]]; then
+    printf '✓ VM is already marked as configured.\n\n'
+fi
+
+# ---------------------------------------------------------------
+# Generate report
+# ---------------------------------------------------------------
+{
+    printf '# Lumina Windows Auto Configure\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- VM Name: %s\n' "${vm_name}"
+    printf -- '- VM State: %s\n' "${vm_state}"
+    printf -- '- Guest IP: %s\n' "${guest_ip}"
+    printf -- '- VM Configured: %s\n' "$([[ -f "${vm_configured_marker}" ]] && echo yes || echo no)"
+    printf '\n## Check Results\n'
+    for line in "${check_results[@]}"; do
+        printf -- '- %s\n' "${line}"
+    done
+    if [[ ${#manual_steps[@]} -gt 0 ]]; then
+        printf '\n## Remaining Manual Steps\n'
+        for step in "${manual_steps[@]}"; do
+            printf -- '- %s\n' "${step}"
+        done
+    fi
+    printf '\n## Next Commands\n'
+    printf -- '- Start VM:    lumina-windows-vm-runner --profile-id %s --start\n' "${profile_id}"
+    printf -- '- Stop VM:     lumina-windows-vm-runner --profile-id %s --stop\n' "${profile_id}"
+    printf -- '- Snapshot:    lumina-windows-vm-runner --profile-id %s --snapshot\n' "${profile_id}"
+    printf -- '- Recheck:     lumina-windows-auto-configure --profile-id %s\n' "${profile_id}"
+    printf -- '- Workflow Hub: lumina-windows-workflow-hub --profile-id %s\n' "${profile_id}"
+} > "${configure_report}"
+
+printf 'Report: %s\n' "${configure_report}"

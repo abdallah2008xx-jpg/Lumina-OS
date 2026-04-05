@@ -93,6 +93,9 @@
 - source-side follow-up fixes are now in place for the latest `stable` observations: stronger screenshot helper fallback, executable screenshot helper permissions in the live image, smarter session environment discovery, and a compact-screen Welcome preview layout fix for 1024x768 VirtualBox guests
 - Welcome, Update Center, and SDDM now share a stronger glassmorphism design pass with brighter frosted panels, layered ambient gradients, and more premium control styling aimed at a more iPhone-like visual tone
 - Plasma now has a dedicated `LuminaGlass` desktop theme for the floating panel and task backgrounds, and the dock-style panel direction has been live-validated inside VirtualBox on the current check VM
+- Windows Apps now has a full execution layer: interactive onboarding via `lumina-windows-onboarding`, one-command VM creation via `lumina-windows-vm-launcher`, daily VM management via `lumina-windows-vm-runner`, and automated post-create configuration via `lumina-windows-auto-configure`
+- the workflow hub and next-action launcher now point to execution-layer commands instead of manual report-reading steps for VM creation and configuration
+- desktop launchers now exist for `Lumina Windows Apps Setup` (onboarding) and `Lumina Windows VM` (runner)
 
 ## Active Focus
 - validate the new direct GitHub Actions download helper against the completed `stable` reference cycle

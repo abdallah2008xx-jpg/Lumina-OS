@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Lumina Windows VM
+Comment=Start or manage your Windows workspace VM
+Exec=/usr/local/bin/lumina-windows-vm-runner
+Icon=computer
+Terminal=false
+Categories=System;Utility;

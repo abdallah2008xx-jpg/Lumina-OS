@@ -1,0 +1,315 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Lumina Windows VM Runner
+# Daily VM management: start, stop, connect, snapshot, status.
+# Replaces the need to manually open virt-manager and hunt for the VM.
+
+selected_profile_id=""
+action="auto"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --start)
+            action="start"
+            shift
+            ;;
+        --stop)
+            action="stop"
+            shift
+            ;;
+        --connect)
+            action="connect"
+            shift
+            ;;
+        --snapshot)
+            action="snapshot"
+            shift
+            ;;
+        --status)
+            action="status"
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+runner_report="${state_root}/windows-vm-runner.md"
+
+has_gui=0
+if command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    has_gui=1
+fi
+
+# ---------------------------------------------------------------
+# Resolve profile
+# ---------------------------------------------------------------
+if [[ -z "${selected_profile_id}" ]]; then
+    if [[ ${has_gui} -eq 1 ]]; then
+        entries=()
+        while IFS='|' read -r pid pname pfocus _; do
+            [[ -z "${pid}" || "${pid}" == \#* ]] && continue
+            entries+=("${pid}" "${pname} — ${pfocus}")
+        done < "${profiles_path}"
+        if [[ ${#entries[@]} -gt 0 ]]; then
+            selected_profile_id="$(kdialog --title "Lumina VM Runner" \
+                --menu "Which Windows workspace?" \
+                "${entries[@]}" 2>/dev/null || true)"
+        fi
+    fi
+    if [[ -z "${selected_profile_id}" ]]; then
+        selected_profile_id="adobe-creator"
+    fi
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown profile: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+
+# Resolve VM name from env or default
+vm_name="Lumina-${profile_id//-/_}-vm"
+starter_env_path="${workspace_root}/vm-create.env"
+if [[ -f "${starter_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${starter_env_path}"
+    vm_name="${LUMINA_WINDOWS_VM_NAME:-${vm_name}}"
+fi
+
+connect_uri="qemu:///system"
+
+# ---------------------------------------------------------------
+# Helper: get VM state
+# ---------------------------------------------------------------
+get_vm_state() {
+    virsh --connect "${connect_uri}" domstate "${vm_name}" 2>/dev/null || echo "not-found"
+}
+
+# ---------------------------------------------------------------
+# Ensure libvirtd
+# ---------------------------------------------------------------
+ensure_libvirtd() {
+    if ! virsh --connect "${connect_uri}" list >/dev/null 2>&1; then
+        printf 'Starting libvirtd...\n'
+        sudo systemctl start libvirtd.service 2>/dev/null || true
+        sleep 2
+    fi
+}
+
+# ---------------------------------------------------------------
+# Actions
+# ---------------------------------------------------------------
+do_status() {
+    ensure_libvirtd
+    local state
+    state="$(get_vm_state)"
+    printf '\n'
+    printf '%s\n' '========================================'
+    printf '  %s — %s\n' "${profile_name}" "${vm_name}"
+    printf '%s\n' '========================================'
+    printf '\n'
+    printf 'State: %s\n' "${state}"
+
+    if [[ "${state}" == "running" ]]; then
+        # Try to get IP
+        local ip_info
+        ip_info="$(virsh --connect "${connect_uri}" domifaddr "${vm_name}" 2>/dev/null || true)"
+        if [[ -n "${ip_info}" ]]; then
+            printf '\n%s\n' "${ip_info}"
+        fi
+    fi
+    printf '\n'
+}
+
+do_start() {
+    ensure_libvirtd
+    local state
+    state="$(get_vm_state)"
+
+    if [[ "${state}" == "running" ]]; then
+        printf 'VM "%s" is already running.\n' "${vm_name}"
+        do_connect
+        return
+    fi
+
+    if [[ "${state}" == "not-found" ]]; then
+        printf 'VM "%s" does not exist. Use lumina-windows-vm-launcher to create it.\n' "${vm_name}" >&2
+        if [[ ${has_gui} -eq 1 ]]; then
+            kdialog --title "Lumina VM Runner" \
+                --sorry "VM \"${vm_name}\" not found.\n\nUse 'lumina-windows-vm-launcher' to create it first." 2>/dev/null || true
+        fi
+        return 1
+    fi
+
+    printf 'Starting VM "%s"...\n' "${vm_name}"
+    if virsh --connect "${connect_uri}" start "${vm_name}" 2>&1; then
+        printf '✓ VM started.\n'
+        if [[ ${has_gui} -eq 1 ]]; then
+            kdialog --title "Lumina VM Runner" \
+                --passivepopup "VM \"${vm_name}\" started." 3 2>/dev/null || true
+        fi
+        sleep 2
+        do_connect
+    else
+        printf '✗ Failed to start VM.\n' >&2
+        if [[ ${has_gui} -eq 1 ]]; then
+            kdialog --title "Lumina VM Runner" \
+                --error "Failed to start VM \"${vm_name}\"." 2>/dev/null || true
+        fi
+        return 1
+    fi
+}
+
+do_stop() {
+    ensure_libvirtd
+    local state
+    state="$(get_vm_state)"
+
+    if [[ "${state}" != "running" ]]; then
+        printf 'VM "%s" is not running (state: %s).\n' "${vm_name}" "${state}"
+        return 0
+    fi
+
+    printf 'Sending shutdown signal to "%s"...\n' "${vm_name}"
+    virsh --connect "${connect_uri}" shutdown "${vm_name}" 2>&1 || true
+    printf 'Shutdown signal sent. The VM will power off after Windows shuts down.\n'
+
+    if [[ ${has_gui} -eq 1 ]]; then
+        kdialog --title "Lumina VM Runner" \
+            --passivepopup "Shutdown signal sent to \"${vm_name}\"." 3 2>/dev/null || true
+    fi
+}
+
+do_connect() {
+    ensure_libvirtd
+    local state
+    state="$(get_vm_state)"
+
+    if [[ "${state}" != "running" ]]; then
+        printf 'VM "%s" is not running. Starting it first...\n' "${vm_name}"
+        do_start
+        return
+    fi
+
+    if command -v virt-viewer >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+        printf 'Connecting with virt-viewer...\n'
+        virt-viewer --connect "${connect_uri}" "${vm_name}" >/dev/null 2>&1 &
+    elif command -v virt-manager >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+        printf 'Connecting with virt-manager...\n'
+        virt-manager --connect "${connect_uri}" --show-domain-console "${vm_name}" >/dev/null 2>&1 &
+    else
+        printf 'No graphical viewer available. Use: virsh --connect %s console %s\n' "${connect_uri}" "${vm_name}"
+    fi
+}
+
+do_snapshot() {
+    ensure_libvirtd
+    local state
+    state="$(get_vm_state)"
+
+    local snap_name
+    snap_name="lumina-snap-$(date +%Y%m%d-%H%M%S)"
+
+    if [[ ${has_gui} -eq 1 ]]; then
+        user_name="$(kdialog --title "Lumina VM Runner" \
+            --inputbox "Snapshot name:" "${snap_name}" 2>/dev/null || true)"
+        if [[ -n "${user_name}" ]]; then
+            snap_name="${user_name}"
+        fi
+    fi
+
+    printf 'Creating snapshot "%s" for "%s"...\n' "${snap_name}" "${vm_name}"
+    if virsh --connect "${connect_uri}" snapshot-create-as "${vm_name}" "${snap_name}" 2>&1; then
+        printf '✓ Snapshot "%s" created.\n' "${snap_name}"
+        # Record in state
+        mkdir -p "${workflow_state_root}"
+        printf '%s %s\n' "$(date -Is)" "${snap_name}" >> "${workflow_state_root}/snapshots.log"
+        if [[ ${has_gui} -eq 1 ]]; then
+            kdialog --title "Lumina VM Runner" \
+                --passivepopup "Snapshot \"${snap_name}\" created." 3 2>/dev/null || true
+        fi
+    else
+        printf '✗ Snapshot creation failed.\n' >&2
+    fi
+}
+
+do_auto() {
+    ensure_libvirtd
+    local state
+    state="$(get_vm_state)"
+
+    case "${state}" in
+        running)
+            printf 'VM is running. Connecting...\n'
+            do_connect
+            ;;
+        "shut off"|paused)
+            printf 'VM is stopped. Starting...\n'
+            do_start
+            ;;
+        not-found)
+            printf 'VM not found. Launch the onboarding first.\n'
+            if [[ ${has_gui} -eq 1 ]]; then
+                response="$(kdialog --title "Lumina VM Runner" \
+                    --yesno "VM \"${vm_name}\" not found.\n\nDo you want to create it now?" 2>/dev/null && echo "yes" || echo "no")"
+                if [[ "${response}" == "yes" ]]; then
+                    exec /usr/local/bin/ahmados-windows-vm-launcher --profile-id "${profile_id}"
+                fi
+            fi
+            ;;
+        *)
+            printf 'VM state: %s\n' "${state}"
+            do_status
+            ;;
+    esac
+}
+
+# ---------------------------------------------------------------
+# Execute action
+# ---------------------------------------------------------------
+case "${action}" in
+    start)   do_start ;;
+    stop)    do_stop ;;
+    connect) do_connect ;;
+    snapshot) do_snapshot ;;
+    status)  do_status ;;
+    auto)    do_auto ;;
+esac
+
+# ---------------------------------------------------------------
+# Generate report
+# ---------------------------------------------------------------
+current_state="$(get_vm_state 2>/dev/null || echo 'unknown')"
+{
+    printf '# Lumina Windows VM Runner\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- VM Name: %s\n' "${vm_name}"
+    printf -- '- VM State: %s\n' "${current_state}"
+    printf -- '- Last Action: %s\n' "${action}"
+    printf '\n## Quick Commands\n'
+    printf -- '- Start:    lumina-windows-vm-runner --profile-id %s --start\n' "${profile_id}"
+    printf -- '- Stop:     lumina-windows-vm-runner --profile-id %s --stop\n' "${profile_id}"
+    printf -- '- Connect:  lumina-windows-vm-runner --profile-id %s --connect\n' "${profile_id}"
+    printf -- '- Snapshot: lumina-windows-vm-runner --profile-id %s --snapshot\n' "${profile_id}"
+    printf -- '- Status:   lumina-windows-vm-runner --profile-id %s --status\n' "${profile_id}"
+} > "${runner_report}"

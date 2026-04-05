@@ -55,6 +55,14 @@ chmod 755 /usr/local/bin/ahmados-windows-app-install-starter
 chmod 755 /usr/local/bin/lumina-windows-app-install-starter
 chmod 755 /usr/local/bin/ahmados-windows-workflow-proof-pass
 chmod 755 /usr/local/bin/lumina-windows-workflow-proof-pass
+chmod 755 /usr/local/bin/ahmados-windows-onboarding
+chmod 755 /usr/local/bin/lumina-windows-onboarding
+chmod 755 /usr/local/bin/ahmados-windows-vm-launcher
+chmod 755 /usr/local/bin/lumina-windows-vm-launcher
+chmod 755 /usr/local/bin/ahmados-windows-vm-runner
+chmod 755 /usr/local/bin/lumina-windows-vm-runner
+chmod 755 /usr/local/bin/ahmados-windows-auto-configure
+chmod 755 /usr/local/bin/lumina-windows-auto-configure
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

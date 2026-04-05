@@ -171,12 +171,12 @@ elif [[ "${route_mode}" == "linux-first" && ! -f "${linux_first_validated_marker
     operator_note="Only mark this after one realistic workflow pass feels good enough on the Lumina side."
 elif [[ "${route_mode}" != "linux-first" && ! -f "${vm_created_marker}" ]]; then
     next_action="Create the Windows workspace VM"
-    next_command="/usr/local/bin/lumina-windows-workflow-mark --profile-id ${profile_id} --step vm-created"
-    operator_note="Create one clean VM per workflow instead of mixing unrelated app stacks together."
+    next_command="/usr/local/bin/lumina-windows-vm-launcher --profile-id ${profile_id}"
+    operator_note="The VM launcher will create a real VM and open virt-manager automatically."
 elif [[ "${route_mode}" != "linux-first" && ! -f "${vm_configured_marker}" ]]; then
-    next_action="Follow the VM post-create workflow"
-    next_command="xdg-open '${vm_postcreate_report}'"
-    operator_note="Use the post-create plan to get through first boot, drivers, share validation, and the clean snapshot before you mark the VM as configured."
+    next_action="Configure the Windows VM"
+    next_command="/usr/local/bin/lumina-windows-auto-configure --profile-id ${profile_id}"
+    operator_note="The auto-configure tool will check networking, shares, and snapshots, then offer to mark the VM as configured."
 elif [[ "${route_mode}" != "linux-first" && ! -f "${apps_installed_marker}" ]]; then
     next_action="Follow the app install starter"
     next_command="xdg-open '${app_install_report}'"

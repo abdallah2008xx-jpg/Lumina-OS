@@ -45,6 +45,7 @@ Current project outputs include:
 - a Windows VM Lab launcher now turns that compatibility result into a quickstart path and opens `virt-manager` on compatible machines
 - a user-facing `Lumina Windows Apps` launcher now frames the same stack as one Lumina experience instead of raw VM language
 - a hidden `Windows Apps` background-prep step now runs on session start so the bridge path is warmed automatically
+- a Windows Apps execution layer now provides interactive onboarding, one-command VM creation, daily VM management, and automated post-create configuration
 
 ## Collaboration
 

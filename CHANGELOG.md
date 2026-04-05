@@ -33,6 +33,11 @@ This project follows a simple rule for now:
 - Complete build-handoff export/import support for Arch->Windows transfers
 - GitHub Actions remote ISO build workflow
 - First successful remote GitHub Actions matrix build for `stable` and `login-test`
+- Windows Apps execution layer: interactive onboarding (`lumina-windows-onboarding`)
+- Windows Apps execution layer: one-command VM creation (`lumina-windows-vm-launcher`)
+- Windows Apps execution layer: daily VM management with start/stop/connect/snapshot (`lumina-windows-vm-runner`)
+- Windows Apps execution layer: automated post-create checks and configuration (`lumina-windows-auto-configure`)
+- Desktop launchers for Windows Apps onboarding and VM runner
 
 ### Changed
 - Live-system UI wording now presents the distro as `Lumina-OS`
@@ -49,6 +54,7 @@ This project follows a simple rule for now:
 - an Arch-side `export-build-handoff.sh` path and Windows-side `import-build-handoff.ps1` path now allow moving the manifest and ISO together as one transfer unit
 - the repo can now build `stable` and `login-test` remotely through `.github/workflows/build-iso.yml` and upload the resulting handoff artifacts
 - the remote GitHub Actions path now passes its first real matrix build after iterative CI fixes
+- the Windows Apps workflow hub and next-action launcher now point to execution-layer commands (`vm-launcher`, `auto-configure`) instead of manual report-reading steps
 
 ### Pending Before First Tagged Release
 - First imported successful build handoff inside the local evidence chain

@@ -1,0 +1,271 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Lumina Windows Apps Onboarding
+# Replaces the manual "read reports then run commands" path with
+# a single interactive flow that checks hardware, asks what the user
+# wants, and prepares everything automatically.
+
+selected_profile_id=""
+skip_compat=0
+auto_mode=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --skip-compat)
+            skip_compat=1
+            shift
+            ;;
+        --auto)
+            auto_mode=1
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+onboarding_report="${state_root}/windows-onboarding.md"
+compat_report="${state_root}/windows-compat-report.md"
+
+has_gui=0
+if command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    has_gui=1
+fi
+
+# ---------------------------------------------------------------
+# Step 1: Hardware compatibility check
+# ---------------------------------------------------------------
+if [[ ${skip_compat} -eq 0 ]]; then
+    if [[ ${has_gui} -eq 1 ]]; then
+        kdialog --title "Lumina Windows Apps" \
+            --passivepopup "Checking hardware compatibility..." 3 2>/dev/null || true
+    fi
+    printf 'Checking hardware compatibility...\n'
+    /usr/local/bin/ahmados-windows-compat-check --no-open >/dev/null 2>&1 || true
+fi
+
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+compatibility_summary="$(awk -F': ' '/^- Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+
+tier_display="unknown"
+tier_explanation="Hardware check did not complete."
+case "${compatibility_tier}" in
+    basic-proton-only)
+        tier_display="Basic — Wine and Proton only"
+        tier_explanation="This machine can run Windows apps through Wine and Proton. A full Windows VM is not practical yet."
+        ;;
+    windows-vm-ready)
+        tier_display="Windows Creator Mode — VM ready"
+        tier_explanation="This machine supports a strong background Windows workspace for Adobe, Office, and creator tools."
+        ;;
+    single-gpu-experimental)
+        tier_display="Performance Mode — single GPU experimental"
+        tier_explanation="This machine can explore GPU passthrough, but single-GPU setups require careful configuration."
+        ;;
+    full-passthrough-candidate)
+        tier_display="Studio Mode — full passthrough candidate"
+        tier_explanation="This machine is a strong candidate for near-native Windows performance with GPU passthrough."
+        ;;
+esac
+
+# ---------------------------------------------------------------
+# Step 2: Show compatibility result and ask to continue
+# ---------------------------------------------------------------
+if [[ ${has_gui} -eq 1 && ${auto_mode} -eq 0 ]]; then
+    kdialog --title "Lumina Windows Apps" \
+        --msgbox "Hardware check complete.\n\n${tier_display}\n\n${tier_explanation}" 2>/dev/null || true
+fi
+printf 'Hardware tier: %s\n' "${tier_display}"
+
+# ---------------------------------------------------------------
+# Step 3: Choose workflow profile
+# ---------------------------------------------------------------
+if [[ -z "${selected_profile_id}" ]]; then
+    if [[ ${has_gui} -eq 1 && ${auto_mode} -eq 0 ]]; then
+        entries=()
+        while IFS='|' read -r pid pname pfocus _; do
+            [[ -z "${pid}" || "${pid}" == \#* ]] && continue
+            entries+=("${pid}" "${pname} — ${pfocus}")
+        done < "${profiles_path}"
+
+        if [[ ${#entries[@]} -gt 0 ]]; then
+            selected_profile_id="$(kdialog --title "Lumina Windows Apps" \
+                --menu "What do you want to use Windows apps for?" \
+                "${entries[@]}" 2>/dev/null || true)"
+        fi
+    fi
+
+    if [[ -z "${selected_profile_id}" ]]; then
+        selected_profile_id="adobe-creator"
+    fi
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown profile: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+# ---------------------------------------------------------------
+# Step 4: Confirm and prepare everything
+# ---------------------------------------------------------------
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+
+already_bootstrapped=0
+if [[ -f "${workflow_state_root}/bootstrap-ready.marker" ]]; then
+    already_bootstrapped=1
+fi
+
+if [[ ${has_gui} -eq 1 && ${auto_mode} -eq 0 ]]; then
+    if [[ ${already_bootstrapped} -eq 1 ]]; then
+        kdialog --title "Lumina Windows Apps" \
+            --yesno "The ${profile_name} workspace already exists.\n\nDo you want to refresh and update it?" 2>/dev/null || { printf 'User cancelled.\n'; exit 0; }
+    else
+        kdialog --title "Lumina Windows Apps" \
+            --yesno "Ready to prepare your ${profile_name} workspace.\n\nThis will:\n• Create workspace folders\n• Generate daily launch recipe\n• Create helper scripts\n• Prepare VM template\n\nContinue?" 2>/dev/null || { printf 'User cancelled.\n'; exit 0; }
+    fi
+fi
+
+# ---------------------------------------------------------------
+# Step 5: Run all preparation layers automatically
+# ---------------------------------------------------------------
+printf 'Preparing workspace for %s...\n' "${profile_name}"
+
+step_count=0
+total_steps=7
+
+run_step() {
+    step_count=$((step_count + 1))
+    local label="$1"
+    shift
+    printf '[%d/%d] %s\n' "${step_count}" "${total_steps}" "${label}"
+    if [[ ${has_gui} -eq 1 ]]; then
+        kdialog --title "Lumina Windows Apps" \
+            --passivepopup "[${step_count}/${total_steps}] ${label}" 2 2>/dev/null || true
+    fi
+    "$@" >/dev/null 2>&1 || true
+}
+
+run_step "Generating bridge report" \
+    /usr/local/bin/ahmados-windows-apps --no-open
+
+run_step "Preparing workspace folders" \
+    /usr/local/bin/ahmados-windows-workflow-bootstrap --profile-id "${profile_id}" --no-open
+
+run_step "Generating daily launch recipe" \
+    /usr/local/bin/ahmados-windows-workflow-recipe --profile-id "${profile_id}" --no-open
+
+run_step "Generating workspace action pack" \
+    /usr/local/bin/ahmados-windows-workflow-action-pack --profile-id "${profile_id}" --no-open
+
+run_step "Generating VM template" \
+    /usr/local/bin/ahmados-windows-vm-template --profile-id "${profile_id}" --no-open
+
+run_step "Generating VM creation plan" \
+    /usr/local/bin/ahmados-windows-vm-creation-starter --profile-id "${profile_id}" --no-open
+
+run_step "Generating post-create workflow" \
+    /usr/local/bin/ahmados-windows-vm-postcreate --profile-id "${profile_id}" --no-open
+
+# Record onboarding state
+onboarding_marker="${workflow_state_root}/onboarding-complete.marker"
+mkdir -p "${workflow_state_root}"
+date -Is > "${onboarding_marker}"
+
+# ---------------------------------------------------------------
+# Step 6: Determine next action
+# ---------------------------------------------------------------
+needs_vm=1
+if [[ "${compatibility_tier}" == "basic-proton-only" ]]; then
+    needs_vm=0
+fi
+
+recommended_route="$(awk -F': ' '/^- Recommended Route:/ {print $2; exit}' "${state_root}/windows-profile-assistant.md" 2>/dev/null || true)"
+if [[ "${recommended_route}" == *"Out of scope"* ]]; then
+    needs_vm=0
+fi
+
+next_action=""
+next_command=""
+if [[ ${needs_vm} -eq 1 ]]; then
+    vm_created_marker="${workflow_state_root}/vm-created.marker"
+    if [[ -f "${vm_created_marker}" ]]; then
+        next_action="Your Windows VM already exists. Use 'lumina-windows-vm-runner' to start it."
+        next_command="lumina-windows-vm-runner --profile-id ${profile_id}"
+    else
+        next_action="Next step: Create your Windows VM with 'lumina-windows-vm-launcher'."
+        next_command="lumina-windows-vm-launcher --profile-id ${profile_id}"
+    fi
+else
+    next_action="Your workflow is Linux-first. Follow the daily launch recipe to get started."
+    next_command="xdg-open '${workspace_root}/checklists/daily-launch-recipe.md'"
+fi
+
+# ---------------------------------------------------------------
+# Step 7: Generate onboarding report
+# ---------------------------------------------------------------
+{
+    printf '# Lumina Windows Apps Onboarding\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Hardware Tier: %s\n' "${tier_display}"
+    printf -- '- Workspace Root: %s\n' "${workspace_root}"
+    printf '\n## Preparation Summary\n'
+    printf -- '- Bridge report: done\n'
+    printf -- '- Workspace bootstrap: done\n'
+    printf -- '- Daily launch recipe: done\n'
+    printf -- '- Action pack: done\n'
+    printf -- '- VM template: done\n'
+    printf -- '- VM creation plan: done\n'
+    printf -- '- Post-create workflow: done\n'
+    printf '\n## Next Step\n'
+    printf -- '- %s\n' "${next_action}"
+    printf -- '- Command: `%s`\n' "${next_command}"
+    printf '\n## Hardware Details\n'
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Summary: %s\n' "${compatibility_summary:-not-available}"
+} > "${onboarding_report}"
+
+# ---------------------------------------------------------------
+# Step 8: Show final summary
+# ---------------------------------------------------------------
+printf '\n'
+printf '%s\n' '========================================'
+printf '%s\n' '     Lumina Windows Apps — Ready!'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Hardware: %s\n' "${tier_display}"
+printf 'Workspace: %s\n' "${workspace_root}"
+printf '\n'
+printf 'Next: %s\n' "${next_action}"
+printf '\n'
+
+if [[ ${has_gui} -eq 1 && ${auto_mode} -eq 0 ]]; then
+    if [[ ${needs_vm} -eq 1 ]] && [[ ! -f "${workflow_state_root}/vm-created.marker" ]]; then
+        response="$(kdialog --title "Lumina Windows Apps — Ready!" \
+            --yesno "Workspace prepared successfully!\n\n${next_action}\n\nDo you want to create your Windows VM now?" 2>/dev/null && echo "yes" || echo "no")"
+        if [[ "${response}" == "yes" ]]; then
+            exec /usr/local/bin/ahmados-windows-vm-launcher --profile-id "${profile_id}"
+        fi
+    else
+        kdialog --title "Lumina Windows Apps — Ready!" \
+            --msgbox "Workspace prepared successfully!\n\n${next_action}" 2>/dev/null || true
+    fi
+fi

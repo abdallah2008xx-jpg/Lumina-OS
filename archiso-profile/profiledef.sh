@@ -46,5 +46,13 @@ file_permissions=(
   ["/usr/local/bin/ahmados-windows-vm-lab"]="0:0:755"
   ["/usr/local/bin/lumina-windows-compat-check"]="0:0:755"
   ["/usr/local/bin/lumina-windows-vm-lab"]="0:0:755"
+  ["/usr/local/bin/ahmados-windows-onboarding"]="0:0:755"
+  ["/usr/local/bin/lumina-windows-onboarding"]="0:0:755"
+  ["/usr/local/bin/ahmados-windows-vm-launcher"]="0:0:755"
+  ["/usr/local/bin/lumina-windows-vm-launcher"]="0:0:755"
+  ["/usr/local/bin/ahmados-windows-vm-runner"]="0:0:755"
+  ["/usr/local/bin/lumina-windows-vm-runner"]="0:0:755"
+  ["/usr/local/bin/ahmados-windows-auto-configure"]="0:0:755"
+  ["/usr/local/bin/lumina-windows-auto-configure"]="0:0:755"
   ["/home/live/Desktop/Install Lumina-OS.desktop"]="0:0:755"
 )

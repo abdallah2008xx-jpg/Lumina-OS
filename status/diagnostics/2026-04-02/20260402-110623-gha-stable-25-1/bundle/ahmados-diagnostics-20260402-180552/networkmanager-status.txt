@@ -1,0 +1,22 @@
+● NetworkManager.service - Network Manager
+     Loaded: loaded (/usr/lib/systemd/system/NetworkManager.service; enabled; preset: disabled)
+     Active: active (running) since Thu 2026-04-02 17:48:22 UTC; 17min ago
+ Invocation: 8b16eee51e7b47ac9fe11fdb02819ac0
+       Docs: man:NetworkManager(8)
+   Main PID: 477 (NetworkManager)
+      Tasks: 4 (limit: 4620)
+     Memory: 8.7M (peak: 9.3M)
+        CPU: 133ms
+     CGroup: /system.slice/NetworkManager.service
+             └─477 /usr/bin/NetworkManager --no-daemon
+
+Apr 02 17:48:22 lumina-os NetworkManager[477]: <info>  [1775152102.4414] dhcp4 (enp0s3): state changed new lease, address=10.0.2.15
+Apr 02 17:48:22 lumina-os NetworkManager[477]: <info>  [1775152102.4424] policy: set 'Wired connection 1' (enp0s3) as default for IPv4 routing and DNS
+Apr 02 17:48:22 lumina-os NetworkManager[477]: <info>  [1775152102.4676] device (enp0s3): state change: ip-config -> ip-check (reason 'none', managed-type: 'full')
+Apr 02 17:48:22 lumina-os NetworkManager[477]: <info>  [1775152102.4686] device (enp0s3): state change: ip-check -> secondaries (reason 'none', managed-type: 'full')
+Apr 02 17:48:22 lumina-os NetworkManager[477]: <info>  [1775152102.4687] device (enp0s3): state change: secondaries -> activated (reason 'none', managed-type: 'full')
+Apr 02 17:48:22 lumina-os NetworkManager[477]: <info>  [1775152102.4689] manager: NetworkManager state is now CONNECTED_SITE
+Apr 02 17:48:22 lumina-os NetworkManager[477]: <info>  [1775152102.4689] device (enp0s3): Activation: successful, device activated.
+Apr 02 17:48:22 lumina-os NetworkManager[477]: <info>  [1775152102.4690] manager: startup complete
+Apr 02 17:48:22 lumina-os NetworkManager[477]: <info>  [1775152102.3225] manager: NetworkManager state is now CONNECTED_GLOBAL
+Apr 02 17:48:38 lumina-os NetworkManager[477]: <info>  [1775152118.8937] agent-manager: agent[c1b17cf616f4a9f0,:1.28/org.kde.plasma.networkmanagement/1000]: agent registered

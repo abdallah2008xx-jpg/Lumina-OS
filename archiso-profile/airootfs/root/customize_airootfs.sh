@@ -81,6 +81,10 @@ chmod 755 /usr/local/bin/ahmados-windows-registered-app-launch
 chmod 755 /usr/local/bin/lumina-windows-registered-app-launch
 chmod 755 /usr/local/bin/ahmados-windows-app-launcher-pack
 chmod 755 /usr/local/bin/lumina-windows-app-launcher-pack
+chmod 755 /usr/local/bin/ahmados-windows-app-surfaces
+chmod 755 /usr/local/bin/lumina-windows-app-surfaces
+chmod 755 /usr/local/bin/ahmados-windows-registered-app-picker
+chmod 755 /usr/local/bin/lumina-windows-registered-app-picker
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

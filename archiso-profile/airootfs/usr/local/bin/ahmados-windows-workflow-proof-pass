@@ -31,6 +31,7 @@ proof_report="${state_root}/windows-workflow-proof-pass.md"
 app_install_report="${state_root}/windows-app-install-starter.md"
 app_registration_report="${state_root}/windows-app-registration.md"
 app_launcher_pack_report="${state_root}/windows-app-launcher-pack.md"
+app_surfaces_report="${state_root}/windows-app-surfaces.md"
 state_report="${state_root}/windows-workflow-state.md"
 hub_report="${state_root}/windows-workflow-hub.md"
 
@@ -49,6 +50,7 @@ IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studi
 /usr/local/bin/ahmados-windows-app-install-starter --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-app-registration --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-app-launcher-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-app-surfaces --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
 workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
 checklists_dir="${workspace_root}/checklists"
@@ -139,6 +141,7 @@ touch "${proof_marker}"
     printf -- '- App Install Starter Report: %s\n' "${app_install_report}"
     printf -- '- App Registration Report: %s\n' "${app_registration_report}"
     printf -- '- App Launcher Pack Report: %s\n' "${app_launcher_pack_report}"
+    printf -- '- App Surfaces Report: %s\n' "${app_surfaces_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
 } > "${proof_report}"

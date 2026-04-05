@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+app_surfaces_report="${state_root}/windows-app-surfaces.md"
+app_registration_report="${state_root}/windows-app-registration.md"
+app_launcher_pack_report="${state_root}/windows-app-launcher-pack.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-app-registration --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-app-launcher-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+registry_root="${workspace_root}/app-registry"
+registry_index_path="${registry_root}/registry-index.tsv"
+launchers_dir="${registry_root}/launchers"
+surfaces_index_path="${registry_root}/launcher-surfaces.tsv"
+workflow_state_root="${workspace_root}/state"
+app_surfaces_marker="${workflow_state_root}/app-surfaces-ready.marker"
+
+mkdir -p "${registry_root}" "${launchers_dir}" "${workflow_state_root}"
+
+generated_count=0
+surfaces_lines=""
+
+{
+    printf '# app_id|app_name|surface_state|launcher_script|launcher_desktop|manifest_path\n'
+    while IFS='|' read -r app_id app_name app_category registration_state preferred_route manifest_path; do
+        [[ -z "${app_id}" || "${app_id}" == \#* ]] && continue
+
+        launcher_script_path="${launchers_dir}/launch-${app_id}.sh"
+        launcher_desktop_path="${launchers_dir}/${app_id}.desktop"
+        surface_state="ready"
+
+        if [[ ! -f "${launcher_script_path}" || ! -f "${launcher_desktop_path}" ]]; then
+            surface_state="missing-launcher"
+        fi
+
+        printf '%s|%s|%s|%s|%s|%s\n' \
+            "${app_id}" \
+            "${app_name}" \
+            "${surface_state}" \
+            "${launcher_script_path}" \
+            "${launcher_desktop_path}" \
+            "${manifest_path}"
+
+        generated_count=$((generated_count + 1))
+        surfaces_lines+="- ${app_name}: ${surface_state} | ${launcher_script_path} | ${launcher_desktop_path}\n"
+    done < "${registry_index_path}"
+} > "${surfaces_index_path}"
+
+if [[ -z "${surfaces_lines}" ]]; then
+    surfaces_lines="- No registered app surfaces were resolved for this workflow yet.\n"
+fi
+
+touch "${app_surfaces_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows App Surfaces\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Surfaces Index: %s\n' "${surfaces_index_path}"
+    printf -- '- Registered App Count: %s\n' "${generated_count}"
+    printf -- '- App Surfaces Marker: %s\n' "${app_surfaces_marker}"
+    printf '\n## Registered App Surfaces\n'
+    printf '%b' "${surfaces_lines}"
+    printf '\n## Related Reports\n'
+    printf -- '- App Registration Report: %s\n' "${app_registration_report}"
+    printf -- '- App Launcher Pack Report: %s\n' "${app_launcher_pack_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${app_surfaces_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '      Lumina Windows App Surfaces'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Registered app surfaces: %s\n' "${generated_count}"
+printf 'Report: %s\n' "${app_surfaces_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${app_surfaces_report}" >/dev/null 2>&1 || true
+fi

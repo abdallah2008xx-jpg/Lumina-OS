@@ -103,6 +103,8 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-app-registration",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-registered-app-launch",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-app-launcher-pack",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-app-surfaces",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-registered-app-picker",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
@@ -147,6 +149,8 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-app-registration",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-registered-app-launch",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-app-launcher-pack",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-app-surfaces",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-registered-app-picker",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
@@ -482,7 +486,11 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/ahmados-windows-registered-app-launch",
         "/usr/local/bin/lumina-windows-registered-app-launch",
         "/usr/local/bin/ahmados-windows-app-launcher-pack",
-        "/usr/local/bin/lumina-windows-app-launcher-pack"
+        "/usr/local/bin/lumina-windows-app-launcher-pack",
+        "/usr/local/bin/ahmados-windows-app-surfaces",
+        "/usr/local/bin/lumina-windows-app-surfaces",
+        "/usr/local/bin/ahmados-windows-registered-app-picker",
+        "/usr/local/bin/lumina-windows-registered-app-picker"
     )) {
         if ($customizeContent -notmatch [regex]::Escape("chmod 755 $requiredChmodTarget")) {
             Add-Error "customize_airootfs.sh does not enforce executable permissions for $requiredChmodTarget"

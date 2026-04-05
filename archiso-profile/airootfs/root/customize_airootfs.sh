@@ -47,6 +47,8 @@ chmod 755 /usr/local/bin/ahmados-windows-workflow-next-action
 chmod 755 /usr/local/bin/lumina-windows-workflow-next-action
 chmod 755 /usr/local/bin/ahmados-windows-vm-template
 chmod 755 /usr/local/bin/lumina-windows-vm-template
+chmod 755 /usr/local/bin/ahmados-windows-vm-creation-starter
+chmod 755 /usr/local/bin/lumina-windows-vm-creation-starter
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

@@ -117,6 +117,8 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-launcher-pack"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-surfaces"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-registered-app-picker"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-guest-app-discovery"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-manifest-hydration"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
@@ -163,6 +165,8 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-launcher-pack"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-surfaces"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-registered-app-picker"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-guest-app-discovery"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-manifest-hydration"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
@@ -440,7 +444,11 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/ahmados-windows-app-surfaces \
         /usr/local/bin/lumina-windows-app-surfaces \
         /usr/local/bin/ahmados-windows-registered-app-picker \
-        /usr/local/bin/lumina-windows-registered-app-picker; do
+        /usr/local/bin/lumina-windows-registered-app-picker \
+        /usr/local/bin/ahmados-windows-guest-app-discovery \
+        /usr/local/bin/lumina-windows-guest-app-discovery \
+        /usr/local/bin/ahmados-windows-app-manifest-hydration \
+        /usr/local/bin/lumina-windows-app-manifest-hydration; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
             add_error "customize_airootfs.sh does not enforce executable permissions for ${required_chmod_target}"
         fi

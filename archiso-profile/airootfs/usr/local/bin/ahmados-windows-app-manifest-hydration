@@ -1,0 +1,213 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+replace_manifest_field() {
+    local file_path="$1"
+    local field_name="$2"
+    local field_value="$3"
+    local temp_path
+
+    temp_path="$(mktemp)"
+    awk -v field_name="${field_name}" -v field_value="${field_value}" '
+        BEGIN { replaced = 0 }
+        index($0, "- " field_name ": ") == 1 {
+            print "- " field_name ": " field_value
+            replaced = 1
+            next
+        }
+        { print }
+        END {
+            if (!replaced) {
+                print "- " field_name ": " field_value
+            }
+        }
+    ' "${file_path}" > "${temp_path}"
+    mv "${temp_path}" "${file_path}"
+}
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+hydration_report="${state_root}/windows-app-manifest-hydration.md"
+guest_discovery_report="${state_root}/windows-guest-app-discovery.md"
+app_registration_report="${state_root}/windows-app-registration.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-app-registration --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+registry_root="${workspace_root}/app-registry"
+registry_index_path="${registry_root}/registry-index.tsv"
+workflow_state_root="${workspace_root}/state"
+share_path="${workspace_root}/vm-share"
+workspace_env_path="${workspace_root}/workspace.env"
+vm_create_env_path="${workspace_root}/vm-create.env"
+hydration_cache_root="${registry_root}/discovery-cache"
+hydration_cache_path="${hydration_cache_root}/registered-apps.tsv"
+hydration_marker="${workflow_state_root}/app-manifest-hydration-ready.marker"
+discovery_results_path="${share_path}/launch-broker/discovery/registered-apps.tsv"
+
+mkdir -p "${registry_root}" "${workflow_state_root}" "${hydration_cache_root}"
+
+if [[ -f "${workspace_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${workspace_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_DIR:-${share_path}}"
+    discovery_results_path="${share_path}/launch-broker/discovery/registered-apps.tsv"
+fi
+
+if [[ -f "${vm_create_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${vm_create_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${share_path}}"
+    discovery_results_path="${share_path}/launch-broker/discovery/registered-apps.tsv"
+fi
+
+hydrated_count=0
+missing_count=0
+hydrated_lines=""
+missing_lines=""
+hydration_status="awaiting-discovery"
+
+if [[ ! -f "${discovery_results_path}" ]]; then
+    hydration_note="No guest discovery results were found yet. Run the generated Windows-side discovery script first."
+else
+    cp "${discovery_results_path}" "${hydration_cache_path}"
+    hydration_status="hydrated"
+
+    while IFS='|' read -r app_id app_name discovery_state launch_target candidate discovered_at; do
+        [[ -z "${app_id}" || "${app_id}" == \#* ]] && continue
+
+        registry_row="$(awk -F'|' -v target="${app_id}" 'NF >= 6 && $1 == target {print; exit}' "${registry_index_path}" || true)"
+        if [[ -z "${registry_row}" ]]; then
+            continue
+        fi
+
+        IFS='|' read -r catalog_id registry_app_name category registration_state preferred_route manifest_path <<< "${registry_row}"
+
+        if [[ ! -f "${manifest_path}" ]]; then
+            continue
+        fi
+
+        current_state="$(awk -F': ' '/^- Registration State:/ {print $2; exit}' "${manifest_path}" 2>/dev/null || true)"
+
+        if [[ "${discovery_state}" == "found" && -n "${launch_target}" ]]; then
+            next_state="${current_state}"
+            if [[ -z "${next_state}" || "${next_state}" == "planned" || "${next_state}" == "discovery-pending" || "${next_state}" == "not-found" || "${next_state}" == "discovered" ]]; then
+                next_state="discovered"
+            fi
+
+            replace_manifest_field "${manifest_path}" "Registration State" "${next_state}"
+            replace_manifest_field "${manifest_path}" "Suggested Launch Target" "${launch_target}"
+            hydrated_count=$((hydrated_count + 1))
+            hydrated_lines+="- ${registry_app_name}: ${launch_target} (${candidate:-direct})\n"
+        else
+            next_state="${current_state}"
+            if [[ -z "${next_state}" || "${next_state}" == "planned" || "${next_state}" == "discovery-pending" || "${next_state}" == "not-found" ]]; then
+                next_state="not-found"
+            fi
+            replace_manifest_field "${manifest_path}" "Registration State" "${next_state}"
+            missing_count=$((missing_count + 1))
+            missing_lines+="- ${registry_app_name}: not found yet\n"
+        fi
+    done < "${discovery_results_path}"
+
+    {
+        printf '# id|name|category|registration_state|preferred_route|manifest_path\n'
+        while IFS='|' read -r catalog_id app_name category registration_state preferred_route manifest_path; do
+            [[ -z "${catalog_id}" || "${catalog_id}" == \#* ]] && continue
+            next_state="$(awk -F': ' '/^- Registration State:/ {print $2; exit}' "${manifest_path}" 2>/dev/null || true)"
+            if [[ -z "${next_state}" ]]; then
+                next_state="${registration_state}"
+            fi
+            printf '%s|%s|%s|%s|%s|%s\n' \
+                "${catalog_id}" "${app_name}" "${category}" "${next_state}" "${preferred_route}" "${manifest_path}"
+        done < "${registry_index_path}"
+    } > "${registry_index_path}.tmp"
+    mv "${registry_index_path}.tmp" "${registry_index_path}"
+
+    touch "${hydration_marker}"
+    hydration_note="Lumina hydrated the registered app manifests using the latest guest-side discovery results."
+fi
+
+if [[ -z "${hydrated_lines}" ]]; then
+    hydrated_lines="- No registered app launch targets were hydrated yet.\n"
+fi
+
+if [[ -z "${missing_lines}" ]]; then
+    missing_lines="- No unresolved app discovery rows remain in this pass.\n"
+fi
+
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows App Manifest Hydration\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Hydration Status: %s\n' "${hydration_status}"
+    printf -- '- Hydrated Targets: %s\n' "${hydrated_count}"
+    printf -- '- Unresolved Targets: %s\n' "${missing_count}"
+    printf -- '- Discovery Results Path: %s\n' "${discovery_results_path}"
+    printf -- '- Discovery Cache Path: %s\n' "${hydration_cache_path}"
+    printf -- '- Hydration Marker: %s\n' "${hydration_marker}"
+    printf '\n## Hydration Note\n'
+    printf -- '- %s\n' "${hydration_note}"
+    printf '\n## Hydrated Targets\n'
+    printf '%b' "${hydrated_lines}"
+    printf '\n## Unresolved Targets\n'
+    printf '%b' "${missing_lines}"
+    printf '\n## Related Reports\n'
+    printf -- '- Guest Discovery Report: %s\n' "${guest_discovery_report}"
+    printf -- '- App Registration Report: %s\n' "${app_registration_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${hydration_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '  Lumina App Manifest Hydration'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Status: %s\n' "${hydration_status}"
+printf 'Report: %s\n' "${hydration_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${hydration_report}" >/dev/null 2>&1 || true
+fi

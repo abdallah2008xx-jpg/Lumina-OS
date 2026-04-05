@@ -43,6 +43,8 @@ app_surfaces_report="${state_root}/windows-app-surfaces.md"
 workflow_proof_report="${state_root}/windows-workflow-proof-pass.md"
 launch_sync_report="${state_root}/windows-launch-results-sync.md"
 guest_onboarding_report="${state_root}/windows-guest-onboarding.md"
+guest_app_discovery_report="${state_root}/windows-guest-app-discovery.md"
+app_manifest_hydration_report="${state_root}/windows-app-manifest-hydration.md"
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="adobe-creator"
@@ -80,6 +82,8 @@ launch_result_seen_marker="${workflow_state_root}/launch-result-seen.marker"
 launch_request_pending_marker="${workflow_state_root}/launch-request-pending.marker"
 guest_onboarding_marker="${workflow_state_root}/guest-onboarding-ready.marker"
 guest_agent_installed_marker="${workflow_state_root}/guest-agent-installed.marker"
+guest_app_discovery_marker="${workflow_state_root}/guest-app-discovery-ready.marker"
+app_manifest_hydration_marker="${workflow_state_root}/app-manifest-hydration-ready.marker"
 notes_path="${workflow_state_root}/current-notes.md"
 
 touch "${notes_path}"
@@ -152,6 +156,16 @@ if [[ -f "${app_registration_marker}" ]]; then
     status="in-progress"
 fi
 
+if [[ -f "${guest_app_discovery_marker}" ]]; then
+    phase="guest-app-discovery-ready"
+    status="in-progress"
+fi
+
+if [[ -f "${app_manifest_hydration_marker}" ]]; then
+    phase="app-manifest-hydration-ready"
+    status="in-progress"
+fi
+
 if [[ -f "${app_launcher_pack_marker}" ]]; then
     phase="app-launcher-pack-ready"
     status="in-progress"
@@ -216,6 +230,8 @@ fi
     printf -- '- Guest Agent Pack Ready: %s\n' "$([[ -f "${guest_agent_pack_marker}" ]] && printf yes || printf no)"
     printf -- '- Guest Onboarding Ready: %s\n' "$([[ -f "${guest_onboarding_marker}" ]] && printf yes || printf no)"
     printf -- '- Guest Agent Installed: %s\n' "$([[ -f "${guest_agent_installed_marker}" ]] && printf yes || printf no)"
+    printf -- '- Guest App Discovery Ready: %s\n' "$([[ -f "${guest_app_discovery_marker}" ]] && printf yes || printf no)"
+    printf -- '- App Manifest Hydration Ready: %s\n' "$([[ -f "${app_manifest_hydration_marker}" ]] && printf yes || printf no)"
     printf -- '- Launch Result Seen: %s\n' "$([[ -f "${launch_result_seen_marker}" ]] && printf yes || printf no)"
     printf -- '- Launch Request Pending: %s\n' "$([[ -f "${launch_request_pending_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Created: %s\n' "$([[ -f "${vm_created_marker}" ]] && printf yes || printf no)"
@@ -242,6 +258,8 @@ fi
     printf -- '- Workflow Proof Pass Report: %s\n' "${workflow_proof_report}"
     printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
     printf -- '- Guest Onboarding Report: %s\n' "${guest_onboarding_report}"
+    printf -- '- Guest App Discovery Report: %s\n' "${guest_app_discovery_report}"
+    printf -- '- App Manifest Hydration Report: %s\n' "${app_manifest_hydration_report}"
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
 } > "${state_report}"

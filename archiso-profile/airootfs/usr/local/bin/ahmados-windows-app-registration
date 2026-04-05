@@ -104,28 +104,55 @@ for app_id in "${app_id_array[@]}"; do
     IFS='|' read -r catalog_id app_name category basic_path vm_path studio_path catalog_notes <<< "${app_row}"
     manifest_path="${manifests_dir}/${catalog_id}.md"
     preferred_route="${vm_path}"
+    registration_state="planned"
+    launch_target="<fill after install>"
+    export_test_path="<fill after first proof pass>"
+    preserved_notes=""
+
+    if [[ -f "${manifest_path}" ]]; then
+        existing_registration_state="$(awk -F': ' '/^- Registration State:/ {print $2; exit}' "${manifest_path}" 2>/dev/null || true)"
+        existing_launch_target="$(awk -F': ' '/^- Suggested Launch Target:/ {print $2; exit}' "${manifest_path}" 2>/dev/null || true)"
+        existing_export_test_path="$(awk -F': ' '/^- Suggested Export\/Test Path:/ {print $2; exit}' "${manifest_path}" 2>/dev/null || true)"
+        preserved_notes="$(awk 'found && /^- / {print} /^## Notes$/ {found=1}' "${manifest_path}" 2>/dev/null || true)"
+
+        if [[ -n "${existing_registration_state}" ]]; then
+            registration_state="${existing_registration_state}"
+        fi
+
+        if [[ -n "${existing_launch_target}" ]]; then
+            launch_target="${existing_launch_target}"
+        fi
+
+        if [[ -n "${existing_export_test_path}" ]]; then
+            export_test_path="${existing_export_test_path}"
+        fi
+    fi
 
     {
         printf '# %s Registration Manifest\n\n' "${app_name}"
         printf -- '- App Id: %s\n' "${catalog_id}"
         printf -- '- Profile Id: %s\n' "${profile_id}"
         printf -- '- Category: %s\n' "${category}"
-        printf -- '- Registration State: planned\n'
+        printf -- '- Registration State: %s\n' "${registration_state}"
         printf -- '- Preferred Route: %s\n' "${preferred_route}"
         printf -- '- Linux-First Hint: %s\n' "${basic_path}"
         printf -- '- Windows Workspace Hint: %s\n' "${vm_path}"
         printf -- '- Studio Hint: %s\n' "${studio_path}"
         printf -- '- Suggested Installer Drop: %s\n' "${installers_dir}"
         printf -- '- Suggested Share Path: %s\n' "${share_dir}"
-        printf -- '- Suggested Launch Target: <fill after install>\n'
-        printf -- '- Suggested Export/Test Path: <fill after first proof pass>\n'
+        printf -- '- Suggested Launch Target: %s\n' "${launch_target}"
+        printf -- '- Suggested Export/Test Path: %s\n' "${export_test_path}"
         printf '\n## Notes\n'
-        printf -- '- %s\n' "${catalog_notes}"
-        printf -- '- Fill the real launch target after install so Lumina can later move from raw files toward known app entries.\n'
+        if [[ -n "${preserved_notes}" ]]; then
+            printf '%s\n' "${preserved_notes}"
+        else
+            printf -- '- %s\n' "${catalog_notes}"
+            printf -- '- Fill the real launch target after install so Lumina can later move from raw files toward known app entries.\n'
+        fi
     } > "${manifest_path}"
 
     printf '%s|%s|%s|%s|%s|%s\n' \
-        "${catalog_id}" "${app_name}" "${category}" "planned" "${preferred_route}" "${manifest_path}" >> "${registry_index_path}"
+        "${catalog_id}" "${app_name}" "${category}" "${registration_state}" "${preferred_route}" "${manifest_path}" >> "${registry_index_path}"
 
     registration_targets+="- ${app_name}: ${manifest_path}\n"
 done

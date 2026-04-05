@@ -76,6 +76,8 @@ The current phase adds:
 - a registered-app launch layer that stages named app requests through the Windows workspace instead of relying only on raw `.exe` clicks
 - an app-surfaces layer that indexes known registered Windows apps as launchable Lumina-side surfaces
 - a registered-app picker layer that lets Lumina choose one known app and dry-run the named launch path without relying on a raw file click
+- a guest-app-discovery layer that generates a Windows-side discovery pass for the registered app set
+- an app-manifest-hydration layer that fills registered app manifests with real launch targets from guest-side discovery results
 
 ## Current Limits
 
@@ -90,6 +92,8 @@ The current phase adds:
 - It can now stage named registered-app launch requests through the same Lumina workflow path instead of treating every Windows app launch like an anonymous file.
 - It can now index those known apps into a dedicated app-surfaces layer instead of scattering them across raw files and reports.
 - It can now dry-run one known registered app through a picker flow before the workflow is considered truly hands-free.
+- It can now prepare a Windows-side discovery pass that searches for installed app targets instead of relying only on manual manifest edits.
+- It can now hydrate the registered app manifests from shared guest-side discovery results when those results exist.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 - Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.
 

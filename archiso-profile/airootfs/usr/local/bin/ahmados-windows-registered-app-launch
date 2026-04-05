@@ -80,6 +80,8 @@ if [[ ! -f "${registry_index_path}" ]]; then
     /usr/local/bin/ahmados-windows-app-registration --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 fi
 
+/usr/local/bin/ahmados-windows-app-manifest-hydration --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
 app_row="$(awk -F'|' -v target="${selected_app_id}" 'NF >= 6 && $1 == target {print; exit}' "${registry_index_path}" || true)"
 if [[ -z "${app_row}" ]]; then
     printf 'Unknown registered app id: %s\n' "${selected_app_id}" >&2

@@ -1,0 +1,300 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+candidate_names_for_app() {
+    case "$1" in
+        photoshop) printf '%s' 'Photoshop.exe;Adobe Photoshop*.lnk' ;;
+        premiere-pro) printf '%s' 'Adobe Premiere Pro.exe;Adobe Premiere Pro*.lnk' ;;
+        illustrator) printf '%s' 'Illustrator.exe;Adobe Illustrator*.lnk' ;;
+        after-effects) printf '%s' 'AfterFX.exe;Adobe After Effects*.lnk' ;;
+        creative-cloud) printf '%s' 'Creative Cloud.exe;Adobe Creative Cloud*.lnk' ;;
+        office) printf '%s' 'WINWORD.EXE;EXCEL.EXE;POWERPNT.EXE;OUTLOOK.EXE;Word.lnk;Excel.lnk;PowerPoint.lnk;Outlook.lnk' ;;
+        notion-windows) printf '%s' 'Notion.exe;Notion*.lnk' ;;
+        fl-studio) printf '%s' 'FL64.exe;FL.exe;FL Studio*.lnk' ;;
+        epic-launcher) printf '%s' 'EpicGamesLauncher.exe;Epic Games Launcher*.lnk' ;;
+        battle-net) printf '%s' 'Battle.net.exe;Battle.net Launcher.exe;Battle.net*.lnk' ;;
+        riot-client) printf '%s' 'RiotClientServices.exe;Riot Client*.lnk' ;;
+        windows-launchers) printf '%s' 'Setup.exe;Launcher.exe;Updater.exe;Vendor*.lnk' ;;
+        *) printf '%s' '' ;;
+    esac
+}
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+guest_discovery_report="${state_root}/windows-guest-app-discovery.md"
+app_registration_report="${state_root}/windows-app-registration.md"
+guest_onboarding_report="${state_root}/windows-guest-onboarding.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-app-registration --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-guest-onboarding --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+registry_root="${workspace_root}/app-registry"
+registry_index_path="${registry_root}/registry-index.tsv"
+workflow_state_root="${workspace_root}/state"
+share_path="${workspace_root}/vm-share"
+workspace_env_path="${workspace_root}/workspace.env"
+vm_create_env_path="${workspace_root}/vm-create.env"
+guest_discovery_root="${workspace_root}/guest-app-discovery"
+candidate_map_path="${guest_discovery_root}/candidate-map.tsv"
+guest_discovery_config_path="${guest_discovery_root}/app-discovery.config.ps1"
+guest_discovery_script_path="${guest_discovery_root}/Discover-LuminaRegisteredApps.ps1"
+guest_discovery_cmd_path="${guest_discovery_root}/Run-LuminaAppDiscovery.cmd"
+guest_discovery_notes_path="${guest_discovery_root}/app-discovery-notes.md"
+guest_discovery_env_path="${guest_discovery_root}/app-discovery.env"
+guest_discovery_marker="${workflow_state_root}/guest-app-discovery-ready.marker"
+discovery_share_dir="${share_path}/launch-broker/discovery"
+discovery_results_path="${discovery_share_dir}/registered-apps.tsv"
+discovery_summary_path="${discovery_share_dir}/registered-apps-summary.md"
+
+mkdir -p "${workflow_state_root}" "${guest_discovery_root}" "${discovery_share_dir}"
+
+if [[ -f "${workspace_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${workspace_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_DIR:-${share_path}}"
+    discovery_share_dir="${share_path}/launch-broker/discovery"
+    discovery_results_path="${discovery_share_dir}/registered-apps.tsv"
+    discovery_summary_path="${discovery_share_dir}/registered-apps-summary.md"
+fi
+
+if [[ -f "${vm_create_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${vm_create_env_path}"
+    share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${share_path}}"
+    discovery_share_dir="${share_path}/launch-broker/discovery"
+    discovery_results_path="${discovery_share_dir}/registered-apps.tsv"
+    discovery_summary_path="${discovery_share_dir}/registered-apps-summary.md"
+fi
+
+{
+    printf '# app_id|app_name|candidate_names\n'
+    while IFS='|' read -r app_id app_name app_category registration_state preferred_route manifest_path; do
+        [[ -z "${app_id}" || "${app_id}" == \#* ]] && continue
+        candidate_names="$(candidate_names_for_app "${app_id}")"
+        printf '%s|%s|%s\n' "${app_id}" "${app_name}" "${candidate_names}"
+    done < "${registry_index_path}"
+} > "${candidate_map_path}"
+
+{
+    printf '$LuminaProfileId = %s\n' "'${profile_id}'"
+    printf '$LuminaRegistryIndexPath = %s\n' "'${registry_index_path}'"
+    printf '$LuminaCandidateMapPath = %s\n' "'${candidate_map_path}'"
+    printf '$LuminaDiscoveryResultsPath = %s\n' "'${discovery_results_path}'"
+    printf '$LuminaDiscoverySummaryPath = %s\n' "'${discovery_summary_path}'"
+} > "${guest_discovery_config_path}"
+
+cat > "${guest_discovery_script_path}" <<'EOF'
+param(
+    [switch]$OpenResults
+)
+
+$ErrorActionPreference = 'Stop'
+$ConfigPath = Join-Path $PSScriptRoot 'app-discovery.config.ps1'
+if (-not (Test-Path $ConfigPath)) {
+    throw "Missing app-discovery.config.ps1"
+}
+
+. $ConfigPath
+
+function Import-LuminaTsv {
+    param([string]$Path)
+
+    $rows = @()
+    if (-not (Test-Path $Path)) {
+        return $rows
+    }
+
+    foreach ($line in Get-Content -Path $Path) {
+        if (-not $line -or $line.StartsWith('#')) {
+            continue
+        }
+        $rows += ,($line -split '\|')
+    }
+    return $rows
+}
+
+function Find-LuminaCandidateTarget {
+    param([string[]]$CandidateNames)
+
+    $SearchRoots = @(
+        $env:ProgramFiles,
+        ${env:ProgramFiles(x86)},
+        $env:LOCALAPPDATA,
+        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs",
+        "$env:APPDATA\Microsoft\Windows\Start Menu\Programs"
+    ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -Unique
+
+    foreach ($candidate in $CandidateNames) {
+        if (-not $candidate) {
+            continue
+        }
+
+        foreach ($root in $SearchRoots) {
+            $match = Get-ChildItem -Path $root -Recurse -File -Filter $candidate -ErrorAction SilentlyContinue |
+                Select-Object -First 1
+            if ($match) {
+                return [PSCustomObject]@{
+                    Path = $match.FullName
+                    Candidate = $candidate
+                }
+            }
+        }
+    }
+
+    return $null
+}
+
+$CandidateRows = Import-LuminaTsv -Path $LuminaCandidateMapPath
+if (-not (Test-Path (Split-Path -Parent $LuminaDiscoveryResultsPath))) {
+    New-Item -ItemType Directory -Path (Split-Path -Parent $LuminaDiscoveryResultsPath) -Force | Out-Null
+}
+
+$Output = New-Object System.Collections.Generic.List[string]
+$Output.Add('# app_id|app_name|discovery_state|launch_target|candidate|discovered_at')
+$Summary = New-Object System.Collections.Generic.List[string]
+$Summary.Add('# Lumina Windows Guest App Discovery')
+$Summary.Add('')
+$Summary.Add('- Generated At: ' + (Get-Date -Format o))
+
+foreach ($row in $CandidateRows) {
+    if ($row.Count -lt 3) {
+        continue
+    }
+
+    $AppId = $row[0]
+    $AppName = $row[1]
+    $Candidates = @()
+    if ($row[2]) {
+        $Candidates = $row[2] -split ';'
+    }
+
+    $Result = Find-LuminaCandidateTarget -CandidateNames $Candidates
+    if ($Result) {
+        $Output.Add(('{0}|{1}|found|{2}|{3}|{4}' -f $AppId, $AppName, $Result.Path, $Result.Candidate, (Get-Date -Format o)))
+        $Summary.Add(('- {0}: found via {1} -> {2}' -f $AppName, $Result.Candidate, $Result.Path))
+    }
+    else {
+        $Output.Add(('{0}|{1}|not-found|||' -f $AppId, $AppName))
+        $Summary.Add(('- {0}: not found yet' -f $AppName))
+    }
+}
+
+$Output | Set-Content -Path $LuminaDiscoveryResultsPath -Encoding UTF8
+$Summary | Set-Content -Path $LuminaDiscoverySummaryPath -Encoding UTF8
+
+Write-Host "Lumina guest app discovery results:"
+Write-Host (" - " + $LuminaDiscoveryResultsPath)
+Write-Host (" - " + $LuminaDiscoverySummaryPath)
+
+if ($OpenResults) {
+    Invoke-Item $LuminaDiscoverySummaryPath
+}
+EOF
+
+cat > "${guest_discovery_cmd_path}" <<'EOF'
+@echo off
+powershell.exe -ExecutionPolicy Bypass -File "%~dp0Discover-LuminaRegisteredApps.ps1" -OpenResults
+EOF
+
+{
+    printf '# %s Guest App Discovery\n\n' "${profile_name}"
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Candidate Map: %s\n' "${candidate_map_path}"
+    printf -- '- Discovery Script: %s\n' "${guest_discovery_script_path}"
+    printf -- '- Discovery Runner: %s\n' "${guest_discovery_cmd_path}"
+    printf -- '- Discovery Results Path: %s\n' "${discovery_results_path}"
+    printf -- '- Discovery Summary Path: %s\n' "${discovery_summary_path}"
+    printf '\n## What This Stage Does\n'
+    printf -- '- gives the Windows side a generated discovery pass for registered apps\n'
+    printf -- '- searches common install roots and Start Menu locations for known app candidates\n'
+    printf -- '- writes shared discovery results so Lumina can hydrate app manifests with real launch targets\n'
+    printf '\n## Windows-Side Use\n'
+    printf -- '- Open the workflow share from inside Windows.\n'
+    printf -- '- Run `%s` after the core app stack is installed.\n' "${guest_discovery_cmd_path}"
+    printf -- '- Return to Lumina and run the manifest hydration step after the results land in the shared discovery folder.\n'
+} > "${guest_discovery_notes_path}"
+
+{
+    printf 'LUMINA_WINDOWS_PROFILE_ID=%q\n' "${profile_id}"
+    printf 'LUMINA_WINDOWS_GUEST_DISCOVERY_ROOT=%q\n' "${guest_discovery_root}"
+    printf 'LUMINA_WINDOWS_GUEST_DISCOVERY_CANDIDATE_MAP=%q\n' "${candidate_map_path}"
+    printf 'LUMINA_WINDOWS_GUEST_DISCOVERY_SCRIPT=%q\n' "${guest_discovery_script_path}"
+    printf 'LUMINA_WINDOWS_GUEST_DISCOVERY_RUNNER=%q\n' "${guest_discovery_cmd_path}"
+    printf 'LUMINA_WINDOWS_GUEST_DISCOVERY_RESULTS=%q\n' "${discovery_results_path}"
+    printf 'LUMINA_WINDOWS_GUEST_DISCOVERY_SUMMARY=%q\n' "${discovery_summary_path}"
+} > "${guest_discovery_env_path}"
+
+touch "${guest_discovery_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows Guest App Discovery\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Candidate Map: %s\n' "${candidate_map_path}"
+    printf -- '- Discovery Script: %s\n' "${guest_discovery_script_path}"
+    printf -- '- Discovery Runner: %s\n' "${guest_discovery_cmd_path}"
+    printf -- '- Discovery Notes: %s\n' "${guest_discovery_notes_path}"
+    printf -- '- Discovery Env: %s\n' "${guest_discovery_env_path}"
+    printf -- '- Discovery Results Path: %s\n' "${discovery_results_path}"
+    printf -- '- Discovery Summary Path: %s\n' "${discovery_summary_path}"
+    printf -- '- Guest App Discovery Marker: %s\n' "${guest_discovery_marker}"
+    printf '\n## Related Reports\n'
+    printf -- '- App Registration Report: %s\n' "${app_registration_report}"
+    printf -- '- Guest Onboarding Report: %s\n' "${guest_onboarding_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${guest_discovery_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '    Lumina Guest App Discovery'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Discovery script: %s\n' "${guest_discovery_script_path}"
+printf 'Report: %s\n' "${guest_discovery_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${guest_discovery_report}" >/dev/null 2>&1 || true
+fi

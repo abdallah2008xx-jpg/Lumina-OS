@@ -110,6 +110,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-guest-agent-pack"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-vm-warm-start"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-launch-results-sync"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-launch-session"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
@@ -149,6 +150,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-guest-agent-pack"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-vm-warm-start"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-launch-results-sync"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-launch-session"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
@@ -412,7 +414,9 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/ahmados-windows-vm-warm-start \
         /usr/local/bin/lumina-windows-vm-warm-start \
         /usr/local/bin/ahmados-windows-launch-results-sync \
-        /usr/local/bin/lumina-windows-launch-results-sync; do
+        /usr/local/bin/lumina-windows-launch-results-sync \
+        /usr/local/bin/ahmados-windows-launch-session \
+        /usr/local/bin/lumina-windows-launch-session; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
             add_error "customize_airootfs.sh does not enforce executable permissions for ${required_chmod_target}"
         fi
@@ -491,7 +495,7 @@ ${profile_path}/airootfs/usr/share/applications/ahmados-welcome.desktop|Exec=/us
 ${profile_path}/airootfs/usr/share/applications/lumina-finalize-install.desktop|Exec=/usr/local/bin/lumina-finalize-install
 ${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop|Exec=/usr/local/bin/lumina-installer
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-apps.desktop|Exec=/usr/local/bin/lumina-windows-workflow-hub
-${profile_path}/airootfs/usr/share/applications/lumina-windows-launch-broker.desktop|Exec=/usr/local/bin/lumina-windows-launch-broker --file %f
+${profile_path}/airootfs/usr/share/applications/lumina-windows-launch-broker.desktop|Exec=/usr/local/bin/lumina-windows-launch-session --file %f
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-compat-check.desktop|Exec=/usr/local/bin/lumina-windows-compat-check
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-vm-lab.desktop|Exec=/usr/local/bin/lumina-windows-vm-lab
 ${profile_path}/airootfs/home/live/Desktop/Install Lumina-OS.desktop|Exec=/usr/local/bin/lumina-installer

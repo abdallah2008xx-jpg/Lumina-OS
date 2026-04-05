@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+target_file=""
+open_report=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --file)
+            target_file="${2:-}"
+            shift 2
+            ;;
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --open-report)
+            open_report=1
+            shift
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+session_report="${state_root}/windows-launch-session.md"
+broker_report="${state_root}/windows-launch-broker.md"
+warm_start_report="${state_root}/windows-vm-warm-start.md"
+launch_sync_report="${state_root}/windows-launch-results-sync.md"
+mkdir -p "${state_root}"
+
+if [[ -z "${target_file}" ]]; then
+    printf 'No Windows launch file was provided.\n' >&2
+    exit 1
+fi
+
+if [[ -n "${selected_profile_id}" ]]; then
+    /usr/local/bin/ahmados-windows-launch-broker \
+        --file "${target_file}" \
+        --profile-id "${selected_profile_id}" \
+        --no-open-report \
+        --no-run-next-action >/dev/null 2>&1
+else
+    /usr/local/bin/ahmados-windows-launch-broker \
+        --file "${target_file}" \
+        --no-open-report \
+        --no-run-next-action >/dev/null 2>&1
+fi
+
+profile_name="$(awk -F': ' '/^- Profile:/ {print $2; exit}' "${broker_report}" 2>/dev/null || true)"
+profile_id="$(awk -F': ' '/^- Profile Id:/ {print $2; exit}' "${broker_report}" 2>/dev/null || true)"
+launch_method="$(awk -F': ' '/^- Launch Method:/ {print $2; exit}' "${broker_report}" 2>/dev/null || true)"
+target_path="$(awk -F': ' '/^- Target File:/ {print $2; exit}' "${broker_report}" 2>/dev/null || true)"
+vm_name="$(awk -F': ' '/^- VM Name:/ {print $2; exit}' "${broker_report}" 2>/dev/null || true)"
+pending_requests="$(awk -F': ' '/^- Pending Requests:/ {print $2; exit}' "${broker_report}" 2>/dev/null || true)"
+
+session_phase="broker-only"
+session_outcome="staged"
+session_note="Lumina staged the request and captured the launch context."
+guest_launch_status="not-applicable"
+guest_launch_message="No guest-side launch status was needed yet."
+
+case "${launch_method}" in
+    vm-launch-request-staged)
+        /usr/local/bin/ahmados-windows-vm-warm-start --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+        /usr/local/bin/ahmados-windows-launch-results-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+        pending_requests="$(awk -F': ' '/^- Pending Requests:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+        guest_launch_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+        guest_launch_message="$(awk -F': ' '/^- Message:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+        session_phase="broker-warm-start-sync"
+        if [[ "${pending_requests:-0}" != "0" && ( -z "${guest_launch_status}" || "${guest_launch_status}" == "none" ) ]]; then
+            session_outcome="waiting-for-guest-agent"
+            session_note="Lumina staged the request and warmed the VM, but the guest-side agent still needs to consume the queue."
+        else
+            session_outcome="launch-feedback-available"
+            session_note="Lumina staged the request, warmed the VM, and synced guest-side launch feedback back into workflow state."
+        fi
+        ;;
+    wine-first)
+        session_phase="linux-first"
+        session_outcome="wine-launched"
+        session_note="Lumina stayed on the Linux-first path and asked Wine to launch the file directly."
+        ;;
+    vm-create-needed)
+        session_phase="vm-create-needed"
+        session_outcome="workspace-vm-missing"
+        session_note="The hidden Windows path still needs the VM to be created first."
+        ;;
+    vm-configure-needed)
+        session_phase="vm-configure-needed"
+        session_outcome="workspace-vm-needs-config"
+        session_note="The Windows VM exists, but the workflow still needs the post-create configuration pass."
+        ;;
+    documentation-only)
+        session_phase="documented-only"
+        session_outcome="out-of-scope"
+        session_note="Lumina documented the route honestly and refused to pretend that this path is already solved."
+        ;;
+esac
+
+{
+    printf '# Lumina Windows Launch Session\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name:-unknown}"
+    printf -- '- Profile Id: %s\n' "${profile_id:-unknown}"
+    printf -- '- Target File: %s\n' "${target_path:-${target_file}}"
+    printf -- '- Launch Method: %s\n' "${launch_method:-unknown}"
+    printf -- '- Session Phase: %s\n' "${session_phase}"
+    printf -- '- Session Outcome: %s\n' "${session_outcome}"
+    printf -- '- VM Name: %s\n' "${vm_name:-unknown}"
+    printf -- '- Pending Requests: %s\n' "${pending_requests:-unknown}"
+    printf -- '- Guest Launch Status: %s\n' "${guest_launch_status:-unknown}"
+    printf -- '- Guest Launch Message: %s\n' "${guest_launch_message:-unknown}"
+    printf '\n## Session Note\n'
+    printf -- '- %s\n' "${session_note}"
+    printf '\n## Related Reports\n'
+    printf -- '- Broker Report: %s\n' "${broker_report}"
+    printf -- '- VM Warm Start Report: %s\n' "${warm_start_report}"
+    printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
+} > "${session_report}"
+
+if command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    case "${session_outcome}" in
+        wine-launched)
+            kdialog --title "Lumina Windows Apps" --passivepopup "Lumina tried the Linux-first path for $(basename "${target_file}")." 3 2>/dev/null || true
+            ;;
+        launch-feedback-available)
+            kdialog --title "Lumina Windows Apps" --passivepopup "Lumina staged the app and synced launch feedback from the Windows workspace." 3 2>/dev/null || true
+            ;;
+        waiting-for-guest-agent)
+            kdialog --title "Lumina Windows Apps" --passivepopup "Request staged. Finish the Windows guest agent setup once so future launches become hands-free." 4 2>/dev/null || true
+            ;;
+    esac
+fi
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${session_report}" >/dev/null 2>&1 || true
+fi
+
+printf '%s\n' '========================================'
+printf '%s\n' '    Lumina Windows Launch Session'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name:-unknown}"
+printf 'Outcome: %s\n' "${session_outcome}"
+printf 'Report: %s\n' "${session_report}"
+printf '\n'

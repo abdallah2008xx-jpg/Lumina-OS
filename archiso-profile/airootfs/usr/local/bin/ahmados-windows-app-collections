@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+slugify() {
+    local value="${1,,}"
+    value="${value// /-}"
+    value="${value//\//-}"
+    value="${value//[^a-z0-9-]/}"
+    value="${value//--/-}"
+    printf '%s' "${value}"
+}
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+collections_report="${state_root}/windows-app-collections.md"
+surfaces_report="${state_root}/windows-app-surfaces.md"
+menu_export_report="${state_root}/windows-app-menu-export.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-app-surfaces --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+registry_root="${workspace_root}/app-registry"
+surfaces_index_path="${registry_root}/launcher-surfaces.tsv"
+collections_dir="${registry_root}/collections"
+collections_index_path="${registry_root}/collections.tsv"
+workflow_state_root="${workspace_root}/state"
+collections_marker="${workflow_state_root}/app-collections-ready.marker"
+
+mkdir -p "${registry_root}" "${collections_dir}" "${workflow_state_root}"
+
+declare -A collection_total=()
+declare -A collection_ready=()
+
+while IFS='|' read -r app_id app_name app_category surface_state launcher_script launcher_desktop manifest_path; do
+    [[ -z "${app_id}" || "${app_id}" == \#* ]] && continue
+    collection_total["${app_category}"]=$(( ${collection_total["${app_category}"]:-0} + 1 ))
+    if [[ "${surface_state}" == "ready" ]]; then
+        collection_ready["${app_category}"]=$(( ${collection_ready["${app_category}"]:-0} + 1 ))
+    fi
+done < "${surfaces_index_path}"
+
+collection_lines=""
+collection_count=0
+
+{
+    printf '# collection_id|collection_name|app_count|ready_count|launcher_script|launcher_desktop\n'
+    for collection_name in "${!collection_total[@]}"; do
+        collection_id="$(slugify "${collection_name}")"
+        launcher_script_path="${collections_dir}/open-${collection_id}.sh"
+        launcher_desktop_path="${collections_dir}/${collection_id}.desktop"
+        ready_count="${collection_ready["${collection_name}"]:-0}"
+        app_count="${collection_total["${collection_name}"]:-0}"
+
+        cat > "${launcher_script_path}" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+exec /usr/local/bin/lumina-windows-registered-app-picker --profile-id ${profile_id} --category "$(printf '%s' "${collection_name}")"
+EOF
+        chmod 755 "${launcher_script_path}"
+
+        cat > "${launcher_desktop_path}" <<EOF
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=${collection_name} (Lumina Windows)
+Comment=Open the ${collection_name} Windows app collection in Lumina
+Exec=/usr/local/bin/lumina-windows-registered-app-picker --profile-id ${profile_id} --category "$(printf '%s' "${collection_name}")"
+Icon=folder
+Terminal=false
+Categories=Utility;System;
+StartupNotify=true
+EOF
+
+        printf '%s|%s|%s|%s|%s|%s\n' \
+            "${collection_id}" \
+            "${collection_name}" \
+            "${app_count}" \
+            "${ready_count}" \
+            "${launcher_script_path}" \
+            "${launcher_desktop_path}"
+
+        collection_count=$((collection_count + 1))
+        collection_lines+="- ${collection_name}: ${ready_count}/${app_count} ready | ${launcher_script_path}\n"
+    done
+} > "${collections_index_path}"
+
+if [[ -z "${collection_lines}" ]]; then
+    collection_lines="- No collections were generated because no app surfaces exist yet.\n"
+fi
+
+touch "${collections_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows App Collections\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Collections Index: %s\n' "${collections_index_path}"
+    printf -- '- Collections Directory: %s\n' "${collections_dir}"
+    printf -- '- Collection Count: %s\n' "${collection_count}"
+    printf -- '- Collections Marker: %s\n' "${collections_marker}"
+    printf '\n## Collections\n'
+    printf '%b' "${collection_lines}"
+    printf '\n## Related Reports\n'
+    printf -- '- App Surfaces Report: %s\n' "${surfaces_report}"
+    printf -- '- App Menu Export Report: %s\n' "${menu_export_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${collections_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '    Lumina Windows App Collections'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Collections: %s\n' "${collection_count}"
+printf 'Report: %s\n' "${collections_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${collections_report}" >/dev/null 2>&1 || true
+fi

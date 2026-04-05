@@ -3,6 +3,8 @@ set -euo pipefail
 
 selected_profile_id=""
 selected_app_id=""
+selected_category=""
+selected_surface_state=""
 open_report=1
 
 while [[ $# -gt 0 ]]; do
@@ -13,6 +15,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --app-id)
             selected_app_id="${2:-}"
+            shift 2
+            ;;
+        --category)
+            selected_category="${2:-}"
+            shift 2
+            ;;
+        --surface-state)
+            selected_surface_state="${2:-}"
             shift 2
             ;;
         --no-open)
@@ -55,9 +65,15 @@ surfaces_index_path="${workspace_root}/app-registry/launcher-surfaces.tsv"
 choose_app_with_kdialog() {
     local entries=()
 
-    while IFS='|' read -r app_id app_name surface_state launcher_script launcher_desktop manifest_path; do
+    while IFS='|' read -r app_id app_name app_category surface_state launcher_script launcher_desktop manifest_path; do
         [[ -z "${app_id}" || "${app_id}" == \#* ]] && continue
-        entries+=("${app_id}" "${app_name} - ${surface_state}")
+        if [[ -n "${selected_category}" && "${app_category}" != "${selected_category}" ]]; then
+            continue
+        fi
+        if [[ -n "${selected_surface_state}" && "${surface_state}" != "${selected_surface_state}" ]]; then
+            continue
+        fi
+        entries+=("${app_id}" "${app_name} - ${app_category} - ${surface_state}")
     done < "${surfaces_index_path}"
 
     if [[ ${#entries[@]} -eq 0 ]]; then
@@ -74,7 +90,20 @@ if [[ -z "${selected_app_id}" && -f "${surfaces_index_path}" && -n "${DISPLAY:-}
 fi
 
 if [[ -z "${selected_app_id}" && -f "${surfaces_index_path}" ]]; then
-    selected_app_id="$(awk -F'|' 'NF >= 3 && $1 !~ /^#/ && $3 == "ready" {print $1; exit}' "${surfaces_index_path}" || true)"
+    selected_app_id="$(
+        awk -F'|' \
+            -v category="${selected_category}" \
+            -v surface_filter="${selected_surface_state}" '
+            NF >= 7 && $1 !~ /^#/ {
+                if (category != "" && $3 != category) next
+                if (surface_filter != "" && $4 != surface_filter) next
+                if ($4 == "ready") {
+                    print $1
+                    exit
+                }
+            }
+        ' "${surfaces_index_path}" || true
+    )"
 fi
 
 if [[ -z "${selected_app_id}" ]]; then
@@ -84,8 +113,8 @@ fi
 
 /usr/local/bin/ahmados-windows-registered-app-launch --profile-id "${profile_id}" --app-id "${selected_app_id}" --no-open >/dev/null 2>&1 || true
 
-selected_surface_row="$(awk -F'|' -v target="${selected_app_id}" 'NF >= 6 && $1 == target {print; exit}' "${surfaces_index_path}" || true)"
-IFS='|' read -r app_id app_name surface_state launcher_script launcher_desktop manifest_path <<< "${selected_surface_row}"
+selected_surface_row="$(awk -F'|' -v target="${selected_app_id}" 'NF >= 7 && $1 == target {print; exit}' "${surfaces_index_path}" || true)"
+IFS='|' read -r app_id app_name app_category surface_state launcher_script launcher_desktop manifest_path <<< "${selected_surface_row}"
 
 launch_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${launch_report}" 2>/dev/null || true)"
 guest_launch_status="$(awk -F': ' '/^- Guest Launch Status:/ {print $2; exit}' "${launch_report}" 2>/dev/null || true)"
@@ -98,6 +127,7 @@ launch_note="$(awk 'found && /^- / {sub(/^- /,""); print; exit} /^## Launch Note
     printf -- '- Profile Id: %s\n' "${profile_id}"
     printf -- '- Selected App Id: %s\n' "${app_id}"
     printf -- '- Selected App Name: %s\n' "${app_name}"
+    printf -- '- Selected Category: %s\n' "${app_category}"
     printf -- '- Surface State: %s\n' "${surface_state}"
     printf -- '- Launch Outcome: %s\n' "${launch_outcome:-unknown}"
     printf -- '- Guest Launch Status: %s\n' "${guest_launch_status:-unknown}"

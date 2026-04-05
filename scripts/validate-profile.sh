@@ -121,6 +121,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-manifest-hydration"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-menu-export"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-installed-app-sync"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-collections"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
@@ -171,6 +172,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-manifest-hydration"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-menu-export"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-installed-app-sync"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-collections"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
@@ -456,7 +458,9 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/ahmados-windows-app-menu-export \
         /usr/local/bin/lumina-windows-app-menu-export \
         /usr/local/bin/ahmados-windows-installed-app-sync \
-        /usr/local/bin/lumina-windows-installed-app-sync; do
+        /usr/local/bin/lumina-windows-installed-app-sync \
+        /usr/local/bin/ahmados-windows-app-collections \
+        /usr/local/bin/lumina-windows-app-collections; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
             add_error "customize_airootfs.sh does not enforce executable permissions for ${required_chmod_target}"
         fi

@@ -42,6 +42,7 @@ app_launcher_pack_report="${state_root}/windows-app-launcher-pack.md"
 app_surfaces_report="${state_root}/windows-app-surfaces.md"
 app_menu_export_report="${state_root}/windows-app-menu-export.md"
 installed_app_sync_report="${state_root}/windows-installed-app-sync.md"
+app_collections_report="${state_root}/windows-app-collections.md"
 workflow_proof_report="${state_root}/windows-workflow-proof-pass.md"
 launch_sync_report="${state_root}/windows-launch-results-sync.md"
 guest_onboarding_report="${state_root}/windows-guest-onboarding.md"
@@ -80,6 +81,7 @@ app_launcher_pack_marker="${workflow_state_root}/app-launcher-pack-ready.marker"
 app_surfaces_marker="${workflow_state_root}/app-surfaces-ready.marker"
 app_menu_export_marker="${workflow_state_root}/app-menu-export-ready.marker"
 installed_app_sync_marker="${workflow_state_root}/installed-app-sync-ready.marker"
+app_collections_marker="${workflow_state_root}/app-collections-ready.marker"
 workflow_proof_marker="${workflow_state_root}/workflow-proof-ready.marker"
 guest_agent_pack_marker="${workflow_state_root}/guest-agent-pack-ready.marker"
 launch_result_seen_marker="${workflow_state_root}/launch-result-seen.marker"
@@ -190,6 +192,11 @@ if [[ -f "${installed_app_sync_marker}" ]]; then
     status="in-progress"
 fi
 
+if [[ -f "${app_collections_marker}" ]]; then
+    phase="app-collections-ready"
+    status="in-progress"
+fi
+
 if [[ -f "${linux_first_validated_marker}" ]]; then
     phase="linux-first-validated"
     status="ready-for-review"
@@ -242,6 +249,7 @@ fi
     printf -- '- App Surfaces Ready: %s\n' "$([[ -f "${app_surfaces_marker}" ]] && printf yes || printf no)"
     printf -- '- App Menu Export Ready: %s\n' "$([[ -f "${app_menu_export_marker}" ]] && printf yes || printf no)"
     printf -- '- Installed App Sync Ready: %s\n' "$([[ -f "${installed_app_sync_marker}" ]] && printf yes || printf no)"
+    printf -- '- App Collections Ready: %s\n' "$([[ -f "${app_collections_marker}" ]] && printf yes || printf no)"
     printf -- '- Workflow Proof Ready: %s\n' "$([[ -f "${workflow_proof_marker}" ]] && printf yes || printf no)"
     printf -- '- Guest Agent Pack Ready: %s\n' "$([[ -f "${guest_agent_pack_marker}" ]] && printf yes || printf no)"
     printf -- '- Guest Onboarding Ready: %s\n' "$([[ -f "${guest_onboarding_marker}" ]] && printf yes || printf no)"
@@ -273,6 +281,7 @@ fi
     printf -- '- App Surfaces Report: %s\n' "${app_surfaces_report}"
     printf -- '- App Menu Export Report: %s\n' "${app_menu_export_report}"
     printf -- '- Installed App Sync Report: %s\n' "${installed_app_sync_report}"
+    printf -- '- App Collections Report: %s\n' "${app_collections_report}"
     printf -- '- Workflow Proof Pass Report: %s\n' "${workflow_proof_report}"
     printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
     printf -- '- Guest Onboarding Report: %s\n' "${guest_onboarding_report}"

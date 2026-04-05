@@ -62,7 +62,7 @@ generated_count=0
 surfaces_lines=""
 
 {
-    printf '# app_id|app_name|surface_state|launcher_script|launcher_desktop|manifest_path\n'
+    printf '# app_id|app_name|category|surface_state|launcher_script|launcher_desktop|manifest_path\n'
     while IFS='|' read -r app_id app_name app_category registration_state preferred_route manifest_path; do
         [[ -z "${app_id}" || "${app_id}" == \#* ]] && continue
 
@@ -74,9 +74,10 @@ surfaces_lines=""
             surface_state="missing-launcher"
         fi
 
-        printf '%s|%s|%s|%s|%s|%s\n' \
+        printf '%s|%s|%s|%s|%s|%s|%s\n' \
             "${app_id}" \
             "${app_name}" \
+            "${app_category}" \
             "${surface_state}" \
             "${launcher_script_path}" \
             "${launcher_desktop_path}" \

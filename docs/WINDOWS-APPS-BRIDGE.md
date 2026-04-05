@@ -71,6 +71,7 @@ The current phase adds:
 - a launch-results sync layer that imports shared guest results back into Lumina workflow state so staged EXE requests are no longer a blind queue
 - a launch-session layer that chains broker, warm-start, and results-sync together when the user simply clicks a Windows launch file
 - a guest-onboarding layer that turns the generated guest agent pack into a concrete Windows-side install checklist and success gate
+- an app-registration layer that turns installed app sets into named manifests so later proof passes and launch flows target known apps instead of raw setup steps
 
 ## Current Limits
 
@@ -80,6 +81,7 @@ The current phase adds:
 - It can now sync launch result files back into the Lumina workflow and mark whether a request is still pending or already consumed by the guest.
 - Desktop-side `.exe` clicks now enter a full launch session flow instead of stopping at the raw broker layer.
 - It can now define the exact Windows-side onboarding step required before a staged request can honestly become hands-free.
+- It can now generate named app manifests for each workflow so installed Windows apps become trackable entities inside Lumina.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 - Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.
 

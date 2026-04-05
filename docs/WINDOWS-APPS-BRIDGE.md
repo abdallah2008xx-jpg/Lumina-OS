@@ -85,6 +85,7 @@ The current phase adds:
 - an app-collections layer that groups Windows app surfaces into Lumina-facing collections instead of leaving everything as individual launchers only
 - a collection-menu-export layer that promotes those named Windows app collections into the Lumina menu
 - an app-library layer that gives Lumina one product-facing view for published apps, discovered apps, and collections together
+- a lightweight resource-tuning layer that classifies hosts as `light`, `balanced`, or `performance` and shrinks Windows VM budgets automatically on weaker hardware
 
 ## Current Limits
 
@@ -108,6 +109,7 @@ The current phase adds:
 - It can now group the Windows app surfaces into named collections so Lumina can present broader app sets, not just single launchers.
 - It can now export those named collections into the Lumina menu instead of leaving them trapped inside workspace files.
 - It can now generate a single app-library view so the user can reason about published apps, discovered apps, and collections from one Lumina-facing surface.
+- It now classifies weaker hosts and biases Windows workflows toward smaller VM shapes, lower background pressure, and Linux-first routes where possible.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 - Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.
 

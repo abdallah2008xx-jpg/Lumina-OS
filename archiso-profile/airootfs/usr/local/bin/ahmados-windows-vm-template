@@ -63,6 +63,8 @@ if [[ -z "${recommended_route}" ]]; then
 fi
 
 compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${state_root}/windows-compat-report.md" 2>/dev/null || true)"
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${state_root}/windows-compat-report.md" 2>/dev/null || true)"
+resource_summary="$(awk -F': ' '/^- Resource Summary:/ {print $2; exit}' "${state_root}/windows-compat-report.md" 2>/dev/null || true)"
 
 route_mode="linux-first"
 if [[ "${recommended_route}" == *"Out of scope"* ]]; then
@@ -92,6 +94,7 @@ share_name="${profile_id//-/_}_share"
 share_path="${workspace_root}/vm-share"
 network_mode="NAT first"
 virtio_mode="Use virtio for disk and net where supported"
+efficiency_mode="balanced"
 notes_block=""
 
 case "${profile_id}" in
@@ -134,6 +137,34 @@ if [[ "${route_mode}" == "studio-vm" ]]; then
     notes_block+="- This profile may graduate into a stronger graphics path later, but start from a stable VM first.\n"
 fi
 
+case "${resource_class}" in
+    light)
+        efficiency_mode="lightweight"
+        cpu_topology="2 vCPU"
+        memory_size="4 GiB"
+        disk_size="64 GiB"
+        if [[ "${profile_id}" == "adobe-creator" || "${profile_id}" == "studio-audio" ]]; then
+            cpu_topology="4 vCPU"
+            memory_size="8 GiB"
+            disk_size="96 GiB"
+        elif [[ "${profile_id}" == "gaming-launchers" ]]; then
+            cpu_topology="3 vCPU"
+            memory_size="6 GiB"
+            disk_size="90 GiB"
+        fi
+        notes_block+="- This machine was classified as light, so Lumina is biasing the VM toward lower overhead and smaller footprints.\n"
+        notes_block+="- Keep only one focused Windows workflow open at a time on weaker hardware.\n"
+        ;;
+    performance)
+        efficiency_mode="performance"
+        notes_block+="- This machine can absorb a larger Windows workspace, but Lumina should still stay disciplined about background load.\n"
+        ;;
+    *)
+        resource_class="balanced"
+        efficiency_mode="balanced"
+        ;;
+esac
+
 {
     printf 'LUMINA_WINDOWS_VM_NAME=%q\n' "${vm_name}"
     printf 'LUMINA_WINDOWS_VM_FIRMWARE=%q\n' "${firmware}"
@@ -148,6 +179,8 @@ fi
     printf 'LUMINA_WINDOWS_VM_SHARE_PATH=%q\n' "${share_path}"
     printf 'LUMINA_WINDOWS_VM_NETWORK=%q\n' "${network_mode}"
     printf 'LUMINA_WINDOWS_VM_VIRTIO=%q\n' "${virtio_mode}"
+    printf 'LUMINA_WINDOWS_VM_RESOURCE_CLASS=%q\n' "${resource_class}"
+    printf 'LUMINA_WINDOWS_VM_EFFICIENCY_MODE=%q\n' "${efficiency_mode}"
 } > "${template_env_path}"
 
 {
@@ -155,6 +188,8 @@ fi
     printf -- '- Generated At: %s\n' "$(date -Is)"
     printf -- '- Profile Id: %s\n' "${profile_id}"
     printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
+    printf -- '- Resource Class: %s\n' "${resource_class:-unknown}"
+    printf -- '- Resource Summary: %s\n' "${resource_summary:-unknown}"
     printf -- '- Recommended Route: %s\n' "${recommended_route}"
     printf '\n## Suggested VM Shape\n'
     printf -- '- VM Name: %s\n' "${vm_name}"
@@ -166,6 +201,7 @@ fi
     printf -- '- CPU: %s\n' "${cpu_topology}"
     printf -- '- Memory: %s\n' "${memory_size}"
     printf -- '- Disk Size: %s\n' "${disk_size}"
+    printf -- '- Efficiency Mode: %s\n' "${efficiency_mode}"
     printf -- '- Network: %s\n' "${network_mode}"
     printf -- '- Virtio Guidance: %s\n' "${virtio_mode}"
     printf '\n## Shared Paths\n'

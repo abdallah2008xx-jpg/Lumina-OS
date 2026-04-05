@@ -66,6 +66,24 @@ memory_size="${LUMINA_WINDOWS_VM_MEMORY:-8 GiB}"
 disk_size="${LUMINA_WINDOWS_VM_DISK:-100 GiB}"
 share_name="${LUMINA_WINDOWS_VM_SHARE_NAME:-${profile_id//-/_}_share}"
 share_path="${LUMINA_WINDOWS_VM_SHARE_PATH:-${vm_share_dir}}"
+resource_class="${LUMINA_WINDOWS_VM_RESOURCE_CLASS:-balanced}"
+efficiency_mode="${LUMINA_WINDOWS_VM_EFFICIENCY_MODE:-balanced}"
+
+cpu_count="$(printf '%s' "${cpu_topology}" | sed -E 's/[^0-9].*$//' )"
+memory_gib="$(printf '%s' "${memory_size}" | sed -E 's/[^0-9].*$//' )"
+disk_gib="$(printf '%s' "${disk_size}" | sed -E 's/[^0-9].*$//' )"
+
+if [[ -z "${cpu_count}" ]]; then
+    cpu_count="4"
+fi
+if [[ -z "${memory_gib}" ]]; then
+    memory_gib="8"
+fi
+if [[ -z "${disk_gib}" ]]; then
+    disk_gib="100"
+fi
+
+memory_mib="$(( memory_gib * 1024 ))"
 
 starter_marker="${workflow_state_root}/vm-creation-starter-ready.marker"
 starter_plan_path="${workspace_root}/vm-create-plan.md"
@@ -88,6 +106,11 @@ disk_path="${workspace_root}/${vm_name}.qcow2"
     printf 'LUMINA_WINDOWS_VM_MEMORY=%q\n' "${memory_size}"
     printf 'LUMINA_WINDOWS_VM_DISK=%q\n' "${disk_size}"
     printf 'LUMINA_WINDOWS_VM_FIRMWARE=%q\n' "${firmware}"
+    printf 'LUMINA_WINDOWS_VM_RESOURCE_CLASS=%q\n' "${resource_class}"
+    printf 'LUMINA_WINDOWS_VM_EFFICIENCY_MODE=%q\n' "${efficiency_mode}"
+    printf 'LUMINA_WINDOWS_VM_CPU_COUNT=%q\n' "${cpu_count}"
+    printf 'LUMINA_WINDOWS_VM_MEMORY_MIB=%q\n' "${memory_mib}"
+    printf 'LUMINA_WINDOWS_VM_DISK_GIB=%q\n' "${disk_gib}"
 } > "${starter_env_path}"
 
 cat > "${virt_install_example_path}" <<EOF
@@ -111,13 +134,13 @@ printf '%s\n' 'This is a starter command example. Review it before you run it.'
 printf '%s\n' ''
 printf 'virt-install \\\n'
 printf '  --name %q \\\n' "\${LUMINA_WINDOWS_VM_NAME}"
-printf '  --memory 8192 \\\n'
-printf '  --vcpus 4 \\\n'
+printf '  --memory %q \\\n' "\${LUMINA_WINDOWS_VM_MEMORY_MIB}"
+printf '  --vcpus %q \\\n' "\${LUMINA_WINDOWS_VM_CPU_COUNT}"
 printf '  --cpu host-passthrough \\\n'
 printf '  --machine q35 \\\n'
 printf '  --os-variant win11 \\\n'
 printf '  --boot uefi \\\n'
-printf '  --disk path=%q,size=100,format=qcow2,bus=virtio \\\n' "\${LUMINA_WINDOWS_VM_DISK_PATH}"
+printf '  --disk path=%q,size=%q,format=qcow2,bus=virtio \\\n' "\${LUMINA_WINDOWS_VM_DISK_PATH}" "\${LUMINA_WINDOWS_VM_DISK_GIB}"
 printf '  --cdrom %q \\\n' "\${LUMINA_WINDOWS_VM_WINDOWS_ISO}"
 printf '  --network network=default,model=virtio \\\n'
 printf '  --graphics spice \\\n'
@@ -148,6 +171,8 @@ chmod 755 "${virt_install_example_path}"
     printf -- '- CPU: %s\n' "${cpu_topology}"
     printf -- '- Memory: %s\n' "${memory_size}"
     printf -- '- Disk Size: %s\n' "${disk_size}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Efficiency Mode: %s\n' "${efficiency_mode}"
     printf '\n## Asset Locations\n'
     printf -- '- Windows ISO Path: %s\n' "${windows_iso_path}"
     printf -- '- VirtIO ISO Path: %s\n' "${virtio_iso_path}"
@@ -158,6 +183,7 @@ chmod 755 "${virt_install_example_path}"
     printf -- '- Start with a clean VM from the template, not from ad-hoc guesses.\n'
     printf -- '- Use virt-manager if you want the safest guided setup path first.\n'
     printf -- '- Use the example script only after you review and adjust it for your environment.\n'
+    printf -- '- Keep the resource class honest. Do not force a heavy VM shape onto a weak machine unless the workflow truly proves it needs more.\n'
     printf -- '- Mark `vm-created` only after the VM actually exists and boots into installation media.\n'
     printf '\n## Starter Files\n'
     printf -- '- VM Template: %s\n' "${workspace_root}/vm-template.md"

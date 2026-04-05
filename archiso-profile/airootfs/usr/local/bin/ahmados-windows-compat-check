@@ -46,6 +46,13 @@ if [[ -n "${gpu_lines}" ]]; then
     gpu_count="$(printf '%s\n' "${gpu_lines}" | sed '/^[[:space:]]*$/d' | wc -l | tr -d ' ')"
 fi
 
+cpu_threads="$(nproc 2>/dev/null || printf '0')"
+host_memory_kib="$(awk '/^MemTotal:/ {print $2; exit}' /proc/meminfo 2>/dev/null || printf '0')"
+host_memory_gib="0"
+if [[ "${host_memory_kib}" =~ ^[0-9]+$ ]] && [[ "${host_memory_kib}" -gt 0 ]]; then
+    host_memory_gib="$(( host_memory_kib / 1024 / 1024 ))"
+fi
+
 qemu_state="missing"
 if command -v qemu-system-x86_64 >/dev/null 2>&1; then
     qemu_state="present"
@@ -79,6 +86,8 @@ fi
 
 compatibility_tier="basic-proton-only"
 compatibility_summary="Use Wine/Proton first. Windows VM passthrough is not ready on this machine yet."
+resource_class="balanced"
+resource_summary="The machine looks suitable for a normal mixed Lumina + Windows workflow."
 
 if [[ "${kvm_device_state}" == "present" && "${qemu_state}" == "present" && "${virsh_state}" == "present" ]]; then
     compatibility_tier="windows-vm-ready"
@@ -93,6 +102,14 @@ fi
 if [[ "${kvm_device_state}" == "present" && "${qemu_state}" == "present" && "${virsh_state}" == "present" && "${iommu_groups_count}" -gt 0 && "${gpu_count}" -ge 2 ]]; then
     compatibility_tier="full-passthrough-candidate"
     compatibility_summary="This machine looks like a strong candidate for a Windows gaming or Adobe VM with passthrough."
+fi
+
+if [[ "${cpu_threads}" -le 4 || "${host_memory_gib}" -le 7 ]]; then
+    resource_class="light"
+    resource_summary="Favor lightweight Windows workflows, smaller VM footprints, and Linux-first routes whenever possible."
+elif [[ "${cpu_threads}" -ge 12 && "${host_memory_gib}" -ge 24 ]]; then
+    resource_class="performance"
+    resource_summary="The machine can handle heavier Windows workflows with larger VM budgets."
 fi
 
 virt_validate_state="not-run"
@@ -114,12 +131,16 @@ fi
     printf -- '- IOMMU Boot Params: %s\n' "${iommu_cmdline_state}"
     printf -- '- IOMMU Groups Count: %s\n' "${iommu_groups_count}"
     printf -- '- GPU Count: %s\n' "${gpu_count}"
+    printf -- '- CPU Threads: %s\n' "${cpu_threads}"
+    printf -- '- Host Memory (GiB): %s\n' "${host_memory_gib}"
     printf -- '- QEMU: %s\n' "${qemu_state}"
     printf -- '- libvirt / virsh: %s\n' "${virsh_state}"
     printf -- '- virt-manager: %s\n' "${virt_manager_state}"
     printf -- '- swtpm: %s\n' "${swtpm_state}"
     printf -- '- libvirtd: %s\n' "${libvirtd_state}"
     printf -- '- virt-host-validate: %s\n' "${virt_validate_state}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Resource Summary: %s\n' "${resource_summary}"
     printf '\n## GPUs\n'
     if [[ -n "${gpu_lines}" ]]; then
         printf '%s\n' "${gpu_lines}"
@@ -132,6 +153,7 @@ fi
     printf -- '- GPU passthrough needs IOMMU plus friendly hardware. Two GPUs or iGPU+dGPU is the easiest route.\n'
     printf -- '- Single-GPU passthrough can work, but it is a more advanced and less universal path.\n'
     printf -- '- Anti-cheat bypass or VM hiding is intentionally out of scope for Lumina-OS.\n'
+    printf -- '- Weak hardware should stay biased toward Linux-first routes and smaller Windows app hosts.\n'
     printf '\n## Next Step\n'
     if [[ "${compatibility_tier}" == "full-passthrough-candidate" ]]; then
         printf -- '- Start with a Windows VM plan using KVM, libvirt, OVMF, and VFIO.\n'
@@ -141,6 +163,13 @@ fi
         printf -- '- Start with a normal Windows VM for Adobe and tooling before attempting passthrough.\n'
     else
         printf -- '- Keep the main experience focused on Wine/Proton until the hardware path improves.\n'
+    fi
+    if [[ "${resource_class}" == "light" ]]; then
+        printf -- '- Use a lightweight VM budget first: smaller RAM, fewer vCPUs, and only one focused workflow at a time.\n'
+    elif [[ "${resource_class}" == "performance" ]]; then
+        printf -- '- You can afford a larger Windows workspace, but keep the workflow disciplined anyway.\n'
+    else
+        printf -- '- Stay with a balanced VM footprint until a workflow proves it needs more.\n'
     fi
 } > "${report_path}"
 

@@ -51,6 +51,7 @@ The current phase adds:
 - a tracked workflow state layer that records where the user is inside the selected Windows workflow
 - a workflow recipe layer that turns each selected profile into a repeatable daily launch and shutdown rhythm
 - a workflow hub layer that shows the current phase, the next recommended move, and the relevant reports from one entry point
+- a workspace action-pack layer that generates ready-to-use helper scripts inside each workflow workspace
 - a hidden session-start prep step that warms the Windows Apps path without opening an extra desktop
 
 ## Future Target

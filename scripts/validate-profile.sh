@@ -99,6 +99,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-workflow-mark"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-workflow-recipe"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-workflow-hub"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-workflow-action-pack"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
@@ -127,6 +128,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-workflow-mark"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-workflow-recipe"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-workflow-hub"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-workflow-action-pack"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-catalog"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-prep"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
@@ -361,7 +363,9 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/ahmados-windows-workflow-recipe \
         /usr/local/bin/lumina-windows-workflow-recipe \
         /usr/local/bin/ahmados-windows-workflow-hub \
-        /usr/local/bin/lumina-windows-workflow-hub; do
+        /usr/local/bin/lumina-windows-workflow-hub \
+        /usr/local/bin/ahmados-windows-workflow-action-pack \
+        /usr/local/bin/lumina-windows-workflow-action-pack; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
             add_error "customize_airootfs.sh does not enforce executable permissions for ${required_chmod_target}"
         fi

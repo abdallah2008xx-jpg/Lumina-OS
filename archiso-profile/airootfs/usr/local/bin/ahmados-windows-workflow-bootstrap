@@ -31,6 +31,7 @@ profile_report="${state_root}/windows-profile-assistant.md"
 runbook_report="${state_root}/windows-profile-runbook.md"
 compat_report="${state_root}/windows-compat-report.md"
 recipe_report="${state_root}/windows-workflow-recipe.md"
+action_pack_report="${state_root}/windows-workflow-action-pack.md"
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="adobe-creator"
@@ -94,6 +95,7 @@ env_path="${workspace_root}/workspace.env"
 workflow_state_root="${workspace_root}/state"
 bootstrap_marker="${workflow_state_root}/bootstrap-ready.marker"
 daily_recipe_path="${workspace_root}/checklists/daily-launch-recipe.md"
+actions_dir="${workspace_root}/actions"
 
 {
     printf '# %s First Session Checklist\n\n' "${profile_name}"
@@ -164,11 +166,13 @@ touch "${bootstrap_marker}"
     printf -- '- Summary: %s\n' "${summary_path}"
     printf -- '- Checklist: %s\n' "${checklist_path}"
     printf -- '- Daily Launch Recipe: %s\n' "${daily_recipe_path}"
+    printf -- '- Actions Directory: %s\n' "${actions_dir}"
     printf -- '- Environment File: %s\n' "${env_path}"
     printf -- '- State Root: %s\n' "${workflow_state_root}"
     printf '\n## Operating Note\n'
     printf -- '- This bootstrap does not create a Windows VM by itself. It prepares a clean Lumina-side workspace for the selected workflow.\n'
     printf -- '- Run the workflow recipe layer next if you want a daily launch and shutdown rhythm for this profile.\n'
+    printf -- '- Run the action-pack layer if you want ready-to-use helper scripts inside the workspace itself.\n'
 } > "${bootstrap_report}"
 
 printf '%s\n' '========================================'

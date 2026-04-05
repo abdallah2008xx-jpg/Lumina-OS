@@ -41,6 +41,8 @@ chmod 755 /usr/local/bin/ahmados-windows-workflow-recipe
 chmod 755 /usr/local/bin/lumina-windows-workflow-recipe
 chmod 755 /usr/local/bin/ahmados-windows-workflow-hub
 chmod 755 /usr/local/bin/lumina-windows-workflow-hub
+chmod 755 /usr/local/bin/ahmados-windows-workflow-action-pack
+chmod 755 /usr/local/bin/lumina-windows-workflow-action-pack
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

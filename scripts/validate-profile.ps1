@@ -99,6 +99,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-vm-warm-start",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-launch-results-sync",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-launch-session",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-guest-onboarding",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
@@ -139,6 +140,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-vm-warm-start",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-launch-results-sync",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-launch-session",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-guest-onboarding",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-catalog",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps-prep",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
@@ -466,7 +468,9 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/ahmados-windows-launch-results-sync",
         "/usr/local/bin/lumina-windows-launch-results-sync",
         "/usr/local/bin/ahmados-windows-launch-session",
-        "/usr/local/bin/lumina-windows-launch-session"
+        "/usr/local/bin/lumina-windows-launch-session",
+        "/usr/local/bin/ahmados-windows-guest-onboarding",
+        "/usr/local/bin/lumina-windows-guest-onboarding"
     )) {
         if ($customizeContent -notmatch [regex]::Escape("chmod 755 $requiredChmodTarget")) {
             Add-Error "customize_airootfs.sh does not enforce executable permissions for $requiredChmodTarget"

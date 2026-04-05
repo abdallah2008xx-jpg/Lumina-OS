@@ -71,6 +71,12 @@ case "${step_name}" in
     workflow-proof-ready)
         marker_path="${workflow_state_root}/workflow-proof-ready.marker"
         ;;
+    guest-onboarding-ready)
+        marker_path="${workflow_state_root}/guest-onboarding-ready.marker"
+        ;;
+    guest-agent-installed)
+        marker_path="${workflow_state_root}/guest-agent-installed.marker"
+        ;;
     *)
         printf 'Unknown workflow step: %s\n' "${step_name}" >&2
         exit 1

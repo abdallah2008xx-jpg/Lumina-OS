@@ -73,6 +73,8 @@ chmod 755 /usr/local/bin/ahmados-windows-launch-results-sync
 chmod 755 /usr/local/bin/lumina-windows-launch-results-sync
 chmod 755 /usr/local/bin/ahmados-windows-launch-session
 chmod 755 /usr/local/bin/lumina-windows-launch-session
+chmod 755 /usr/local/bin/ahmados-windows-guest-onboarding
+chmod 755 /usr/local/bin/lumina-windows-guest-onboarding
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

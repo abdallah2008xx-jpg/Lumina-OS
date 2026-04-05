@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+guest_onboarding_report="${state_root}/windows-guest-onboarding.md"
+guest_agent_report="${state_root}/windows-guest-agent-pack.md"
+vm_postcreate_report="${state_root}/windows-vm-postcreate.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-vm-postcreate --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-guest-agent-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+guest_agent_dir="${workspace_root}/guest-agent"
+checklists_dir="${workspace_root}/checklists"
+notes_dir="${workspace_root}/notes"
+mkdir -p "${workflow_state_root}" "${checklists_dir}" "${notes_dir}"
+
+guest_onboarding_marker="${workflow_state_root}/guest-onboarding-ready.marker"
+guest_agent_installed_marker="${workflow_state_root}/guest-agent-installed.marker"
+guest_onboarding_plan_path="${workspace_root}/guest-onboarding-plan.md"
+guest_onboarding_env_path="${workspace_root}/guest-onboarding.env"
+guest_onboarding_checklist_path="${checklists_dir}/guest-onboarding-checklist.md"
+guest_onboarding_notes_path="${notes_dir}/guest-onboarding-notes.md"
+
+guest_agent_install_path="${guest_agent_dir}/Install-LuminaLaunchAgent.ps1"
+guest_agent_cmd_path="${guest_agent_dir}/Run-LuminaLaunchAgent.cmd"
+guest_agent_contract_path="${guest_agent_dir}/launch-agent-contract.md"
+
+{
+    printf 'LUMINA_WINDOWS_PROFILE_ID=%q\n' "${profile_id}"
+    printf 'LUMINA_WINDOWS_GUEST_AGENT_DIR=%q\n' "${guest_agent_dir}"
+    printf 'LUMINA_WINDOWS_GUEST_AGENT_INSTALLER=%q\n' "${guest_agent_install_path}"
+    printf 'LUMINA_WINDOWS_GUEST_AGENT_STARTUP_WRAPPER=%q\n' "${guest_agent_cmd_path}"
+    printf 'LUMINA_WINDOWS_GUEST_AGENT_CONTRACT=%q\n' "${guest_agent_contract_path}"
+} > "${guest_onboarding_env_path}"
+
+{
+    printf '# %s Guest Onboarding Checklist\n\n' "${profile_name}"
+    printf -- '- Open the shared workflow folder from inside Windows.\n'
+    printf -- '- Open `%s` inside the guest to review the launch contract.\n' "${guest_agent_contract_path}"
+    printf -- '- Run `%s` once inside Windows as the target Windows user.\n' "${guest_agent_install_path}"
+    printf -- '- Log out and back in to Windows, or run `%s` manually.\n' "${guest_agent_cmd_path}"
+    printf -- '- Return to Lumina and run `lumina-windows-launch-results-sync --profile-id %s` after the first staged launch.\n' "${profile_id}"
+    printf -- '- Mark `guest-agent-installed` only after the first launch request is consumed and a result appears in the synced report.\n'
+    printf -- '- Record any guest-side path, permission, or startup issues in `%s`.\n' "${guest_onboarding_notes_path}"
+} > "${guest_onboarding_checklist_path}"
+
+{
+    printf '# %s Guest Onboarding Notes\n\n' "${profile_name}"
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Use this file to capture Windows-side startup issues, share visibility quirks, and launch-agent problems.\n'
+} > "${guest_onboarding_notes_path}"
+
+{
+    printf '# %s Guest Onboarding Plan\n\n' "${profile_name}"
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Guest Agent Directory: %s\n' "${guest_agent_dir}"
+    printf -- '- Install Helper: %s\n' "${guest_agent_install_path}"
+    printf -- '- Startup Wrapper: %s\n' "${guest_agent_cmd_path}"
+    printf -- '- Contract Notes: %s\n' "${guest_agent_contract_path}"
+    printf '\n## What This Stage Does\n'
+    printf -- '- closes the gap between generating the guest agent pack and actually installing it inside Windows\n'
+    printf -- '- gives Lumina a clean checklist for the first true hidden-launch handoff\n'
+    printf -- '- defines when the workflow is allowed to claim that the guest agent is really installed\n'
+    printf '\n## Success Gate\n'
+    printf -- '- `guest-onboarding-ready`: Lumina prepared the guest onboarding files and checklist.\n'
+    printf -- '- `guest-agent-installed`: you have proof that Windows consumed at least one staged launch request and produced a synced result.\n'
+    printf '\n## Files For This Stage\n'
+    printf -- '- Guest Onboarding Env: %s\n' "${guest_onboarding_env_path}"
+    printf -- '- Guest Onboarding Checklist: %s\n' "${guest_onboarding_checklist_path}"
+    printf -- '- Guest Onboarding Notes: %s\n' "${guest_onboarding_notes_path}"
+} > "${guest_onboarding_plan_path}"
+
+touch "${guest_onboarding_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows Guest Onboarding\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Guest Onboarding Plan: %s\n' "${guest_onboarding_plan_path}"
+    printf -- '- Guest Onboarding Env: %s\n' "${guest_onboarding_env_path}"
+    printf -- '- Guest Onboarding Checklist: %s\n' "${guest_onboarding_checklist_path}"
+    printf -- '- Guest Onboarding Notes: %s\n' "${guest_onboarding_notes_path}"
+    printf -- '- Guest Onboarding Ready: %s\n' "$([[ -f "${guest_onboarding_marker}" ]] && printf yes || printf no)"
+    printf -- '- Guest Agent Installed: %s\n' "$([[ -f "${guest_agent_installed_marker}" ]] && printf yes || printf no)"
+    printf '\n## Related Reports\n'
+    printf -- '- Guest Agent Pack Report: %s\n' "${guest_agent_report}"
+    printf -- '- VM Post-Create Report: %s\n' "${vm_postcreate_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${guest_onboarding_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '    Lumina Windows Guest Onboarding'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Plan: %s\n' "${guest_onboarding_plan_path}"
+printf 'Report: %s\n' "${guest_onboarding_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${guest_onboarding_report}" >/dev/null 2>&1 || true
+fi

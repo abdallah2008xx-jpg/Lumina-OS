@@ -147,7 +147,7 @@ fi
 printf 'Preparing workspace for %s...\n' "${profile_name}"
 
 step_count=0
-total_steps=7
+total_steps=8
 
 run_step() {
     step_count=$((step_count + 1))
@@ -181,6 +181,9 @@ run_step "Generating VM creation plan" \
 
 run_step "Generating post-create workflow" \
     /usr/local/bin/ahmados-windows-vm-postcreate --profile-id "${profile_id}" --no-open
+
+run_step "Generating guest onboarding plan" \
+    /usr/local/bin/ahmados-windows-guest-onboarding --profile-id "${profile_id}" --no-open
 
 # Record onboarding state
 onboarding_marker="${workflow_state_root}/onboarding-complete.marker"
@@ -234,6 +237,7 @@ fi
     printf -- '- VM template: done\n'
     printf -- '- VM creation plan: done\n'
     printf -- '- Post-create workflow: done\n'
+    printf -- '- Guest onboarding plan: done\n'
     printf '\n## Next Step\n'
     printf -- '- %s\n' "${next_action}"
     printf -- '- Command: `%s`\n' "${next_command}"

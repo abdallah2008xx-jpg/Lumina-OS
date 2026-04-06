@@ -89,6 +89,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-run-smoke-checks"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-compat-check"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-vm-lab"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-surface"
     "${profile_path}/airootfs/usr/local/bin/ahmados-firstboot"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-assistant"
@@ -145,6 +146,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-run-smoke-checks"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-compat-check"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-vm-lab"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-surface"
     "${profile_path}/airootfs/usr/local/bin/lumina-firstboot"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-assistant"
@@ -480,7 +482,9 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/ahmados-windows-collection-menu-export \
         /usr/local/bin/lumina-windows-collection-menu-export \
         /usr/local/bin/ahmados-windows-app-library \
-        /usr/local/bin/lumina-windows-app-library; do
+        /usr/local/bin/lumina-windows-app-library \
+        /usr/local/bin/ahmados-windows-daily-surface \
+        /usr/local/bin/lumina-windows-daily-surface; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
             add_error "customize_airootfs.sh does not enforce executable permissions for ${required_chmod_target}"
         fi
@@ -558,7 +562,7 @@ ${profile_path}/airootfs/usr/share/applications/ahmados-update-center.desktop|Ex
 ${profile_path}/airootfs/usr/share/applications/ahmados-welcome.desktop|Exec=/usr/local/bin/lumina-welcome
 ${profile_path}/airootfs/usr/share/applications/lumina-finalize-install.desktop|Exec=/usr/local/bin/lumina-finalize-install
 ${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop|Exec=/usr/local/bin/lumina-installer
-${profile_path}/airootfs/usr/share/applications/lumina-windows-apps.desktop|Exec=/usr/local/bin/lumina-windows-workflow-hub
+${profile_path}/airootfs/usr/share/applications/lumina-windows-apps.desktop|Exec=/usr/local/bin/lumina-windows-daily-surface
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-launch-broker.desktop|Exec=/usr/local/bin/lumina-windows-launch-session --file %f
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-compat-check.desktop|Exec=/usr/local/bin/lumina-windows-compat-check
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-vm-lab.desktop|Exec=/usr/local/bin/lumina-windows-vm-lab

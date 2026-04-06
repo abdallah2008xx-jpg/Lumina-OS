@@ -1,0 +1,280 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_surface=1
+launch_advanced_lab=0
+launch_best=0
+choose_collection=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --advanced)
+            launch_advanced_lab=1
+            shift
+            ;;
+        --launch-best)
+            launch_best=1
+            shift
+            ;;
+        --choose-collection)
+            choose_collection=1
+            shift
+            ;;
+        --no-open)
+            open_surface=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+daily_surface_report="${state_root}/windows-daily-surface.md"
+bridge_report="${state_root}/windows-apps-bridge.md"
+catalog_report="${state_root}/windows-app-catalog.md"
+compat_report="${state_root}/windows-compat-report.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+state_report="${state_root}/windows-workflow-state.md"
+app_library_report="${state_root}/windows-app-library.md"
+vm_lab_report="${state_root}/windows-vm-lab.md"
+
+choose_profile_with_kdialog() {
+    local default_id="$1"
+    local entries=()
+
+    while IFS='|' read -r profile_id profile_name focus _; do
+        [[ -z "${profile_id}" || "${profile_id}" == \#* ]] && continue
+        if [[ "${profile_id}" == "${default_id}" ]]; then
+            entries+=("${profile_id}" "${profile_name} - ${focus} (Recommended)")
+        else
+            entries+=("${profile_id}" "${profile_name} - ${focus}")
+        fi
+    done < "${profiles_path}"
+
+    if [[ ${#entries[@]} -eq 0 ]]; then
+        return 1
+    fi
+
+    kdialog --title "Lumina Windows Apps" \
+        --menu "Choose the Windows workflow Lumina should open today." \
+        "${entries[@]}" 2>/dev/null || return 1
+}
+
+/usr/local/bin/ahmados-windows-apps --no-open >/dev/null 2>&1 || true
+
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+resource_summary="$(awk -F': ' '/^- Resource Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+[[ -n "${resource_class}" ]] || resource_class="balanced"
+[[ -n "${resource_summary}" ]] || resource_summary="No host resource summary captured."
+[[ -n "${compatibility_tier}" ]] || compatibility_tier="unknown"
+
+default_profile_id="adobe-creator"
+if [[ "${resource_class}" == "light" ]]; then
+    default_profile_id="office-productivity"
+fi
+
+if [[ -z "${selected_profile_id}" && command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    selected_profile_id="$(choose_profile_with_kdialog "${default_profile_id}" || true)"
+fi
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="${default_profile_id}"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-workflow-hub --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-app-library --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+app_library_marker="${workflow_state_root}/app-library-ready.marker"
+workflow_proof_marker="${workflow_state_root}/workflow-proof-ready.marker"
+checklist_complete_marker="${workflow_state_root}/checklist-complete.marker"
+
+surface_mode="guided-setup"
+surface_summary="Lumina should keep this workflow in guidance mode until the Windows app path is mature enough for daily use."
+recommended_action="Open the workflow hub"
+recommended_command="/usr/local/bin/lumina-windows-workflow-hub --profile-id ${profile_id}"
+selected_action="none"
+selected_action_note="No runtime action was executed."
+selected_action_outcome="not-run"
+
+if [[ -f "${app_library_marker}" && -f "${workflow_proof_marker}" && -f "${checklist_complete_marker}" ]]; then
+    surface_mode="daily-launch"
+    surface_summary="This workflow is mature enough for Lumina to treat Windows Apps like a daily-use launch surface."
+    if [[ "${resource_class}" == "light" ]]; then
+        recommended_action="Choose a collection"
+        recommended_command="/usr/local/bin/lumina-windows-app-library --profile-id ${profile_id} --choose-collection"
+    else
+        recommended_action="Launch the best published collection"
+        recommended_command="/usr/local/bin/lumina-windows-app-library --profile-id ${profile_id} --launch-best"
+    fi
+fi
+
+run_surface_action() {
+    local action_mode="$1"
+    case "${action_mode}" in
+        launch-best)
+            /usr/local/bin/ahmados-windows-app-library --profile-id "${profile_id}" --launch-best --no-open >/dev/null 2>&1 || true
+            ;;
+        choose-collection)
+            /usr/local/bin/ahmados-windows-app-library --profile-id "${profile_id}" --choose-collection --no-open >/dev/null 2>&1 || true
+            ;;
+        open-library)
+            if command -v xdg-open >/dev/null 2>&1; then
+                xdg-open "${app_library_report}" >/dev/null 2>&1 || true
+            fi
+            ;;
+        open-hub)
+            if command -v xdg-open >/dev/null 2>&1; then
+                xdg-open "${hub_report}" >/dev/null 2>&1 || true
+            fi
+            ;;
+        open-lab)
+            /usr/local/bin/ahmados-windows-vm-lab >/dev/null 2>&1 &
+            ;;
+    esac
+}
+
+if [[ ${open_surface} -eq 1 ]]; then
+    if [[ ${launch_advanced_lab} -eq 1 ]]; then
+        selected_action="open-lab"
+        selected_action_note="Lumina opened the advanced VM Lab directly."
+        run_surface_action "open-lab"
+        selected_action_outcome="lab-opened"
+    elif [[ ${launch_best} -eq 1 ]]; then
+        selected_action="launch-best"
+        selected_action_note="Lumina asked the app library to launch the best published collection."
+        run_surface_action "launch-best"
+        selected_action_outcome="$(awk -F': ' '/^- Collection Launch Outcome:/ {print $2; exit}' "${app_library_report}" 2>/dev/null || true)"
+    elif [[ ${choose_collection} -eq 1 ]]; then
+        selected_action="choose-collection"
+        selected_action_note="Lumina opened the collection chooser from the daily app library surface."
+        run_surface_action "choose-collection"
+        selected_action_outcome="$(awk -F': ' '/^- Collection Launch Outcome:/ {print $2; exit}' "${app_library_report}" 2>/dev/null || true)"
+    elif command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+        if [[ "${surface_mode}" == "daily-launch" ]]; then
+            chosen_surface="$(kdialog --title "Lumina Windows Apps" \
+                --menu "Choose how Lumina should open the Windows app surface for ${profile_name}." \
+                best "Launch the best published collection (Recommended)" \
+                choose "Choose a collection" \
+                library "Open the app library report" \
+                hub "Open the workflow hub" \
+                lab "Open the advanced VM Lab" 2>/dev/null || true)"
+        else
+            chosen_surface="$(kdialog --title "Lumina Windows Apps" \
+                --menu "This workflow is still in guided mode. Choose the next Lumina surface to open." \
+                hub "Continue guided setup (Recommended)" \
+                library "Open the app library report" \
+                lab "Open the advanced VM Lab" 2>/dev/null || true)"
+        fi
+
+        case "${chosen_surface}" in
+            best)
+                selected_action="launch-best"
+                selected_action_note="Lumina used the daily app library surface to launch the best published collection."
+                run_surface_action "launch-best"
+                selected_action_outcome="$(awk -F': ' '/^- Collection Launch Outcome:/ {print $2; exit}' "${app_library_report}" 2>/dev/null || true)"
+                ;;
+            choose)
+                selected_action="choose-collection"
+                selected_action_note="Lumina opened the collection chooser from the daily app library surface."
+                run_surface_action "choose-collection"
+                selected_action_outcome="$(awk -F': ' '/^- Collection Launch Outcome:/ {print $2; exit}' "${app_library_report}" 2>/dev/null || true)"
+                ;;
+            library)
+                selected_action="open-library"
+                selected_action_note="Lumina opened the app library report."
+                run_surface_action "open-library"
+                selected_action_outcome="library-opened"
+                ;;
+            lab)
+                selected_action="open-lab"
+                selected_action_note="Lumina opened the advanced VM Lab."
+                run_surface_action "open-lab"
+                selected_action_outcome="lab-opened"
+                ;;
+            *)
+                selected_action="open-hub"
+                selected_action_note="Lumina opened the workflow hub."
+                run_surface_action "open-hub"
+                selected_action_outcome="hub-opened"
+                ;;
+        esac
+    else
+        if [[ "${surface_mode}" == "daily-launch" ]]; then
+            selected_action="launch-best"
+            selected_action_note="Lumina used the daily app library surface to launch the best published collection."
+            run_surface_action "launch-best"
+            selected_action_outcome="$(awk -F': ' '/^- Collection Launch Outcome:/ {print $2; exit}' "${app_library_report}" 2>/dev/null || true)"
+        else
+            selected_action="open-hub"
+            selected_action_note="Lumina opened the workflow hub because the daily surface is not ready yet."
+            run_surface_action "open-hub"
+            selected_action_outcome="hub-opened"
+        fi
+    fi
+fi
+
+[[ -n "${selected_action_outcome}" ]] || selected_action_outcome="unknown"
+
+{
+    printf '# Lumina Windows Daily Surface\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Resource Summary: %s\n' "${resource_summary}"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier}"
+    printf -- '- Surface Mode: %s\n' "${surface_mode}"
+    printf -- '- Recommended Action: %s\n' "${recommended_action}"
+    printf -- '- Recommended Command: %s\n' "${recommended_command}"
+    printf -- '- Selected Action: %s\n' "${selected_action}"
+    printf -- '- Selected Action Outcome: %s\n' "${selected_action_outcome}"
+    printf '\n## Surface Summary\n'
+    printf -- '- %s\n' "${surface_summary}"
+    printf -- '- %s\n' "${selected_action_note}"
+    printf '\n## Related Reports\n'
+    printf -- '- Windows Apps Bridge Report: %s\n' "${bridge_report}"
+    printf -- '- Windows App Catalog Report: %s\n' "${catalog_report}"
+    printf -- '- Windows Compatibility Report: %s\n' "${compat_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Windows App Library Report: %s\n' "${app_library_report}"
+    printf -- '- Windows VM Lab Report: %s\n' "${vm_lab_report}"
+} > "${daily_surface_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '      Lumina Windows Daily Surface'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Surface mode: %s\n' "${surface_mode}"
+printf 'Selected action: %s\n' "${selected_action}"
+printf 'Report: %s\n' "${daily_surface_report}"
+printf '\n'
+
+if [[ ${open_surface} -eq 1 && command -v xdg-open >/dev/null 2>&1 ]]; then
+    xdg-open "${daily_surface_report}" >/dev/null 2>&1 || true
+fi

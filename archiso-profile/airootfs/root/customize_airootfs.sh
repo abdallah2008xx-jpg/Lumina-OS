@@ -105,6 +105,8 @@ chmod 755 /usr/local/bin/ahmados-windows-collection-menu-export
 chmod 755 /usr/local/bin/lumina-windows-collection-menu-export
 chmod 755 /usr/local/bin/ahmados-windows-app-library
 chmod 755 /usr/local/bin/lumina-windows-app-library
+chmod 755 /usr/local/bin/ahmados-windows-daily-surface
+chmod 755 /usr/local/bin/lumina-windows-daily-surface
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

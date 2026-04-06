@@ -2,8 +2,8 @@
 Type=Application
 Version=1.0
 Name=Lumina Windows Apps
-Comment=Open the Lumina Windows workflow hub
-Exec=/usr/local/bin/lumina-windows-workflow-hub
+Comment=Open the Lumina Windows daily surface
+Exec=/usr/local/bin/lumina-windows-daily-surface
 Icon=applications-other
 Terminal=false
 Categories=Qt;KDE;System;Utility;

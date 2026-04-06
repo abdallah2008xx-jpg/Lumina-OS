@@ -77,6 +77,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-run-smoke-checks",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-compat-check",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-vm-lab",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-daily-surface",
     "archiso-profile\airootfs\usr\local\bin\ahmados-firstboot",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-apps",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-app-assistant",
@@ -133,6 +134,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-run-smoke-checks",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-compat-check",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-vm-lab",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-daily-surface",
     "archiso-profile\airootfs\usr\local\bin\lumina-firstboot",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-apps",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-app-assistant",
@@ -434,7 +436,7 @@ $expectedExecMappings = @{
     "archiso-profile\airootfs\usr\share\applications\ahmados-welcome.desktop" = "Exec=/usr/local/bin/lumina-welcome"
     "archiso-profile\airootfs\usr\share\applications\lumina-finalize-install.desktop" = "Exec=/usr/local/bin/lumina-finalize-install"
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop" = "Exec=/usr/local/bin/lumina-installer"
-    "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop" = "Exec=/usr/local/bin/lumina-windows-workflow-hub"
+    "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop" = "Exec=/usr/local/bin/lumina-windows-daily-surface"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-launch-broker.desktop" = "Exec=/usr/local/bin/lumina-windows-launch-session --file %f"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop" = "Exec=/usr/local/bin/lumina-windows-compat-check"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-vm-lab.desktop" = "Exec=/usr/local/bin/lumina-windows-vm-lab"
@@ -530,7 +532,9 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/ahmados-windows-collection-menu-export",
         "/usr/local/bin/lumina-windows-collection-menu-export",
         "/usr/local/bin/ahmados-windows-app-library",
-        "/usr/local/bin/lumina-windows-app-library"
+        "/usr/local/bin/lumina-windows-app-library",
+        "/usr/local/bin/ahmados-windows-daily-surface",
+        "/usr/local/bin/lumina-windows-daily-surface"
     )) {
         if ($customizeContent -notmatch [regex]::Escape("chmod 755 $requiredChmodTarget")) {
             Add-Error "customize_airootfs.sh does not enforce executable permissions for $requiredChmodTarget"

@@ -95,6 +95,7 @@ The current phase adds:
 - a launch-queue cleanup layer that moves stale staged requests out of the active queue and prunes old launch-result artifacts automatically
 - a pressure-aware registered-app runtime layer that can defer heavier named app launches on weak machines until the Windows path is ready enough to stay smooth
 - a collection-launch runtime layer that can choose the best app inside a collection, prefer published paths, and stay conservative on weak hardware
+- a daily-use app-library launch layer that can choose the best collection and treat the Windows app library as a real runtime surface, not just a report
 
 ## Current Limits
 
@@ -128,6 +129,7 @@ The current phase adds:
 - It now trims stale launch requests and old result artifacts automatically so weak machines do not keep carrying dead Windows launch pressure forever.
 - It now lets named registered-app launches read category weight, resource class, queue pressure, and guest readiness before pretending a Windows app should just start immediately.
 - It now lets Windows app collections behave like smart launch surfaces instead of static groupings, so Lumina can choose the safest app inside a collection before it stages a Windows launch.
+- It now lets the app library recommend and launch the best published collection once a workflow is mature enough for daily use.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 - Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.
 

@@ -3,11 +3,26 @@ set -euo pipefail
 
 selected_profile_id=""
 open_report=1
+launch_best=0
+choose_collection=0
+launch_category=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --profile-id)
             selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --launch-best)
+            launch_best=1
+            shift
+            ;;
+        --choose-collection)
+            choose_collection=1
+            shift
+            ;;
+        --launch-category)
+            launch_category="${2:-}"
             shift 2
             ;;
         --no-open)
@@ -35,6 +50,7 @@ collections_report="${state_root}/windows-app-collections.md"
 state_report="${state_root}/windows-workflow-state.md"
 hub_report="${state_root}/windows-workflow-hub.md"
 compat_report="${state_root}/windows-compat-report.md"
+collection_launch_report="${state_root}/windows-collection-launch.md"
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="adobe-creator"
@@ -51,11 +67,13 @@ IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studi
 /usr/local/bin/ahmados-windows-app-publish-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-app-menu-export --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-collection-menu-export --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-app-surfaces --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
 workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
 registry_root="${workspace_root}/app-registry"
 registry_index_path="${registry_root}/registry-index.tsv"
 collections_index_path="${registry_root}/collections.tsv"
+surfaces_index_path="${registry_root}/launcher-surfaces.tsv"
 workflow_state_root="${workspace_root}/state"
 library_marker="${workflow_state_root}/app-library-ready.marker"
 app_menu_dir="${data_root}/applications/lumina-windows-apps/${profile_id}"
@@ -65,6 +83,9 @@ mkdir -p "${workflow_state_root}"
 
 declare -A state_counts=()
 declare -A category_counts=()
+declare -A surface_ready_counts=()
+declare -A published_ready_counts=()
+declare -A discovered_ready_counts=()
 app_rows=""
 total_apps=0
 resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
@@ -87,20 +108,59 @@ case "${resource_class}" in
         ;;
 esac
 
-while IFS='|' read -r app_id app_name category registration_state preferred_route manifest_path; do
+app_surface_join_path="$(mktemp)"
+trap 'rm -f "${app_surface_join_path}"' EXIT
+
+awk -F'|' '
+    BEGIN {
+        OFS="|"
+    }
+    FNR == NR {
+        if (NF >= 6 && $1 !~ /^#/ && $1 != "") {
+            registration[$1]=$4
+            next
+        }
+    }
+    NF >= 7 && $1 !~ /^#/ && $1 != "" {
+        app_id=$1
+        app_name=$2
+        category=$3
+        surface_state=$4
+        registration_state=registration[app_id]
+        if (registration_state == "") {
+            registration_state="unknown"
+        }
+        print app_id, app_name, category, registration_state, surface_state
+    }
+' "${registry_index_path}" "${surfaces_index_path}" > "${app_surface_join_path}"
+
+while IFS='|' read -r app_id app_name category registration_state surface_state; do
     [[ -z "${app_id}" || "${app_id}" == \#* ]] && continue
     state_counts["${registration_state}"]=$(( ${state_counts["${registration_state}"]:-0} + 1 ))
     category_counts["${category}"]=$(( ${category_counts["${category}"]:-0} + 1 ))
+    if [[ "${surface_state}" == "ready" ]]; then
+        surface_ready_counts["${category}"]=$(( ${surface_ready_counts["${category}"]:-0} + 1 ))
+        case "${registration_state}" in
+            published)
+                published_ready_counts["${category}"]=$(( ${published_ready_counts["${category}"]:-0} + 1 ))
+                ;;
+            discovered)
+                discovered_ready_counts["${category}"]=$(( ${discovered_ready_counts["${category}"]:-0} + 1 ))
+                ;;
+        esac
+    fi
     total_apps=$((total_apps + 1))
-    app_rows+="- ${app_name} | ${category} | ${registration_state}\n"
-done < "${registry_index_path}"
+    app_rows+="- ${app_name} | ${category} | ${registration_state} | ${surface_state}\n"
+done < "${app_surface_join_path}"
 
 collection_rows=""
 collection_count=0
+collection_entries=()
 while IFS='|' read -r collection_id collection_name app_count ready_count launcher_script launcher_desktop; do
     [[ -z "${collection_id}" || "${collection_id}" == \#* ]] && continue
     collection_count=$((collection_count + 1))
-    collection_rows+="- ${collection_name}: ${ready_count}/${app_count} ready\n"
+    collection_rows+="- ${collection_name}: ${ready_count}/${app_count} ready | published-ready ${published_ready_counts["${collection_name}"]:-0}\n"
+    collection_entries+=("${collection_id}|${collection_name}|${ready_count}|${published_ready_counts["${collection_name}"]:-0}")
 done < "${collections_index_path}"
 
 published_count="${state_counts["published"]:-0}"
@@ -114,8 +174,122 @@ pending_count="${state_counts["pending"]:-0}"
 
 category_rows=""
 for category_name in "Creator Apps" "Productivity" "Audio and Studio" "Gaming and Launchers" "Utilities"; do
-    category_rows+="- ${category_name}: ${category_counts["${category_name}"]:-0}\n"
+    category_rows+="- ${category_name}: ${category_counts["${category_name}"]:-0} total | ${surface_ready_counts["${category_name}"]:-0} ready | ${published_ready_counts["${category_name}"]:-0} published-ready\n"
 done
+
+preferred_order=()
+case "${resource_class}" in
+    light)
+        preferred_order=("Productivity" "Utilities" "Creator Apps" "Audio and Studio" "Gaming and Launchers")
+        ;;
+    performance)
+        preferred_order=("Creator Apps" "Productivity" "Audio and Studio" "Gaming and Launchers" "Utilities")
+        ;;
+    *)
+        preferred_order=("Productivity" "Creator Apps" "Utilities" "Audio and Studio" "Gaming and Launchers")
+        ;;
+esac
+
+recommended_collection=""
+recommended_collection_id=""
+recommended_collection_policy="prefer-published-ready"
+recommended_collection_reason="Lumina recommends the first collection that already has a published ready app surface."
+
+choose_best_collection_by_order() {
+    local check_mode="$1"
+    local category_name entry entry_id entry_name entry_ready entry_published
+
+    for category_name in "${preferred_order[@]}"; do
+        for entry in "${collection_entries[@]}"; do
+            IFS='|' read -r entry_id entry_name entry_ready entry_published <<< "${entry}"
+            [[ "${entry_name}" == "${category_name}" ]] || continue
+            case "${check_mode}" in
+                published)
+                    if [[ "${entry_published}" -gt 0 ]]; then
+                        printf '%s|%s\n' "${entry_id}" "${entry_name}"
+                        return 0
+                    fi
+                    ;;
+                ready)
+                    if [[ "${entry_ready}" -gt 0 ]]; then
+                        printf '%s|%s\n' "${entry_id}" "${entry_name}"
+                        return 0
+                    fi
+                    ;;
+            esac
+        done
+    done
+    return 1
+}
+
+if best_published="$(choose_best_collection_by_order published)"; then
+    IFS='|' read -r recommended_collection_id recommended_collection <<< "${best_published}"
+elif best_ready="$(choose_best_collection_by_order ready)"; then
+    IFS='|' read -r recommended_collection_id recommended_collection <<< "${best_ready}"
+    recommended_collection_policy="fallback-ready"
+    recommended_collection_reason="No published-ready collection exists yet, so Lumina falls back to the first ready collection."
+fi
+
+if [[ -n "${launch_category}" ]]; then
+    recommended_collection="${launch_category}"
+    recommended_collection_id="$(awk -F'|' -v target="${launch_category}" 'NF >= 2 && $2 == target {print $1; exit}' "${collections_index_path}" || true)"
+fi
+
+choose_collection_with_kdialog() {
+    local entries=()
+    local entry entry_id entry_name entry_ready entry_published
+
+    for entry in "${collection_entries[@]}"; do
+        IFS='|' read -r entry_id entry_name entry_ready entry_published <<< "${entry}"
+        entries+=("${entry_id}" "${entry_name} - ${entry_published} published-ready - ${entry_ready} ready")
+    done
+
+    if [[ ${#entries[@]} -eq 0 ]]; then
+        return 1
+    fi
+
+    kdialog --title "Lumina Windows Apps" \
+        --menu "Choose the Windows app collection Lumina should launch." \
+        "${entries[@]}" 2>/dev/null || return 1
+}
+
+executed_launch="no"
+executed_collection_id=""
+executed_collection_name=""
+collection_launch_outcome="not-run"
+collection_launch_note="The app library stayed in report mode."
+
+if [[ ${choose_collection} -eq 1 && -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && command -v kdialog >/dev/null 2>&1; then
+    chosen_collection_id="$(choose_collection_with_kdialog || true)"
+    if [[ -n "${chosen_collection_id}" ]]; then
+        executed_collection_id="${chosen_collection_id}"
+        executed_collection_name="$(awk -F'|' -v target="${chosen_collection_id}" 'NF >= 2 && $1 == target {print $2; exit}' "${collections_index_path}" || true)"
+    fi
+fi
+
+if [[ ${launch_best} -eq 1 || -n "${launch_category}" ]] || [[ ${choose_collection} -eq 1 && -n "${executed_collection_id}" ]]; then
+    if [[ -z "${executed_collection_id}" ]]; then
+        executed_collection_id="${recommended_collection_id}"
+        executed_collection_name="${recommended_collection}"
+    fi
+
+    if [[ -n "${executed_collection_id}" || -n "${executed_collection_name}" ]]; then
+        launch_args=(--profile-id "${profile_id}")
+        if [[ -n "${executed_collection_id}" ]]; then
+            launch_args+=(--collection-id "${executed_collection_id}")
+        elif [[ -n "${executed_collection_name}" ]]; then
+            launch_args+=(--category "${executed_collection_name}")
+        fi
+        launch_args+=(--no-open)
+
+        /usr/local/bin/ahmados-windows-collection-launch "${launch_args[@]}" >/dev/null 2>&1 || true
+        executed_launch="yes"
+        collection_launch_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${collection_launch_report}" 2>/dev/null || true)"
+        collection_launch_note="$(awk 'found && /^- / {sub(/^- /,""); print; exit} /^## Launch Note/ {found=1}' "${collection_launch_report}" 2>/dev/null || true)"
+        [[ -n "${collection_launch_outcome}" ]] || collection_launch_outcome="unknown"
+        [[ -n "${collection_launch_note}" ]] || collection_launch_note="No collection launch note was captured."
+    fi
+fi
 
 touch "${library_marker}"
 /usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
@@ -137,10 +311,19 @@ touch "${library_marker}"
     printf -- '- App Menu Directory: %s\n' "${app_menu_dir}"
     printf -- '- Collection Menu Directory: %s\n' "${collection_menu_dir}"
     printf -- '- App Library Marker: %s\n' "${library_marker}"
+    printf -- '- Recommended Collection: %s\n' "${recommended_collection:-none}"
+    printf -- '- Recommended Collection Id: %s\n' "${recommended_collection_id:-none}"
+    printf -- '- Recommended Collection Policy: %s\n' "${recommended_collection_policy}"
+    printf -- '- Recommended Launch Command: %s\n' "${recommended_collection_id:+/usr/local/bin/lumina-windows-app-library --profile-id ${profile_id} --launch-best}"
+    printf -- '- Executed Launch: %s\n' "${executed_launch}"
+    printf -- '- Collection Launch Outcome: %s\n' "${collection_launch_outcome}"
     printf '\n## Lightweight Policy\n'
     printf -- '- Preferred Categories: %s\n' "${preferred_categories}"
     printf -- '- Deferred Categories: %s\n' "${deferred_categories}"
     printf -- '- Note: %s\n' "${policy_note}"
+    printf '\n## Recommended Daily Path\n'
+    printf -- '- Recommendation: %s\n' "${recommended_collection_reason}"
+    printf -- '- Launch Note: %s\n' "${collection_launch_note}"
     printf '\n## Category Counts\n'
     printf '%b' "${category_rows}"
     printf '\n## App Inventory\n'
@@ -152,6 +335,7 @@ touch "${library_marker}"
     printf -- '- App Menu Export Report: %s\n' "${app_menu_export_report}"
     printf -- '- Collection Menu Export Report: %s\n' "${collection_menu_export_report}"
     printf -- '- App Collections Report: %s\n' "${collections_report}"
+    printf -- '- Collection Launch Report: %s\n' "${collection_launch_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
 } > "${library_report}"

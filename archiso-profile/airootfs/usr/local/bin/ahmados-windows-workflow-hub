@@ -313,6 +313,10 @@ elif [[ "${route_mode}" != "linux-first" && ! -f "${apps_installed_marker}" ]]; 
     next_action="Follow the app install starter"
     next_command="xdg-open '${app_install_report}'"
     operator_note="Use the app install plan to get through the first core app stack before you mark the workflow as apps-installed."
+elif [[ "${route_mode}" != "out-of-scope" && -f "${app_library_marker}" && -f "${workflow_proof_marker}" && -f "${checklist_complete_marker}" ]]; then
+    next_action="Launch the best published Windows app collection"
+    next_command="/usr/local/bin/lumina-windows-app-library --profile-id ${profile_id} --launch-best"
+    operator_note="This workflow is ready enough for daily use, so Lumina can now try the best published app collection instead of sending the user back into setup reports."
 elif [[ ! -f "${checklist_complete_marker}" ]]; then
     next_action="Follow the workflow proof pass"
     next_command="xdg-open '${workflow_proof_report}'"

@@ -5,6 +5,7 @@ param(
     [string]$Repo = "",
     [string]$Token = "",
     [switch]$AllowPublishedCandidate,
+    [switch]$RequireExactEvidenceRunLabel,
     [switch]$OutputPathOnly,
     [string]$RepoRoot = ""
 )
@@ -180,13 +181,35 @@ else {
 if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
     -not [string]::IsNullOrWhiteSpace($installReportRunLabel) -and
     $installReportRunLabel -ne $runLabel) {
-    Add-ValidationItem -Bucket $warnings -Message "Install report Run Label does not match the release manifest."
+    $message = "Install report Run Label does not match the release manifest."
+    if ($RequireExactEvidenceRunLabel.IsPresent) {
+        Add-ValidationItem -Bucket $errors -Message $message
+    }
+    else {
+        Add-ValidationItem -Bucket $warnings -Message $message
+    }
 }
 
 if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
     -not [string]::IsNullOrWhiteSpace($hardwareReportRunLabel) -and
     $hardwareReportRunLabel -ne $runLabel) {
-    Add-ValidationItem -Bucket $warnings -Message "Hardware report Run Label does not match the release manifest."
+    $message = "Hardware report Run Label does not match the release manifest."
+    if ($RequireExactEvidenceRunLabel.IsPresent) {
+        Add-ValidationItem -Bucket $errors -Message $message
+    }
+    else {
+        Add-ValidationItem -Bucket $warnings -Message $message
+    }
+}
+
+if ($RequireExactEvidenceRunLabel.IsPresent -and -not [string]::IsNullOrWhiteSpace($runLabel)) {
+    if (-not [string]::IsNullOrWhiteSpace($installReportSelection) -and $installReportSelection -notin @("exact-run-label", "explicit-path")) {
+        Add-ValidationItem -Bucket $errors -Message "Install report selection is not exact for strict GitHub release gating: $installReportSelection"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($hardwareReportSelection) -and $hardwareReportSelection -notin @("exact-run-label", "explicit-path")) {
+        Add-ValidationItem -Bucket $errors -Message "Hardware report selection is not exact for strict GitHub release gating: $hardwareReportSelection"
+    }
 }
 
 if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
@@ -265,6 +288,7 @@ $report = @"
 - Hardware Report Status: $(if ([string]::IsNullOrWhiteSpace($hardwareReportState)) { "not-recorded-yet" } else { $hardwareReportState })
 - Hardware Report Run Label: $(if ([string]::IsNullOrWhiteSpace($hardwareReportRunLabel)) { "not-recorded-yet" } else { $hardwareReportRunLabel })
 - Hardware Report Selection: $(if ([string]::IsNullOrWhiteSpace($hardwareReportSelection)) { "not-recorded-yet" } else { $hardwareReportSelection })
+- Exact Evidence Required: $($RequireExactEvidenceRunLabel.IsPresent)
 - Release Manifest: $resolvedManifestPath
 - Release Validation Report: $(if ([string]::IsNullOrWhiteSpace($validationReportPath)) { "not-recorded-yet" } else { $validationReportPath })
 - Current Release Candidate: $(if ([string]::IsNullOrWhiteSpace($currentCandidatePath)) { "not-recorded-yet" } else { $currentCandidatePath })

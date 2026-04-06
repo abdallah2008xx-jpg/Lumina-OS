@@ -2,6 +2,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$ReleaseManifestPath,
     [switch]$AllowAttentionState,
+    [switch]$RequireExactEvidenceRunLabel,
     [switch]$OutputPathOnly,
     [string]$RepoRoot = ""
 )
@@ -190,13 +191,35 @@ if ([string]::IsNullOrWhiteSpace($version)) {
 if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
     -not [string]::IsNullOrWhiteSpace($installReportRunLabel) -and
     $installReportRunLabel -ne $runLabel) {
-    Add-ValidationItem -Bucket $warnings -Message "Install Report Run Label does not match the release manifest Run Label."
+    $message = "Install Report Run Label does not match the release manifest Run Label."
+    if ($RequireExactEvidenceRunLabel.IsPresent) {
+        Add-ValidationItem -Bucket $errors -Message $message
+    }
+    else {
+        Add-ValidationItem -Bucket $warnings -Message $message
+    }
 }
 
 if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
     -not [string]::IsNullOrWhiteSpace($hardwareReportRunLabel) -and
     $hardwareReportRunLabel -ne $runLabel) {
-    Add-ValidationItem -Bucket $warnings -Message "Hardware Report Run Label does not match the release manifest Run Label."
+    $message = "Hardware Report Run Label does not match the release manifest Run Label."
+    if ($RequireExactEvidenceRunLabel.IsPresent) {
+        Add-ValidationItem -Bucket $errors -Message $message
+    }
+    else {
+        Add-ValidationItem -Bucket $warnings -Message $message
+    }
+}
+
+if ($RequireExactEvidenceRunLabel.IsPresent -and -not [string]::IsNullOrWhiteSpace($runLabel)) {
+    if (-not [string]::IsNullOrWhiteSpace($installReportSelection) -and $installReportSelection -notin @("exact-run-label", "explicit-path")) {
+        Add-ValidationItem -Bucket $errors -Message "Install Report selection is not exact for strict release gating: $installReportSelection"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($hardwareReportSelection) -and $hardwareReportSelection -notin @("exact-run-label", "explicit-path")) {
+        Add-ValidationItem -Bucket $errors -Message "Hardware Report selection is not exact for strict release gating: $hardwareReportSelection"
+    }
 }
 
 if (-not [string]::IsNullOrWhiteSpace($isoPath) -and -not [string]::IsNullOrWhiteSpace($checksumPath)) {
@@ -320,6 +343,7 @@ $report = @"
 - Hardware Report Status: $(if ([string]::IsNullOrWhiteSpace($hardwareReportState)) { "not-recorded-yet" } else { $hardwareReportState })
 - Hardware Report Run Label: $(if ([string]::IsNullOrWhiteSpace($hardwareReportRunLabel)) { "not-recorded-yet" } else { $hardwareReportRunLabel })
 - Hardware Report Selection: $(if ([string]::IsNullOrWhiteSpace($hardwareReportSelection)) { "not-recorded-yet" } else { $hardwareReportSelection })
+- Exact Evidence Required: $($RequireExactEvidenceRunLabel.IsPresent)
 - Readiness State: $(if ([string]::IsNullOrWhiteSpace($readinessState)) { "not-recorded-yet" } else { $readinessState })
 - Validation Matrix State: $(if ([string]::IsNullOrWhiteSpace($validationState)) { "not-recorded-yet" } else { $validationState })
 - Blocker State: $(if ([string]::IsNullOrWhiteSpace($blockerState)) { "not-recorded-yet" } else { $blockerState })

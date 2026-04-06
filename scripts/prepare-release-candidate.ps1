@@ -15,6 +15,7 @@ param(
     [string]$ReadinessPath = "",
     [string]$ValidationMatrixPath = "",
     [switch]$AllowAttentionState,
+    [switch]$RequireExactEvidenceRunLabel,
     [switch]$OutputPathOnly,
     [string]$RepoRoot = ""
 )
@@ -132,6 +133,10 @@ $validationArgs = @{
 
 if ($AllowAttentionState.IsPresent) {
     $validationArgs["AllowAttentionState"] = $true
+}
+
+if ($RequireExactEvidenceRunLabel.IsPresent) {
+    $validationArgs["RequireExactEvidenceRunLabel"] = $true
 }
 
 $validationReportPath = Join-Path (Split-Path -Parent $manifestPath) "release-validation.md"

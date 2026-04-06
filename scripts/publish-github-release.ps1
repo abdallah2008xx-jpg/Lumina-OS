@@ -8,6 +8,7 @@ param(
     [switch]$Prerelease,
     [switch]$Ready,
     [switch]$AllowAttentionState,
+    [switch]$RequireExactEvidenceRunLabel,
     [switch]$SkipValidationGate,
     [switch]$SkipContextGate,
     [switch]$OutputPathOnly,
@@ -136,6 +137,10 @@ if (-not $SkipValidationGate.IsPresent) {
         $validationArgs["AllowAttentionState"] = $true
     }
 
+    if ($RequireExactEvidenceRunLabel.IsPresent) {
+        $validationArgs["RequireExactEvidenceRunLabel"] = $true
+    }
+
     & $validatorPath @validationArgs | Out-Null
 }
 
@@ -192,6 +197,10 @@ if (-not $SkipContextGate.IsPresent) {
         Token = $resolvedToken
         RepoRoot = $RepoRoot
         OutputPathOnly = $true
+    }
+
+    if ($RequireExactEvidenceRunLabel.IsPresent) {
+        $contextArgs["RequireExactEvidenceRunLabel"] = $true
     }
 
     $contextReportPath = & $contextValidatorScript @contextArgs

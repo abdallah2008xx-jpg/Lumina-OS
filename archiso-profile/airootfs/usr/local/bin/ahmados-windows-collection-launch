@@ -1,0 +1,231 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+selected_collection_id=""
+selected_category=""
+open_report=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --collection-id)
+            selected_collection_id="${2:-}"
+            shift 2
+            ;;
+        --category)
+            selected_category="${2:-}"
+            shift 2
+            ;;
+        --open-report)
+            open_report=1
+            shift
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+if [[ -z "${selected_profile_id}" ]]; then
+    printf 'Usage: %s --profile-id <id> [--collection-id <id> | --category <name>]\n' "$0" >&2
+    exit 1
+fi
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+collection_launch_report="${state_root}/windows-collection-launch.md"
+collections_report="${state_root}/windows-app-collections.md"
+surfaces_report="${state_root}/windows-app-surfaces.md"
+launch_report="${state_root}/windows-registered-app-launch.md"
+app_library_report="${state_root}/windows-app-library.md"
+compat_report="${state_root}/windows-compat-report.md"
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-app-collections --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-app-library --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+registry_root="${workspace_root}/app-registry"
+collections_index_path="${registry_root}/collections.tsv"
+surfaces_index_path="${registry_root}/launcher-surfaces.tsv"
+registry_index_path="${registry_root}/registry-index.tsv"
+
+if [[ -z "${selected_category}" && -n "${selected_collection_id}" ]]; then
+    selected_category="$(awk -F'|' -v target="${selected_collection_id}" 'NF >= 2 && $1 == target {print $2; exit}' "${collections_index_path}" || true)"
+fi
+
+if [[ -z "${selected_category}" ]]; then
+    selected_category="Productivity"
+fi
+
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+[[ -n "${resource_class}" ]] || resource_class="balanced"
+
+collection_weight_class="light"
+case "${selected_category}" in
+    "Creator Apps"|"Audio and Studio"|"Gaming and Launchers")
+        collection_weight_class="heavy"
+        ;;
+esac
+
+app_candidates_path="$(mktemp)"
+trap 'rm -f "${app_candidates_path}"' EXIT
+
+awk -F'|' '
+    BEGIN {
+        OFS="|"
+    }
+    FNR == NR {
+        if (NF >= 6 && $1 !~ /^#/ && $1 != "") {
+            registration[$1]=$4
+        }
+        next
+    }
+    NF >= 7 && $1 !~ /^#/ && $1 != "" {
+        app_id=$1
+        app_name=$2
+        app_category=$3
+        surface_state=$4
+        launcher_script=$5
+        launcher_desktop=$6
+        manifest_path=$7
+        registration_state=registration[app_id]
+        if (registration_state == "") {
+            registration_state="unknown"
+        }
+        print app_id, app_name, app_category, surface_state, registration_state, launcher_script, launcher_desktop, manifest_path
+    }
+' "${registry_index_path}" "${surfaces_index_path}" > "${app_candidates_path}"
+
+published_ready_count="$(awk -F'|' -v category="${selected_category}" 'NF >= 8 && $3 == category && $4 == "ready" && $5 == "published" {count++} END {print count+0}' "${app_candidates_path}" || true)"
+ready_count="$(awk -F'|' -v category="${selected_category}" 'NF >= 8 && $3 == category && $4 == "ready" {count++} END {print count+0}' "${app_candidates_path}" || true)"
+
+selection_policy="prefer-published"
+selection_note="Lumina prefers published registered apps first inside each collection so launches stay predictable."
+selected_app_row=""
+
+if [[ "${resource_class}" == "light" && "${collection_weight_class}" == "heavy" && "${published_ready_count}" -eq 0 ]]; then
+    selection_policy="defer-heavy-collection-on-light"
+    selection_note="This heavier collection has no published ready app on a light machine yet, so Lumina is keeping the experience smooth and asking for library review first."
+else
+    selected_app_row="$(
+        awk -F'|' -v category="${selected_category}" '
+            function rank(state) {
+                if (state == "published") return 1
+                if (state == "discovered") return 2
+                if (state == "planned") return 3
+                if (state == "pending") return 4
+                if (state == "not-found") return 5
+                return 9
+            }
+            NF >= 8 && $3 == category && $4 == "ready" {
+                current_rank = rank($5)
+                if (best == "" || current_rank < best_rank || (current_rank == best_rank && $2 < best_name)) {
+                    best = $0
+                    best_rank = current_rank
+                    best_name = $2
+                }
+            }
+            END {
+                if (best != "") {
+                    print best
+                }
+            }
+        ' "${app_candidates_path}" || true
+    )"
+fi
+
+launch_outcome="collection-review-needed"
+launch_note="Lumina is keeping this collection in review mode until the launch path is smooth enough."
+selected_app_id=""
+selected_app_name=""
+selected_registration_state="none"
+guest_launch_status="not-run"
+guest_launch_message="No app launch was attempted."
+
+if [[ -n "${selected_app_row}" ]]; then
+    IFS='|' read -r selected_app_id selected_app_name _ selected_surface_state selected_registration_state _ _ _ <<< "${selected_app_row}"
+    /usr/local/bin/ahmados-windows-registered-app-launch --profile-id "${profile_id}" --app-id "${selected_app_id}" --no-open >/dev/null 2>&1 || true
+    launch_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${launch_report}" 2>/dev/null || true)"
+    guest_launch_status="$(awk -F': ' '/^- Guest Launch Status:/ {print $2; exit}' "${launch_report}" 2>/dev/null || true)"
+    guest_launch_message="$(awk -F': ' '/^- Guest Launch Message:/ {print $2; exit}' "${launch_report}" 2>/dev/null || true)"
+    launch_note="$(awk 'found && /^- / {sub(/^- /,""); print; exit} /^## Launch Note/ {found=1}' "${launch_report}" 2>/dev/null || true)"
+    [[ -n "${launch_note}" ]] || launch_note="Lumina selected the best available registered app inside this collection and delegated to the named app runtime."
+elif [[ "${ready_count}" -eq 0 ]]; then
+    selection_policy="collection-empty"
+    selection_note="This collection has no ready app surfaces yet, so Lumina should stay in the library until the app pipeline is hydrated."
+    launch_note="No ready app surface exists in this collection yet."
+fi
+
+{
+    printf '# Lumina Windows Collection Launch\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Collection: %s\n' "${selected_category}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Collection Weight Class: %s\n' "${collection_weight_class}"
+    printf -- '- Ready Apps In Collection: %s\n' "${ready_count}"
+    printf -- '- Published Ready Apps: %s\n' "${published_ready_count}"
+    printf -- '- Selection Policy: %s\n' "${selection_policy}"
+    printf -- '- Selected App Id: %s\n' "${selected_app_id:-none}"
+    printf -- '- Selected App Name: %s\n' "${selected_app_name:-none}"
+    printf -- '- Selected App Registration State: %s\n' "${selected_registration_state}"
+    printf -- '- Launch Outcome: %s\n' "${launch_outcome}"
+    printf -- '- Guest Launch Status: %s\n' "${guest_launch_status}"
+    printf -- '- Guest Launch Message: %s\n' "${guest_launch_message}"
+    printf '\n## Selection Note\n'
+    printf -- '- %s\n' "${selection_note}"
+    printf '\n## Launch Note\n'
+    printf -- '- %s\n' "${launch_note}"
+    printf '\n## Related Reports\n'
+    printf -- '- Windows App Collections Report: %s\n' "${collections_report}"
+    printf -- '- Windows App Surfaces Report: %s\n' "${surfaces_report}"
+    printf -- '- Windows App Library Report: %s\n' "${app_library_report}"
+    printf -- '- Registered App Launch Report: %s\n' "${launch_report}"
+} > "${collection_launch_report}"
+
+if command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    case "${launch_outcome}" in
+        registered-launch-staged)
+            kdialog --title "Lumina Windows Apps" --passivepopup "Lumina launched ${selected_app_name} from the ${selected_category} collection." 3 2>/dev/null || true
+            ;;
+        collection-review-needed|deferred-heavy-app-review)
+            kdialog --title "Lumina Windows Apps" --passivepopup "Lumina kept the ${selected_category} collection in review mode so the device stays smooth." 4 2>/dev/null || true
+            ;;
+    esac
+fi
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${collection_launch_report}" >/dev/null 2>&1 || true
+fi
+
+printf '%s\n' '========================================'
+printf '%s\n' '    Lumina Windows Collection Launch'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Collection: %s\n' "${selected_category}"
+printf 'Selected app: %s\n' "${selected_app_name:-none}"
+printf 'Outcome: %s\n' "${launch_outcome}"
+printf 'Report: %s\n' "${collection_launch_report}"
+printf '\n'

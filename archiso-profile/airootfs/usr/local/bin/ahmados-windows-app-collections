@@ -91,7 +91,7 @@ collection_count=0
         cat > "${launcher_script_path}" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
-exec /usr/local/bin/lumina-windows-registered-app-picker --profile-id ${profile_id} --category "$(printf '%s' "${collection_name}")"
+exec /usr/local/bin/lumina-windows-collection-launch --profile-id ${profile_id} --collection-id ${collection_id}
 EOF
         chmod 755 "${launcher_script_path}"
 
@@ -101,7 +101,7 @@ Type=Application
 Version=1.0
 Name=${collection_name} (Lumina Windows)
 Comment=Open the ${collection_name} Windows app collection in Lumina
-Exec=/usr/local/bin/lumina-windows-registered-app-picker --profile-id ${profile_id} --category "$(printf '%s' "${collection_name}")"
+Exec=/usr/local/bin/lumina-windows-collection-launch --profile-id ${profile_id} --collection-id ${collection_id}
 Icon=folder
 Terminal=false
 Categories=Utility;System;

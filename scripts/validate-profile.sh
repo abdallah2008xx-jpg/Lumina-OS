@@ -124,6 +124,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-guest-app-publish-pack"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-publish-sync"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-collections"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-collection-launch"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-collection-menu-export"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-app-library"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-apps-catalog"
@@ -179,6 +180,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-guest-app-publish-pack"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-publish-sync"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-collections"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-collection-launch"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-collection-menu-export"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-app-library"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-apps-catalog"
@@ -473,6 +475,8 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/lumina-windows-app-publish-sync \
         /usr/local/bin/ahmados-windows-app-collections \
         /usr/local/bin/lumina-windows-app-collections \
+        /usr/local/bin/ahmados-windows-collection-launch \
+        /usr/local/bin/lumina-windows-collection-launch \
         /usr/local/bin/ahmados-windows-collection-menu-export \
         /usr/local/bin/lumina-windows-collection-menu-export \
         /usr/local/bin/ahmados-windows-app-library \

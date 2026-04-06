@@ -2,6 +2,7 @@
 set -euo pipefail
 
 state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
 mkdir -p "${state_root}"
 
 lock_dir="${state_root}/windows-apps-prep.lock"
@@ -15,6 +16,9 @@ compat_report="${state_root}/windows-compat-report.md"
 bridge_report="${state_root}/windows-apps-bridge.md"
 catalog_report="${state_root}/windows-app-catalog.md"
 lab_report="${state_root}/windows-vm-lab.md"
+daily_refresh_report="${state_root}/windows-daily-refresh.md"
+daily_surface_report="${state_root}/windows-daily-surface.md"
+daily_app_pack_report="${state_root}/windows-daily-app-pack.md"
 
 /usr/local/bin/ahmados-windows-compat-check >/dev/null 2>&1 || true
 compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
@@ -23,9 +27,26 @@ if [[ -z "${resource_class}" ]]; then
     resource_class="balanced"
 fi
 
+default_daily_profile="adobe-creator"
+if [[ "${resource_class}" == "light" ]]; then
+    default_daily_profile="office-productivity"
+fi
+
+daily_profile_state_root="${documents_root}/Lumina Windows Workflows/${default_daily_profile}/state"
+daily_app_library_marker="${daily_profile_state_root}/app-library-ready.marker"
+daily_workflow_proof_marker="${daily_profile_state_root}/workflow-proof-ready.marker"
+daily_checklist_complete_marker="${daily_profile_state_root}/checklist-complete.marker"
+
 vm_lab_prep="full"
 if [[ "${resource_class}" == "light" ]]; then
     vm_lab_prep="deferred"
+fi
+
+daily_runtime_prep="deferred"
+if [[ "${resource_class}" != "light" ]]; then
+    daily_runtime_prep="warm"
+elif [[ -f "${daily_app_library_marker}" && -f "${daily_workflow_proof_marker}" && -f "${daily_checklist_complete_marker}" ]]; then
+    daily_runtime_prep="light-mature-only"
 fi
 
 if [[ "${vm_lab_prep}" == "full" ]]; then
@@ -33,6 +54,10 @@ if [[ "${vm_lab_prep}" == "full" ]]; then
 fi
 /usr/local/bin/ahmados-windows-apps-catalog --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-apps --no-open >/dev/null 2>&1 || true
+
+if [[ "${daily_runtime_prep}" != "deferred" ]]; then
+    /usr/local/bin/ahmados-windows-daily-refresh --profile-id "${default_daily_profile}" --no-open >/dev/null 2>&1 || true
+fi
 
 experience_mode="$(awk -F': ' '/^- Experience Mode:/ {print $2; exit}' "${bridge_report}" 2>/dev/null || true)"
 
@@ -53,6 +78,8 @@ fi
     printf -- '- Compatibility Tier: %s\n' "${compatibility_tier:-unknown}"
     printf -- '- Resource Class: %s\n' "${resource_class}"
     printf -- '- VM Lab Prep: %s\n' "${vm_lab_prep}"
+    printf -- '- Daily Runtime Prep: %s\n' "${daily_runtime_prep}"
+    printf -- '- Daily Profile Warmed: %s\n' "${default_daily_profile}"
     printf -- '- Experience Mode: %s\n' "${experience_mode:-unknown}"
     printf -- '- libvirt Probe: %s\n' "${libvirt_probe}"
     printf -- '- Goal: Keep the Windows Apps path warm in the background without opening extra windows.\n'
@@ -61,10 +88,18 @@ fi
     printf -- '- Windows Apps Report: %s\n' "${bridge_report}"
     printf -- '- App Catalog Report: %s\n' "${catalog_report}"
     printf -- '- Advanced Lab Report: %s\n' "${lab_report}"
+    printf -- '- Daily Refresh Report: %s\n' "${daily_refresh_report}"
+    printf -- '- Daily Surface Report: %s\n' "${daily_surface_report}"
+    printf -- '- Daily App Pack Report: %s\n' "${daily_app_pack_report}"
     printf '\n## Behavior\n'
     printf -- '- This prep step does not open a VM or a second desktop by itself.\n'
     printf -- '- It only prepares the Windows Apps path so the visible experience can feel faster and more integrated later.\n'
     if [[ "${vm_lab_prep}" == "deferred" ]]; then
         printf -- '- On light machines, Lumina defers the heavier VM-lab prep so the session stays responsive.\n'
+    fi
+    if [[ "${daily_runtime_prep}" == "light-mature-only" ]]; then
+        printf -- '- On light machines, Lumina only refreshes the daily runtime path when the selected default workflow is already mature enough for real daily use.\n'
+    elif [[ "${daily_runtime_prep}" == "deferred" ]]; then
+        printf -- '- On this session, Lumina deferred daily runtime warm-up to avoid unnecessary background work.\n'
     fi
 } > "${prep_report}"

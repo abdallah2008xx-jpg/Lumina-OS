@@ -89,6 +89,7 @@ The current phase adds:
 - a runtime guard layer that keeps weak machines in a `single-workflow` mode so hidden Windows workspaces do not pile up and cause stutter
 - a VM cooldown layer that can managed-save or shut down idle Windows workspaces so RAM and CPU pressure drop back down on weaker hardware
 - a lightweight prep path that defers heavier VM-lab probing during session startup on weak machines
+- a lightweight prep path that can also warm the default daily runtime path quietly when the machine or workflow is ready for it
 - a lightweight app-selection policy that prefers Productivity and Utilities first on weak machines before creator or gaming stacks
 - a lightweight broker policy that can defer an auto-guessed heavy Windows workflow on weak hardware instead of auto-starting background load blindly
 - a pressure-aware guidance layer so the workflow hub and next-action surfaces can recommend cooldown or Linux-first validation on weak machines
@@ -129,6 +130,7 @@ The current phase adds:
 - It now defers a second hidden Windows workflow on `light` machines instead of pretending every staged launch should run immediately.
 - It now supports a cooldown path so an idle Windows workspace can give host resources back instead of lingering forever in the background.
 - It now keeps background prep lighter on weak machines by deferring the heavier VM-lab probing until the user actually needs it.
+- It now lets background prep warm the default daily runtime path quietly on stronger machines, and only does that on weak machines when the workflow is already mature enough.
 - It now biases registered app selection toward lighter categories on weak machines so the default path stays smoother.
 - It now lets the EXE broker pause and redirect an auto-guessed heavy workflow on weak hardware so the default click path stays honest and smoother.
 - It now lets the main workflow guidance surfaces recommend cooldown or Linux-first validation when a weak machine is already under Windows-workflow pressure.

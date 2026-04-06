@@ -5,6 +5,8 @@ selected_profile_id=""
 choose_workflow=0
 perform_launch=0
 open_report=1
+pin_current=0
+clear_pin=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -18,6 +20,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --launch)
             perform_launch=1
+            shift
+            ;;
+        --pin-current)
+            pin_current=1
+            shift
+            ;;
+        --clear-pin)
+            clear_pin=1
             shift
             ;;
         --no-open)
@@ -57,10 +67,13 @@ fi
 recent_workflow_id="$(awk -F= '/^RECENT_WORKFLOW_ID=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
 recent_workflow_mode="$(awk -F= '/^RECENT_WORKFLOW_MODE=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
 recent_workflow_outcome="$(awk -F= '/^RECENT_LAUNCH_OUTCOME=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
+pinned_workflow_id="$(awk -F= '/^PINNED_WORKFLOW_ID=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
 [[ -n "${recent_workflow_id}" ]] || recent_workflow_id="none"
 [[ -n "${recent_workflow_mode}" ]] || recent_workflow_mode="none"
 [[ -n "${recent_workflow_outcome}" ]] || recent_workflow_outcome="none"
+[[ -n "${pinned_workflow_id}" ]] || pinned_workflow_id="none"
 recent_workflow_reusable="yes"
+pinned_workflow_reusable="yes"
 case "${recent_workflow_outcome}" in
     deferred-for-smoothness|queue-sync|awaiting-guest-sync|awaiting-guest|not-run|failed|error)
         recent_workflow_reusable="no"
@@ -193,6 +206,31 @@ while IFS='|' read -r profile_id profile_name focus _; do
     inventory_rows+="- ${profile_name} (${profile_id}): ${mode} | score ${score} | ${note}\n"
 done < "${profiles_path}"
 
+if [[ ${clear_pin} -eq 1 ]]; then
+    pinned_workflow_id="none"
+    selection_policy="clear-pinned-workflow"
+fi
+
+if [[ "${pinned_workflow_id}" != "none" ]]; then
+    pinned_row="$(awk -F'|' -v target="${pinned_workflow_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+    if [[ -n "${pinned_row}" ]]; then
+        pinned_summary="$(profile_state_summary "${pinned_workflow_id}")"
+        IFS='|' read -r pinned_mode pinned_score pinned_note <<< "${pinned_summary}"
+        if [[ "${pinned_mode}" != "quick-launch" && "${pinned_mode}" != "daily-surface" ]]; then
+            pinned_workflow_reusable="no"
+        fi
+    else
+        pinned_workflow_reusable="no"
+    fi
+fi
+
+if [[ -z "${chosen_profile_id}" ]]; then
+    if [[ "${pinned_workflow_id}" != "none" && "${pinned_workflow_reusable}" == "yes" ]]; then
+        chosen_profile_id="${pinned_workflow_id}"
+        selection_policy="pinned-workflow-default"
+    fi
+fi
+
 if [[ -z "${chosen_profile_id}" ]]; then
     if [[ "${recent_workflow_id}" != "none" && "${recent_workflow_reusable}" == "yes" ]]; then
         recent_row="$(awk -F'|' -v target="${recent_workflow_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
@@ -293,11 +331,37 @@ if [[ ${perform_launch} -eq 1 ]]; then
             ;;
     esac
     [[ -n "${launch_outcome}" ]] || launch_outcome="launched"
+    recent_workflow_id="${chosen_id}"
+    recent_workflow_mode="${chosen_mode}"
+    recent_workflow_outcome="${launch_outcome}"
+    recent_workflow_reusable="yes"
+    case "${recent_workflow_outcome}" in
+        deferred-for-smoothness|queue-sync|awaiting-guest-sync|awaiting-guest|not-run|failed|error)
+            recent_workflow_reusable="no"
+            ;;
+    esac
 
     {
         printf 'RECENT_WORKFLOW_ID=%s\n' "${chosen_id}"
         printf 'RECENT_WORKFLOW_MODE=%s\n' "${chosen_mode}"
         printf 'RECENT_LAUNCH_OUTCOME=%s\n' "${launch_outcome}"
+        printf 'PINNED_WORKFLOW_ID=%s\n' "${pinned_workflow_id}"
+        printf 'RECENT_UPDATED_AT=%s\n' "$(date -Is)"
+    } > "${daily_home_state}"
+fi
+
+if [[ ${pin_current} -eq 1 ]]; then
+    pinned_workflow_id="${chosen_id}"
+    pinned_workflow_reusable="yes"
+    selection_policy="pin-current-workflow"
+fi
+
+if [[ ${clear_pin} -eq 1 || ${pin_current} -eq 1 ]]; then
+    {
+        printf 'RECENT_WORKFLOW_ID=%s\n' "${recent_workflow_id}"
+        printf 'RECENT_WORKFLOW_MODE=%s\n' "${recent_workflow_mode}"
+        printf 'RECENT_LAUNCH_OUTCOME=%s\n' "${recent_workflow_outcome}"
+        printf 'PINNED_WORKFLOW_ID=%s\n' "${pinned_workflow_id}"
         printf 'RECENT_UPDATED_AT=%s\n' "$(date -Is)"
     } > "${daily_home_state}"
 fi
@@ -310,6 +374,8 @@ fi
     printf -- '- Resource Summary: %s\n' "${resource_summary}"
     printf -- '- Best Workflow Id: %s\n' "${best_profile_id}"
     printf -- '- Best Workflow Mode: %s\n' "${best_mode}"
+    printf -- '- Pinned Workflow Id: %s\n' "${pinned_workflow_id}"
+    printf -- '- Pinned Workflow Reusable: %s\n' "${pinned_workflow_reusable}"
     printf -- '- Recent Workflow Id: %s\n' "${recent_workflow_id}"
     printf -- '- Recent Workflow Mode: %s\n' "${recent_workflow_mode}"
     printf -- '- Recent Launch Outcome: %s\n' "${recent_workflow_outcome}"

@@ -13,6 +13,11 @@ if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
     $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 }
 
+$controlCenterScript = Join-Path $PSScriptRoot "sync-release-control-center.ps1"
+if (-not (Test-Path $controlCenterScript)) {
+    throw "Missing helper script: $controlCenterScript"
+}
+
 function Get-MetadataValue {
     param(
         [string]$Content,
@@ -271,6 +276,10 @@ $(switch ($candidateState) {
 
 Set-Content -Path $candidateSummaryPath -Value $summaryContent -Encoding UTF8
 Set-Content -Path $currentCandidatePath -Value $currentContent -Encoding UTF8
+
+$null = & $controlCenterScript `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
 
 if ($OutputPathOnly) {
     Write-Output $candidateSummaryPath

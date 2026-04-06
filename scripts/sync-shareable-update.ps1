@@ -140,6 +140,8 @@ function Get-LatestFile {
         Select-Object -First 1
 }
 
+$controlCenterPath = Join-Path $RepoRoot "status\releases\CURRENT-RELEASE-CONTROL-CENTER.md"
+
 $resolvedStatusPath = if ([string]::IsNullOrWhiteSpace($StatusPath)) {
     Join-Path $RepoRoot "status\CURRENT-STATUS.md"
 }
@@ -247,6 +249,12 @@ $evidenceSoftGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent
 $evidenceStrictGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Strict Gate State"
 $evidenceAuditRunLabel = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Run Label"
 $releaseReadinessState = Get-MetadataValue -Content $releaseReadinessAuditContent -Label "Overall Readiness"
+$controlCenterState = if (Test-Path $controlCenterPath) {
+    Get-MetadataValue -Content (Get-Content -Raw $controlCenterPath) -Label "Release Control State"
+}
+else {
+    ""
+}
 $runLabel = Get-FirstNonEmptyValue @(
     $evidenceAuditRunLabel,
     (Get-MetadataValue -Content $releaseEvidencePackContent -Label "Run Label"),
@@ -286,6 +294,10 @@ if (-not [string]::IsNullOrWhiteSpace($releaseReadinessState)) {
     $shareableSummary.Add("Release readiness audit: $releaseReadinessState") | Out-Null
 }
 
+if (-not [string]::IsNullOrWhiteSpace($controlCenterState)) {
+    $shareableSummary.Add("Release control center: $controlCenterState") | Out-Null
+}
+
 if (-not [string]::IsNullOrWhiteSpace($evidenceSoftGateState)) {
     $shareableSummary.Add("Release evidence soft gate: $evidenceSoftGateState") | Out-Null
 }
@@ -323,6 +335,8 @@ $content = @"
 - Release Evidence Audit State: $(Get-ResolvedPathOrDefault -Value $evidenceAuditState -DefaultValue "not-recorded-yet")
 - Release Readiness Audit: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseReadinessAuditPath -DefaultValue "not-recorded-yet")
 - Release Readiness State: $(Get-ResolvedPathOrDefault -Value $releaseReadinessState -DefaultValue "not-recorded-yet")
+- Release Control Center: $(if (Test-Path $controlCenterPath) { $controlCenterPath } else { "not-recorded-yet" })
+- Release Control State: $(Get-ResolvedPathOrDefault -Value $controlCenterState -DefaultValue "not-recorded-yet")
 - Release Evidence Soft Gate: $(Get-ResolvedPathOrDefault -Value $evidenceSoftGateState -DefaultValue "not-recorded-yet")
 - Release Evidence Strict Gate: $(Get-ResolvedPathOrDefault -Value $evidenceStrictGateState -DefaultValue "not-recorded-yet")
 - Current Run Label: $(Get-ResolvedPathOrDefault -Value $runLabel -DefaultValue "not-recorded-yet")

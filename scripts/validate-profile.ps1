@@ -229,6 +229,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\share\applications\lumina-finalize-install.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop",
+    "archiso-profile\airootfs\usr\share\applications\lumina-windows-workflow-chooser.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-launch-broker.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-vm-lab.desktop",
@@ -453,6 +454,7 @@ $expectedExecMappings = @{
     "archiso-profile\airootfs\usr\share\applications\lumina-finalize-install.desktop" = "Exec=/usr/local/bin/lumina-finalize-install"
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop" = "Exec=/usr/local/bin/lumina-installer"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop" = "Exec=/usr/local/bin/lumina-windows-daily-home --launch"
+    "archiso-profile\airootfs\usr\share\applications\lumina-windows-workflow-chooser.desktop" = "Exec=/usr/local/bin/lumina-windows-daily-home --choose-workflow --launch"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-launch-broker.desktop" = "Exec=/usr/local/bin/lumina-windows-launch-session --file %f"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop" = "Exec=/usr/local/bin/lumina-windows-compat-check"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-vm-lab.desktop" = "Exec=/usr/local/bin/lumina-windows-vm-lab"

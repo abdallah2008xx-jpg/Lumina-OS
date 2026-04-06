@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Choose Lumina Windows Workflow
+Comment=Choose which Lumina Windows workflow to open today
+Exec=/usr/local/bin/lumina-windows-daily-home --choose-workflow --launch
+Icon=applications-other
+Terminal=false
+Categories=Qt;KDE;System;Utility;
+StartupNotify=true

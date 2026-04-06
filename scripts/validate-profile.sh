@@ -241,6 +241,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/share/applications/lumina-finalize-install.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-windows-apps.desktop"
+    "${profile_path}/airootfs/usr/share/applications/lumina-windows-workflow-chooser.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-windows-launch-broker.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-windows-compat-check.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-windows-vm-lab.desktop"
@@ -595,6 +596,7 @@ ${profile_path}/airootfs/usr/share/applications/ahmados-welcome.desktop|Exec=/us
 ${profile_path}/airootfs/usr/share/applications/lumina-finalize-install.desktop|Exec=/usr/local/bin/lumina-finalize-install
 ${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop|Exec=/usr/local/bin/lumina-installer
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-apps.desktop|Exec=/usr/local/bin/lumina-windows-daily-home --launch
+${profile_path}/airootfs/usr/share/applications/lumina-windows-workflow-chooser.desktop|Exec=/usr/local/bin/lumina-windows-daily-home --choose-workflow --launch
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-launch-broker.desktop|Exec=/usr/local/bin/lumina-windows-launch-session --file %f
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-compat-check.desktop|Exec=/usr/local/bin/lumina-windows-compat-check
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-vm-lab.desktop|Exec=/usr/local/bin/lumina-windows-vm-lab

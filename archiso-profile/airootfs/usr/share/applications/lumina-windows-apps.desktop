@@ -8,3 +8,12 @@ Icon=applications-other
 Terminal=false
 Categories=Qt;KDE;System;Utility;
 StartupNotify=true
+Actions=ChooseWorkflow;OpenDailyHome;
+
+[Desktop Action ChooseWorkflow]
+Name=Choose Workflow
+Exec=/usr/local/bin/lumina-windows-daily-home --choose-workflow --launch
+
+[Desktop Action OpenDailyHome]
+Name=Open Daily Home Report
+Exec=/usr/local/bin/lumina-windows-daily-home

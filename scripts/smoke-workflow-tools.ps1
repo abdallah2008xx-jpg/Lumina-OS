@@ -68,6 +68,7 @@ function Test-SessionHasExpectedBuildManifest {
 $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
 $startCycleScript = Join-Path $PSScriptRoot "start-vm-test-cycle.ps1"
 $installTestScript = Join-Path $PSScriptRoot "new-install-test-report.ps1"
+$hardwareTestScript = Join-Path $PSScriptRoot "new-hardware-test-report.ps1"
 $buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
 $buildHandoffImportScript = Join-Path $PSScriptRoot "import-build-handoff.ps1"
 $githubArtifactImportScript = Join-Path $PSScriptRoot "import-github-actions-artifact.ps1"
@@ -77,6 +78,7 @@ $isoImportScript = Join-Path $PSScriptRoot "import-iso-artifact.ps1"
 $githubArtifactCycleScript = Join-Path $PSScriptRoot "start-github-actions-vm-cycle.ps1"
 $githubArtifactCycleFinishScript = Join-Path $PSScriptRoot "finish-github-actions-vm-cycle.ps1"
 $prepareReleasePackageScript = Join-Path $PSScriptRoot "prepare-release-package.ps1"
+$releaseEvidenceAuditScript = Join-Path $PSScriptRoot "audit-release-evidence.ps1"
 $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
 $releaseCandidateScript = Join-Path $PSScriptRoot "prepare-release-candidate.ps1"
 $syncReleaseCandidateScript = Join-Path $PSScriptRoot "sync-release-candidate-status.ps1"
@@ -95,6 +97,10 @@ if (-not (Test-Path $startCycleScript)) {
 
 if (-not (Test-Path $installTestScript)) {
     throw "Missing smoke-test target: $installTestScript"
+}
+
+if (-not (Test-Path $hardwareTestScript)) {
+    throw "Missing smoke-test target: $hardwareTestScript"
 }
 
 if (-not (Test-Path $buildManifestImportScript)) {
@@ -131,6 +137,10 @@ if (-not (Test-Path $githubArtifactCycleFinishScript)) {
 
 if (-not (Test-Path $prepareReleasePackageScript)) {
     throw "Missing smoke-test target: $prepareReleasePackageScript"
+}
+
+if (-not (Test-Path $releaseEvidenceAuditScript)) {
+    throw "Missing smoke-test target: $releaseEvidenceAuditScript"
 }
 
 if (-not (Test-Path $cycleChainAuditScript)) {
@@ -266,6 +276,53 @@ try {
     $cycleChainContent = Get-Content -Raw $cycleChainAuditPath
     Assert-Condition -Condition ($cycleChainContent -match [regex]::Escape("- Overall Status: pass")) -Message "Cycle chain audit did not pass."
     Assert-Condition -Condition ($cycleChainContent -match [regex]::Escape("- Run Label: $smokeRunLabel")) -Message "Cycle chain audit does not contain the expected run label."
+
+    $releaseInstallReportPath = & $installTestScript `
+        -Mode stable `
+        -VmType VirtualBox `
+        -Firmware UEFI `
+        -IsoPath $isoPath `
+        -RunLabel $smokeRunLabel `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $releaseInstallReportPath) -Message "Release smoke install report was not created."
+    $releaseInstallReportContent = (Get-Content -Raw $releaseInstallReportPath) -replace '(?m)^- Overall Status: .+$', '- Overall Status: completed'
+    Set-Content -Path $releaseInstallReportPath -Value $releaseInstallReportContent -Encoding UTF8
+
+    $releaseHardwareReportPath = & $hardwareTestScript `
+        -DeviceLabel "smoke-device" `
+        -Firmware UEFI `
+        -BootSource "live-usb" `
+        -RunLabel $smokeRunLabel `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $releaseHardwareReportPath) -Message "Release smoke hardware report was not created."
+    $releaseHardwareReportContent = (Get-Content -Raw $releaseHardwareReportPath) -replace '(?m)^- Overall Status: .+$', '- Overall Status: completed'
+    Set-Content -Path $releaseHardwareReportPath -Value $releaseHardwareReportContent -Encoding UTF8
+
+    $releaseEvidenceAuditPath = & $releaseEvidenceAuditScript `
+        -Version "0.1.0-ci" `
+        -Mode stable `
+        -RunLabel $smokeRunLabel `
+        -IsoPath $isoPath `
+        -BuildManifestPath $buildPath `
+        -VmReportPath $vmPath `
+        -InstallReportPath $releaseInstallReportPath `
+        -HardwareReportPath $releaseHardwareReportPath `
+        -SessionPath $sessionPath `
+        -AuditPath $auditPath `
+        -CycleChainAuditPath $cycleChainAuditPath `
+        -ReadinessPath $readinessPath `
+        -ValidationMatrixPath $validationPath `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $releaseEvidenceAuditPath) -Message "Release evidence audit report was not created."
+    $releaseEvidenceAuditContent = Get-Content -Raw $releaseEvidenceAuditPath
+    Assert-Condition -Condition ($releaseEvidenceAuditContent -match [regex]::Escape("- Soft Gate State: passed")) -Message "Release evidence audit soft gate did not pass."
+    Assert-Condition -Condition ($releaseEvidenceAuditContent -match [regex]::Escape("- Strict Gate State: passed")) -Message "Release evidence audit strict gate did not pass."
 
     $importedBuildPath = (
         & $buildManifestImportScript `
@@ -437,11 +494,14 @@ try {
         -IsoPath $isoPath `
         -BuildManifestPath $buildPath `
         -VmReportPath $vmPath `
+        -InstallReportPath $releaseInstallReportPath `
+        -HardwareReportPath $releaseHardwareReportPath `
         -SessionPath $sessionPath `
         -AuditPath $auditPath `
         -CycleChainAuditPath $cycleChainAuditPath `
         -ReadinessPath $readinessPath `
         -ValidationMatrixPath $validationPath `
+        -RequireExactEvidenceRunLabel `
         -RepoRoot $tempRoot `
         -OutputPathOnly
 
@@ -468,12 +528,14 @@ try {
     $validationContent = Get-Content -Raw $validationReportPath
     Assert-Condition -Condition ($validationContent -match [regex]::Escape("- Result: passed")) -Message "Release validation report did not pass."
     Assert-Condition -Condition ($validationContent -match [regex]::Escape("- Run Label: $smokeRunLabel")) -Message "Release validation report does not contain the expected run label."
+    Assert-Condition -Condition ($validationContent -match [regex]::Escape("- Exact Evidence Required: True")) -Message "Release validation report did not record exact evidence gating."
 
     $contextReportPath = & $releaseContextScript `
         -ReleaseManifestPath $releaseManifestPath `
         -Owner "abdallah2008xx-jpg" `
         -Repo "Lumina-OS" `
         -Token "ci-fake-token" `
+        -RequireExactEvidenceRunLabel `
         -RepoRoot $tempRoot `
         -OutputPathOnly
 
@@ -481,6 +543,7 @@ try {
     $contextContent = Get-Content -Raw $contextReportPath
     Assert-Condition -Condition ($contextContent -match [regex]::Escape("- Overall State: pass")) -Message "GitHub release context did not pass."
     Assert-Condition -Condition ($contextContent -match [regex]::Escape("- GitHub Repository: abdallah2008xx-jpg/Lumina-OS")) -Message "GitHub release context report does not contain the expected repository."
+    Assert-Condition -Condition ($contextContent -match [regex]::Escape("- Exact Evidence Required: True")) -Message "GitHub release context did not record exact evidence gating."
 
     $publishRecordPath = Join-Path (Split-Path -Parent $releaseManifestPath) "github-release-publish.md"
     Set-Content -Path $publishRecordPath -Value "# Publish`r`n`r`n- Run Label: $smokeRunLabel`r`n- Release URL: https://example.com/releases/v0.1.0-ci`r`n- Release ID: 12345" -Encoding UTF8

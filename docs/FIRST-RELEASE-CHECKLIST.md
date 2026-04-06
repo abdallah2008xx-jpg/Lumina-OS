@@ -69,6 +69,7 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] A completed real-device hardware test report exists for the selected candidate
 - [ ] If auto-selected evidence falls back to an older or different `Run Label`, review the release candidate summary before publish
 - [ ] For strict release gating, run `prepare-release-candidate.ps1` and `validate-github-release-context.ps1` with `-RequireExactEvidenceRunLabel`
+- [ ] Run `.\scripts\audit-release-evidence.ps1 -Version "<version>" -Mode stable -RunLabel "<run-label>"` before the final RC pass to inspect soft vs strict evidence readiness
 - [ ] If the ISO was built in a separate Arch clone or VM, a local Windows-accessible copy has been imported with `.\scripts\import-iso-artifact.ps1`
 - [ ] If the build manifest and ISO were transferred together, the handoff folder has been imported with `.\scripts\import-build-handoff.ps1`
 - [ ] ISO checksum is generated

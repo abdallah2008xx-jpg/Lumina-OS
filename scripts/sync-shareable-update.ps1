@@ -3,6 +3,7 @@ param(
     [string]$ReadinessPath = "",
     [string]$ValidationMatrixPath = "",
     [string]$ReleaseCandidatePath = "",
+    [string]$ReleaseEvidenceAuditPath = "",
     [switch]$OutputPathOnly,
     [string]$RepoRoot = ""
 )
@@ -121,6 +122,22 @@ function Get-FirstNonEmptyValue {
     return ""
 }
 
+function Get-LatestFile {
+    param(
+        [string]$Path,
+        [string]$Filter
+    )
+
+    if (-not (Test-Path $Path)) {
+        return $null
+    }
+
+    return Get-ChildItem -Path $Path -Filter $Filter -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -notlike "README.md" -and $_.Name -notlike "CURRENT-*.md" } |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+}
+
 $resolvedStatusPath = if ([string]::IsNullOrWhiteSpace($StatusPath)) {
     Join-Path $RepoRoot "status\CURRENT-STATUS.md"
 }
@@ -149,6 +166,14 @@ else {
     $ReleaseCandidatePath
 }
 
+$resolvedReleaseEvidenceAuditPath = if ([string]::IsNullOrWhiteSpace($ReleaseEvidenceAuditPath)) {
+    $latestAudit = Get-LatestFile -Path (Join-Path $RepoRoot "status\releases") -Filter "release-evidence-audit.md"
+    if ($latestAudit) { $latestAudit.FullName } else { "" }
+}
+else {
+    $ReleaseEvidenceAuditPath
+}
+
 foreach ($requiredPath in @($resolvedStatusPath, $resolvedReadinessPath, $resolvedValidationMatrixPath, $resolvedReleaseCandidatePath)) {
     if (-not (Test-Path $requiredPath)) {
         throw "Missing required status input: $requiredPath"
@@ -159,6 +184,12 @@ $statusContent = Get-Content -Raw $resolvedStatusPath
 $readinessContent = Get-Content -Raw $resolvedReadinessPath
 $validationContent = Get-Content -Raw $resolvedValidationMatrixPath
 $releaseCandidateContent = Get-Content -Raw $resolvedReleaseCandidatePath
+$releaseEvidenceAuditContent = if (-not [string]::IsNullOrWhiteSpace($resolvedReleaseEvidenceAuditPath) -and (Test-Path $resolvedReleaseEvidenceAuditPath)) {
+    Get-Content -Raw $resolvedReleaseEvidenceAuditPath
+}
+else {
+    ""
+}
 
 $completedItems = Get-SectionItems -Content $statusContent -Heading "Completed"
 $nextItems = Get-SectionItems -Content $statusContent -Heading "Next"
@@ -168,7 +199,11 @@ $immediateNext = Get-TopItems -Items $nextItems -Count 5
 $readinessState = Get-MetadataValue -Content $readinessContent -Label "Readiness State"
 $validationState = Get-MetadataValue -Content $validationContent -Label "Overall State"
 $candidateState = Get-MetadataValue -Content $releaseCandidateContent -Label "Candidate State"
+$evidenceSoftGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Soft Gate State"
+$evidenceStrictGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Strict Gate State"
+$evidenceAuditRunLabel = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Run Label"
 $runLabel = Get-FirstNonEmptyValue @(
+    $evidenceAuditRunLabel,
     (Get-MetadataValue -Content $releaseCandidateContent -Label "Run Label"),
     (Get-MetadataValue -Content $readinessContent -Label "Run Label")
 )
@@ -190,6 +225,14 @@ $shareableSummary.Add($headline) | Out-Null
 $shareableSummary.Add("Readiness state: $(Get-ResolvedPathOrDefault -Value $readinessState -DefaultValue "not-recorded-yet")") | Out-Null
 $shareableSummary.Add("Validation matrix state: $(Get-ResolvedPathOrDefault -Value $validationState -DefaultValue "not-recorded-yet")") | Out-Null
 $shareableSummary.Add("Release candidate state: $(Get-ResolvedPathOrDefault -Value $candidateState -DefaultValue "not-recorded-yet")") | Out-Null
+
+if (-not [string]::IsNullOrWhiteSpace($evidenceSoftGateState)) {
+    $shareableSummary.Add("Release evidence soft gate: $evidenceSoftGateState") | Out-Null
+}
+
+if (-not [string]::IsNullOrWhiteSpace($evidenceStrictGateState)) {
+    $shareableSummary.Add("Release evidence strict gate: $evidenceStrictGateState") | Out-Null
+}
 
 if (-not [string]::IsNullOrWhiteSpace($version) -and $version -ne "not-recorded-yet") {
     $shareableSummary.Add("Current tracked release version: $version") | Out-Null
@@ -214,6 +257,9 @@ $content = @"
 - Readiness State: $(Get-ResolvedPathOrDefault -Value $readinessState -DefaultValue "not-recorded-yet")
 - Validation Matrix State: $(Get-ResolvedPathOrDefault -Value $validationState -DefaultValue "not-recorded-yet")
 - Release Candidate State: $(Get-ResolvedPathOrDefault -Value $candidateState -DefaultValue "not-recorded-yet")
+- Release Evidence Audit: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidenceAuditPath -DefaultValue "not-recorded-yet")
+- Release Evidence Soft Gate: $(Get-ResolvedPathOrDefault -Value $evidenceSoftGateState -DefaultValue "not-recorded-yet")
+- Release Evidence Strict Gate: $(Get-ResolvedPathOrDefault -Value $evidenceStrictGateState -DefaultValue "not-recorded-yet")
 - Current Run Label: $(Get-ResolvedPathOrDefault -Value $runLabel -DefaultValue "not-recorded-yet")
 - Current Version: $(Get-ResolvedPathOrDefault -Value $version -DefaultValue "not-recorded-yet")
 
@@ -226,6 +272,7 @@ $(Format-Items -Items $recentProgress)
 ## What Is Ready
 - The core build/test/release workflow is scaffolded and validated locally.
 - Linked evidence now covers build manifests, VM reports, session audits, blockers, readiness, validation matrix, and release-candidate state.
+- Release evidence audit can now show soft vs strict gating before candidate prep.
 - GitHub publish now has local release-context validation before release creation.
 
 ## What Is Still Missing

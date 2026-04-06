@@ -581,12 +581,15 @@ try {
         -ReadinessPath $readinessPath `
         -ValidationMatrixPath $validationPath `
         -ReleaseCandidatePath (Join-Path $tempRoot "status\\release-candidates\\CURRENT-RELEASE-CANDIDATE.md") `
+        -ReleaseEvidenceAuditPath $releaseEvidenceAuditPath `
         -RepoRoot $tempRoot `
         -OutputPathOnly
 
     Assert-Condition -Condition (Test-Path $shareableUpdatePath) -Message "Shareable update snapshot was not created."
     $shareableContent = Get-Content -Raw $shareableUpdatePath
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Candidate State: published")) -Message "Shareable update did not include the published release-candidate state."
+    Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Evidence Soft Gate: passed")) -Message "Shareable update did not include the soft evidence gate state."
+    Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Evidence Strict Gate: passed")) -Message "Shareable update did not include the strict evidence gate state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- run the first real stable build in Arch")) -Message "Shareable update did not include the expected next step."
 
     $shareableBriefPath = & $shareableBriefsScript `
@@ -598,11 +601,13 @@ try {
     Assert-Condition -Condition (Test-Path $shareableBriefPath) -Message "English shareable brief was not created."
     $shareableBriefContent = Get-Content -Raw $shareableBriefPath
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Candidate State: published")) -Message "English shareable brief did not include the published release-candidate state."
+    Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Evidence Soft Gate: passed")) -Message "English shareable brief did not include the soft evidence gate state."
 
     $shareableArabicBriefPath = Join-Path $tempRoot "status\\SHAREABLE-BRIEF-AR.md"
     Assert-Condition -Condition (Test-Path $shareableArabicBriefPath) -Message "Arabic shareable brief was not created."
     $shareableArabicBriefContent = Get-Content -Raw $shareableArabicBriefPath
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Candidate State: published")) -Message "Arabic shareable brief did not include the published release-candidate state."
+    Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Evidence Soft Gate: passed")) -Message "Arabic shareable brief did not include the soft evidence gate state."
 }
 finally {
     if (Test-Path $tempRoot) {

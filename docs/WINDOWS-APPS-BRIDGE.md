@@ -105,6 +105,8 @@ The current phase adds:
 - a daily-refresh layer that keeps the daily menu, daily app pack, and daily surface in sync after app discovery and publish refresh passes
 - a queue-aware daily runtime policy that pauses daily launches when the Windows queue is already under pressure or still awaiting an older guest-side request
 - a daily-recent fast path that remembers the last published daily Windows app and can reopen it with less decision overhead on weaker machines
+- a workflow-state integration that treats the daily-recent fast path as part of the official workflow state instead of a side shortcut only
+- an app-library integration that lets the daily-recent fast path become a first-class launch recommendation on weaker machines
 
 ## Current Limits
 
@@ -148,6 +150,8 @@ The current phase adds:
 - It now refreshes the daily menu and daily app surfaces automatically after installed-app and publish sync passes, so the daily path stays closer to live state instead of lagging behind the registry refreshes.
 - It now lets the daily runtime and daily app picker stop and sync first when the Windows launch queue is already pressurized, instead of blindly stacking one more launch on top of a delayed guest.
 - It now remembers the recent published daily app and can reuse that faster path on weaker machines instead of forcing a fresh app or collection choice every time.
+- It now exposes that recent daily path inside the official workflow state, so the Windows workflow can report it as a real readiness signal instead of a hidden optimization only.
+- It now lets the app library choose the recent daily path directly on weaker machines when that is the smoothest honest launch path.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 - Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.
 

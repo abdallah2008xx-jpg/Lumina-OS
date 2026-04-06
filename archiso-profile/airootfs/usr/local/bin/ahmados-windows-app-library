@@ -6,6 +6,7 @@ open_report=1
 launch_best=0
 choose_collection=0
 launch_category=""
+launch_recent=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -24,6 +25,10 @@ while [[ $# -gt 0 ]]; do
         --launch-category)
             launch_category="${2:-}"
             shift 2
+            ;;
+        --launch-recent)
+            launch_recent=1
+            shift
             ;;
         --no-open)
             open_report=0
@@ -48,6 +53,7 @@ app_menu_export_report="${state_root}/windows-app-menu-export.md"
 collection_menu_export_report="${state_root}/windows-collection-menu-export.md"
 daily_menu_export_report="${state_root}/windows-daily-menu-export.md"
 daily_app_pack_report="${state_root}/windows-daily-app-pack.md"
+daily_recent_report="${state_root}/windows-daily-recent-sync.md"
 collections_report="${state_root}/windows-app-collections.md"
 state_report="${state_root}/windows-workflow-state.md"
 hub_report="${state_root}/windows-workflow-hub.md"
@@ -94,7 +100,17 @@ app_rows=""
 total_apps=0
 resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
 resource_summary="$(awk -F': ' '/^- Resource Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+recent_app_ready="$(awk -F': ' '/^- Recent App Ready:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+recent_app_name="$(awk -F': ' '/^- Recent App Name:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+recent_app_category="$(awk -F': ' '/^- Recent App Category:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+recent_launch_outcome="$(awk -F': ' '/^- Recent Launch Outcome:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+recent_launch_status="$(awk -F': ' '/^- Recent Launch Status:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
 [[ -n "${resource_class}" ]] || resource_class="balanced"
+[[ -n "${recent_app_ready}" ]] || recent_app_ready="no"
+[[ -n "${recent_app_name}" ]] || recent_app_name="none"
+[[ -n "${recent_app_category}" ]] || recent_app_category="none"
+[[ -n "${recent_launch_outcome}" ]] || recent_launch_outcome="not-run"
+[[ -n "${recent_launch_status}" ]] || recent_launch_status="not-run"
 preferred_categories="Creator Apps, Productivity, Audio and Studio, Gaming and Launchers, Utilities"
 deferred_categories="none"
 policy_note="All registered app collections are available, but Lumina should still prefer honest published launch targets."
@@ -198,6 +214,8 @@ recommended_collection=""
 recommended_collection_id=""
 recommended_collection_policy="prefer-published-ready"
 recommended_collection_reason="Lumina recommends the first collection that already has a published ready app surface."
+recommended_daily_mode="collection"
+recommended_daily_launch_command=""
 
 choose_best_collection_by_order() {
     local check_mode="$1"
@@ -239,6 +257,15 @@ if [[ -n "${launch_category}" ]]; then
     recommended_collection_id="$(awk -F'|' -v target="${launch_category}" 'NF >= 2 && $2 == target {print $1; exit}' "${collections_index_path}" || true)"
 fi
 
+if [[ "${resource_class}" == "light" && "${recent_app_ready}" == "yes" ]]; then
+    recommended_daily_mode="recent-app"
+    recommended_collection_reason="Lumina prefers the recent published daily app on a light machine to reduce decision overhead and keep launches smoother."
+    recommended_daily_launch_command="/usr/local/bin/lumina-windows-daily-recent-sync --profile-id ${profile_id} --launch-recent"
+else
+    recommended_daily_mode="collection"
+    recommended_daily_launch_command="${recommended_collection_id:+/usr/local/bin/lumina-windows-app-library --profile-id ${profile_id} --launch-best}"
+fi
+
 choose_collection_with_kdialog() {
     local entries=()
     local entry entry_id entry_name entry_ready entry_published
@@ -258,10 +285,26 @@ choose_collection_with_kdialog() {
 }
 
 executed_launch="no"
+executed_mode="report-only"
 executed_collection_id=""
 executed_collection_name=""
 collection_launch_outcome="not-run"
 collection_launch_note="The app library stayed in report mode."
+recent_runtime_outcome="${recent_launch_outcome}"
+recent_runtime_status="${recent_launch_status}"
+recent_runtime_note="No recent runtime launch was requested from the app library."
+
+if [[ ${launch_recent} -eq 1 ]] || [[ ${launch_best} -eq 1 && "${recommended_daily_mode}" == "recent-app" ]]; then
+    /usr/local/bin/ahmados-windows-daily-recent-sync --profile-id "${profile_id}" --launch-recent --no-open >/dev/null 2>&1 || true
+    executed_launch="yes"
+    executed_mode="recent-app"
+    recent_runtime_outcome="$(awk -F': ' '/^- Recent Launch Outcome:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+    recent_runtime_status="$(awk -F': ' '/^- Recent Launch Status:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+    recent_runtime_note="$(awk 'found && /^- / {sub(/^- /,""); print; exit} /^## Recent Note/ {found=1}' "${daily_recent_report}" 2>/dev/null || true)"
+    [[ -n "${recent_runtime_outcome}" ]] || recent_runtime_outcome="unknown"
+    [[ -n "${recent_runtime_status}" ]] || recent_runtime_status="unknown"
+    [[ -n "${recent_runtime_note}" ]] || recent_runtime_note="No recent runtime note was captured."
+fi
 
 if [[ ${choose_collection} -eq 1 && -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && command -v kdialog >/dev/null 2>&1; then
     chosen_collection_id="$(choose_collection_with_kdialog || true)"
@@ -271,7 +314,7 @@ if [[ ${choose_collection} -eq 1 && -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && 
     fi
 fi
 
-if [[ ${launch_best} -eq 1 || -n "${launch_category}" ]] || [[ ${choose_collection} -eq 1 && -n "${executed_collection_id}" ]]; then
+if [[ ${executed_launch} == "no" ]] && { [[ ${launch_best} -eq 1 || -n "${launch_category}" ]] || [[ ${choose_collection} -eq 1 && -n "${executed_collection_id}" ]]; }; then
     if [[ -z "${executed_collection_id}" ]]; then
         executed_collection_id="${recommended_collection_id}"
         executed_collection_name="${recommended_collection}"
@@ -288,6 +331,7 @@ if [[ ${launch_best} -eq 1 || -n "${launch_category}" ]] || [[ ${choose_collecti
 
         /usr/local/bin/ahmados-windows-collection-launch "${launch_args[@]}" >/dev/null 2>&1 || true
         executed_launch="yes"
+        executed_mode="collection"
         collection_launch_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${collection_launch_report}" 2>/dev/null || true)"
         collection_launch_note="$(awk 'found && /^- / {sub(/^- /,""); print; exit} /^## Launch Note/ {found=1}' "${collection_launch_report}" 2>/dev/null || true)"
         [[ -n "${collection_launch_outcome}" ]] || collection_launch_outcome="unknown"
@@ -318,15 +362,23 @@ touch "${library_marker}"
     printf -- '- Recommended Collection: %s\n' "${recommended_collection:-none}"
     printf -- '- Recommended Collection Id: %s\n' "${recommended_collection_id:-none}"
     printf -- '- Recommended Collection Policy: %s\n' "${recommended_collection_policy}"
-    printf -- '- Recommended Launch Command: %s\n' "${recommended_collection_id:+/usr/local/bin/lumina-windows-app-library --profile-id ${profile_id} --launch-best}"
+    printf -- '- Recommended Daily Mode: %s\n' "${recommended_daily_mode}"
+    printf -- '- Recommended Launch Command: %s\n' "${recommended_daily_launch_command:-none}"
+    printf -- '- Daily Recent Ready: %s\n' "${recent_app_ready}"
+    printf -- '- Daily Recent App: %s\n' "${recent_app_name}"
+    printf -- '- Daily Recent Category: %s\n' "${recent_app_category}"
     printf -- '- Executed Launch: %s\n' "${executed_launch}"
+    printf -- '- Executed Mode: %s\n' "${executed_mode}"
     printf -- '- Collection Launch Outcome: %s\n' "${collection_launch_outcome}"
+    printf -- '- Recent Daily Launch Outcome: %s\n' "${recent_runtime_outcome}"
+    printf -- '- Recent Daily Launch Status: %s\n' "${recent_runtime_status}"
     printf '\n## Lightweight Policy\n'
     printf -- '- Preferred Categories: %s\n' "${preferred_categories}"
     printf -- '- Deferred Categories: %s\n' "${deferred_categories}"
     printf -- '- Note: %s\n' "${policy_note}"
     printf '\n## Recommended Daily Path\n'
     printf -- '- Recommendation: %s\n' "${recommended_collection_reason}"
+    printf -- '- Recent Note: %s\n' "${recent_runtime_note}"
     printf -- '- Launch Note: %s\n' "${collection_launch_note}"
     printf '\n## Category Counts\n'
     printf '%b' "${category_rows}"
@@ -340,6 +392,7 @@ touch "${library_marker}"
     printf -- '- Collection Menu Export Report: %s\n' "${collection_menu_export_report}"
     printf -- '- Daily Menu Export Report: %s\n' "${daily_menu_export_report}"
     printf -- '- Daily App Pack Report: %s\n' "${daily_app_pack_report}"
+    printf -- '- Daily Recent Sync Report: %s\n' "${daily_recent_report}"
     printf -- '- App Collections Report: %s\n' "${collections_report}"
     printf -- '- Collection Launch Report: %s\n' "${collection_launch_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"

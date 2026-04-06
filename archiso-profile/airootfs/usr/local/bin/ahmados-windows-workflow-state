@@ -52,6 +52,7 @@ daily_app_pack_report="${state_root}/windows-daily-app-pack.md"
 daily_app_picker_report="${state_root}/windows-daily-app-picker.md"
 daily_runtime_report="${state_root}/windows-daily-runtime.md"
 daily_refresh_report="${state_root}/windows-daily-refresh.md"
+daily_recent_report="${state_root}/windows-daily-recent-sync.md"
 workflow_proof_report="${state_root}/windows-workflow-proof-pass.md"
 launch_sync_report="${state_root}/windows-launch-results-sync.md"
 guest_onboarding_report="${state_root}/windows-guest-onboarding.md"
@@ -98,6 +99,7 @@ app_library_marker="${workflow_state_root}/app-library-ready.marker"
 daily_menu_export_marker="${workflow_state_root}/daily-menu-export-ready.marker"
 daily_app_pack_marker="${workflow_state_root}/daily-app-pack-ready.marker"
 daily_refresh_marker="${workflow_state_root}/daily-refresh-ready.marker"
+daily_recent_marker="${workflow_state_root}/daily-recent-ready.marker"
 workflow_proof_marker="${workflow_state_root}/workflow-proof-ready.marker"
 guest_agent_pack_marker="${workflow_state_root}/guest-agent-pack-ready.marker"
 launch_result_seen_marker="${workflow_state_root}/launch-result-seen.marker"
@@ -129,6 +131,17 @@ queue_note="$(awk -F': ' '/^- Queue Note:/ {print $2; exit}' "${launch_sync_repo
 [[ -n "${old_imported_results_archived}" ]] || old_imported_results_archived="0"
 [[ -n "${old_imported_archives_pruned}" ]] || old_imported_archives_pruned="0"
 [[ -n "${queue_note}" ]] || queue_note="No queue note captured."
+
+daily_recent_ready="$(awk -F': ' '/^- Recent App Ready:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+daily_recent_app_name="$(awk -F': ' '/^- Recent App Name:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+daily_recent_app_category="$(awk -F': ' '/^- Recent App Category:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+daily_recent_launch_outcome="$(awk -F': ' '/^- Recent Launch Outcome:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+daily_recent_launch_status="$(awk -F': ' '/^- Recent Launch Status:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+[[ -n "${daily_recent_ready}" ]] || daily_recent_ready="no"
+[[ -n "${daily_recent_app_name}" ]] || daily_recent_app_name="none"
+[[ -n "${daily_recent_app_category}" ]] || daily_recent_app_category="none"
+[[ -n "${daily_recent_launch_outcome}" ]] || daily_recent_launch_outcome="not-run"
+[[ -n "${daily_recent_launch_status}" ]] || daily_recent_launch_status="not-run"
 
 phase="bootstrap-pending"
 status="needs-bootstrap"
@@ -278,6 +291,11 @@ if [[ -f "${checklist_complete_marker}" ]]; then
     status="ready-for-next-stage"
 fi
 
+if [[ -f "${daily_recent_marker}" && "${status}" != "ready-for-next-stage" ]]; then
+    phase="daily-recent-ready"
+    status="in-progress"
+fi
+
 {
     printf '# Lumina Windows Workflow State\n\n'
     printf -- '- Generated At: %s\n' "$(date -Is)"
@@ -308,6 +326,7 @@ fi
     printf -- '- Daily Menu Export Ready: %s\n' "$([[ -f "${daily_menu_export_marker}" ]] && printf yes || printf no)"
     printf -- '- Daily App Pack Ready: %s\n' "$([[ -f "${daily_app_pack_marker}" ]] && printf yes || printf no)"
     printf -- '- Daily Refresh Ready: %s\n' "$([[ -f "${daily_refresh_marker}" ]] && printf yes || printf no)"
+    printf -- '- Daily Recent Ready: %s\n' "$([[ -f "${daily_recent_marker}" ]] && printf yes || printf no)"
     printf -- '- Workflow Proof Ready: %s\n' "$([[ -f "${workflow_proof_marker}" ]] && printf yes || printf no)"
     printf -- '- Guest Agent Pack Ready: %s\n' "$([[ -f "${guest_agent_pack_marker}" ]] && printf yes || printf no)"
     printf -- '- Guest Onboarding Ready: %s\n' "$([[ -f "${guest_onboarding_marker}" ]] && printf yes || printf no)"
@@ -330,6 +349,12 @@ fi
     printf -- '- Old Shared Results Pruned: %s\n' "${old_shared_results_pruned}"
     printf -- '- Old Imported Results Archived: %s\n' "${old_imported_results_archived}"
     printf -- '- Old Imported Archives Pruned: %s\n' "${old_imported_archives_pruned}"
+    printf '\n## Daily Recent\n'
+    printf -- '- Daily Recent Ready: %s\n' "${daily_recent_ready}"
+    printf -- '- Daily Recent App: %s\n' "${daily_recent_app_name}"
+    printf -- '- Daily Recent Category: %s\n' "${daily_recent_app_category}"
+    printf -- '- Daily Recent Launch Outcome: %s\n' "${daily_recent_launch_outcome}"
+    printf -- '- Daily Recent Launch Status: %s\n' "${daily_recent_launch_status}"
     printf '\n## State Paths\n'
     printf -- '- Workflow State Root: %s\n' "${workflow_state_root}"
     printf -- '- Notes File: %s\n' "${notes_path}"
@@ -358,6 +383,7 @@ fi
     printf -- '- Daily App Picker Report: %s\n' "${daily_app_picker_report}"
     printf -- '- Daily Runtime Report: %s\n' "${daily_runtime_report}"
     printf -- '- Daily Refresh Report: %s\n' "${daily_refresh_report}"
+    printf -- '- Daily Recent Sync Report: %s\n' "${daily_recent_report}"
     printf -- '- Workflow Proof Pass Report: %s\n' "${workflow_proof_report}"
     printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
     printf -- '- Guest Onboarding Report: %s\n' "${guest_onboarding_report}"

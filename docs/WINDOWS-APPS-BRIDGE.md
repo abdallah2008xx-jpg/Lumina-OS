@@ -107,6 +107,7 @@ The current phase adds:
 - a daily-recent fast path that remembers the last published daily Windows app and can reopen it with less decision overhead on weaker machines
 - a workflow-state integration that treats the daily-recent fast path as part of the official workflow state instead of a side shortcut only
 - an app-library integration that lets the daily-recent fast path become a first-class launch recommendation on weaker machines
+- a daily-quick-launch layer that saves the smoothest current daily entry path and reuses it directly from Lumina
 
 ## Current Limits
 
@@ -152,6 +153,7 @@ The current phase adds:
 - It now remembers the recent published daily app and can reuse that faster path on weaker machines instead of forcing a fresh app or collection choice every time.
 - It now exposes that recent daily path inside the official workflow state, so the Windows workflow can report it as a real readiness signal instead of a hidden optimization only.
 - It now lets the app library choose the recent daily path directly on weaker machines when that is the smoothest honest launch path.
+- It now gives Lumina a daily quick-launch path that can reopen the smoothest current route directly instead of re-running the full decision flow every time.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 - Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.
 

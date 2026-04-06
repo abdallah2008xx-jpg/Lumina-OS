@@ -134,6 +134,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-app-pack"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-app-picker"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-recent-sync"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-quick-launch"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-runtime"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-refresh"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
@@ -197,6 +198,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-app-pack"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-app-picker"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-recent-sync"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-quick-launch"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-runtime"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-refresh"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
@@ -505,6 +507,8 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/lumina-windows-daily-app-picker \
         /usr/local/bin/ahmados-windows-daily-recent-sync \
         /usr/local/bin/lumina-windows-daily-recent-sync \
+        /usr/local/bin/ahmados-windows-daily-quick-launch \
+        /usr/local/bin/lumina-windows-daily-quick-launch \
         /usr/local/bin/ahmados-windows-daily-runtime \
         /usr/local/bin/lumina-windows-daily-runtime \
         /usr/local/bin/ahmados-windows-daily-refresh \

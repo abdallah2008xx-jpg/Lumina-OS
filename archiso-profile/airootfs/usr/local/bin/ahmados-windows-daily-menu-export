@@ -31,6 +31,7 @@ daily_menu_export_report="${state_root}/windows-daily-menu-export.md"
 daily_surface_report="${state_root}/windows-daily-surface.md"
 app_library_report="${state_root}/windows-app-library.md"
 daily_recent_report="${state_root}/windows-daily-recent-sync.md"
+daily_quick_launch_report="${state_root}/windows-daily-quick-launch.md"
 hub_report="${state_root}/windows-workflow-hub.md"
 state_report="${state_root}/windows-workflow-state.md"
 compat_report="${state_root}/windows-compat-report.md"
@@ -49,6 +50,7 @@ IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studi
 
 /usr/local/bin/ahmados-windows-app-library --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-daily-recent-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-daily-quick-launch --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-daily-surface --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
 workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
@@ -99,6 +101,20 @@ Terminal=false
 Categories=Utility;System;
 StartupNotify=true
 Keywords=Windows;Lumina;Smart;Daily;${profile_name};
+EOF
+
+cat > "${export_dir}/lumina-windows-daily-${profile_id}-quick.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Quick ${profile_name} Windows Launch (Lumina)
+Comment=Run the fastest honest daily Windows launch path for ${profile_name}. ${comment_suffix}
+Exec=/usr/local/bin/lumina-windows-daily-quick-launch --profile-id ${profile_id} --launch
+Icon=system-run
+Terminal=false
+Categories=Utility;System;
+StartupNotify=true
+Keywords=Windows;Lumina;Quick;Daily;${profile_name};
 EOF
 
 cat > "${export_dir}/lumina-windows-daily-${profile_id}-recent.desktop" <<EOF
@@ -179,12 +195,14 @@ touch "${daily_menu_export_marker}"
     printf '\n## Exported Shortcuts\n'
     printf -- '- Daily Surface: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-surface.desktop"
     printf -- '- Smart Daily Launch: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-smart.desktop"
+    printf -- '- Quick Daily Launch: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-quick.desktop"
     printf -- '- Recent Daily App: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-recent.desktop"
     printf -- '- Best Collection Launch: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-best.desktop"
     printf -- '- Collection Chooser: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-choose.desktop"
     printf -- '- Daily App Picker: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-pick-app.desktop"
     printf '\n## Related Reports\n'
     printf -- '- Daily Surface Report: %s\n' "${daily_surface_report}"
+    printf -- '- Daily Quick Launch Report: %s\n' "${daily_quick_launch_report}"
     printf -- '- Daily Recent Sync Report: %s\n' "${daily_recent_report}"
     printf -- '- App Library Report: %s\n' "${app_library_report}"
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"

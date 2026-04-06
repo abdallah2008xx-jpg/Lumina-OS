@@ -1,0 +1,158 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+perform_launch=0
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --launch)
+            perform_launch=1
+            shift
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+quick_launch_report="${state_root}/windows-daily-quick-launch.md"
+compat_report="${state_root}/windows-compat-report.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+daily_surface_report="${state_root}/windows-daily-surface.md"
+daily_runtime_report="${state_root}/windows-daily-runtime.md"
+daily_recent_report="${state_root}/windows-daily-recent-sync.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-daily-recent-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-daily-surface --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+quick_launch_marker="${workflow_state_root}/daily-quick-launch-ready.marker"
+
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+surface_mode="$(awk -F': ' '/^- Surface Mode:/ {print $2; exit}' "${daily_surface_report}" 2>/dev/null || true)"
+recent_app_ready="$(awk -F': ' '/^- Recent App Ready:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+recent_app_name="$(awk -F': ' '/^- Recent App Name:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+workflow_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${state_report}" 2>/dev/null || true)"
+
+[[ -n "${resource_class}" ]] || resource_class="balanced"
+[[ -n "${surface_mode}" ]] || surface_mode="guided-setup"
+[[ -n "${recent_app_ready}" ]] || recent_app_ready="no"
+[[ -n "${recent_app_name}" ]] || recent_app_name="none"
+[[ -n "${workflow_status}" ]] || workflow_status="unknown"
+
+quick_mode="guided-surface"
+quick_reason="This workflow is not in daily mode yet, so Lumina should hand off to the guided surface instead of pretending daily launch is ready."
+quick_command="/usr/local/bin/lumina-windows-daily-surface --profile-id ${profile_id}"
+executed_mode="report-only"
+launch_outcome="not-run"
+launch_note="No quick launch was executed."
+
+if [[ "${surface_mode}" == "daily-launch" && "${resource_class}" == "light" && "${recent_app_ready}" == "yes" ]]; then
+    quick_mode="recent-app"
+    quick_reason="On a light machine, Lumina prefers reopening the recent published daily app to minimize overhead and keep the path smooth."
+    quick_command="/usr/local/bin/lumina-windows-daily-recent-sync --profile-id ${profile_id} --launch-recent"
+elif [[ "${surface_mode}" == "daily-launch" ]]; then
+    quick_mode="smart-runtime"
+    quick_reason="This workflow is mature enough for the smart daily runtime to choose the smoothest current launch path."
+    quick_command="/usr/local/bin/lumina-windows-daily-runtime --profile-id ${profile_id}"
+fi
+
+if [[ ${perform_launch} -eq 1 ]]; then
+    case "${quick_mode}" in
+        recent-app)
+            /usr/local/bin/ahmados-windows-daily-recent-sync --profile-id "${profile_id}" --launch-recent --no-open >/dev/null 2>&1 || true
+            executed_mode="recent-app"
+            launch_outcome="$(awk -F': ' '/^- Recent Launch Outcome:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+            launch_note="$(awk 'found && /^- / {sub(/^- /,""); print; exit} /^## Recent Note/ {found=1}' "${daily_recent_report}" 2>/dev/null || true)"
+            ;;
+        smart-runtime)
+            /usr/local/bin/ahmados-windows-daily-runtime --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+            executed_mode="smart-runtime"
+            launch_outcome="$(awk -F': ' '/^- Runtime Outcome:/ {print $2; exit}' "${daily_runtime_report}" 2>/dev/null || true)"
+            launch_note="$(awk 'found && /^- / {sub(/^- /,""); print; exit} /^## Runtime Note/ {found=1}' "${daily_runtime_report}" 2>/dev/null || true)"
+            ;;
+        *)
+            /usr/local/bin/ahmados-windows-daily-surface --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+            executed_mode="guided-surface"
+            launch_outcome="$(awk -F': ' '/^- Selected Action Outcome:/ {print $2; exit}' "${daily_surface_report}" 2>/dev/null || true)"
+            launch_note="$(awk 'found && /^- / {sub(/^- /,""); print; exit} /^## Surface Summary/ {found=1}' "${daily_surface_report}" 2>/dev/null || true)"
+            ;;
+    esac
+    [[ -n "${launch_outcome}" ]] || launch_outcome="unknown"
+    [[ -n "${launch_note}" ]] || launch_note="No quick launch note was captured."
+fi
+
+touch "${quick_launch_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows Daily Quick Launch\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Workflow Status: %s\n' "${workflow_status}"
+    printf -- '- Surface Mode: %s\n' "${surface_mode}"
+    printf -- '- Recent App Ready: %s\n' "${recent_app_ready}"
+    printf -- '- Recent App Name: %s\n' "${recent_app_name}"
+    printf -- '- Quick Launch Mode: %s\n' "${quick_mode}"
+    printf -- '- Quick Launch Command: %s\n' "${quick_command}"
+    printf -- '- Quick Launch Marker: %s\n' "${quick_launch_marker}"
+    printf -- '- Executed Mode: %s\n' "${executed_mode}"
+    printf -- '- Launch Outcome: %s\n' "${launch_outcome}"
+    printf '\n## Quick Launch Note\n'
+    printf -- '- %s\n' "${quick_reason}"
+    printf -- '- %s\n' "${launch_note}"
+    printf '\n## Related Reports\n'
+    printf -- '- Windows Compatibility Report: %s\n' "${compat_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+    printf -- '- Daily Surface Report: %s\n' "${daily_surface_report}"
+    printf -- '- Daily Runtime Report: %s\n' "${daily_runtime_report}"
+    printf -- '- Daily Recent Sync Report: %s\n' "${daily_recent_report}"
+} > "${quick_launch_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '   Lumina Windows Daily Quick Launch'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Quick mode: %s\n' "${quick_mode}"
+printf 'Launch outcome: %s\n' "${launch_outcome}"
+printf 'Report: %s\n' "${quick_launch_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${quick_launch_report}" >/dev/null 2>&1 || true
+fi

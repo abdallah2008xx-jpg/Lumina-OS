@@ -92,14 +92,21 @@ $template = @'
 - use one shared evidence pack from validation through RC gating
 - reduce path drift between `login-test`, `install`, `hardware`, and release prep
 
-## Step 1: Audit Release Evidence
+## Step 1: Sync Evidence Pack
+Refresh the shared evidence snapshot after any report update:
+
+```powershell
+.\scripts\sync-release-evidence-pack.ps1 -EvidencePackPath "__EVIDENCE_PACK__" -ReleaseVersion "__RELEASE_VERSION__"
+```
+
+## Step 2: Audit Release Evidence
 Soft + strict evidence view from the same pack:
 
 ```powershell
 .\scripts\audit-release-evidence.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel "__RUN_LABEL__" -EvidencePackPath "__EVIDENCE_PACK__"
 ```
 
-## Step 2: Prepare Release Candidate
+## Step 3: Prepare Release Candidate
 Standard candidate pass from the same pack:
 
 ```powershell
@@ -112,14 +119,14 @@ Strict candidate pass when the evidence must stay exact:
 .\scripts\prepare-release-candidate.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel "__RUN_LABEL__" -IsoPath "__ISO_PATH__" -EvidencePackPath "__EVIDENCE_PACK__" -RequireExactEvidenceRunLabel
 ```
 
-## Step 3: Audit Release Readiness
+## Step 4: Audit Release Readiness
 Go/no-go summary from the same pack:
 
 ```powershell
 .\scripts\audit-release-readiness.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel "__RUN_LABEL__" -IsoPath "__ISO_PATH__" -EvidencePackPath "__EVIDENCE_PACK__"
 ```
 
-## Step 4: Validate GitHub Release Context
+## Step 5: Validate GitHub Release Context
 Use this after the candidate is ready:
 
 ```powershell

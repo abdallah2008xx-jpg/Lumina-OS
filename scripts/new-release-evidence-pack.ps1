@@ -38,8 +38,9 @@ $installScript = Join-Path $PSScriptRoot "new-install-test-report.ps1"
 $loginTestScript = Join-Path $PSScriptRoot "new-login-test-report.ps1"
 $hardwareScript = Join-Path $PSScriptRoot "new-hardware-test-report.ps1"
 $runbookScript = Join-Path $PSScriptRoot "new-release-evidence-runbook.ps1"
+$syncScript = Join-Path $PSScriptRoot "sync-release-evidence-pack.ps1"
 
-foreach ($requiredScript in @($installScript, $loginTestScript, $hardwareScript, $runbookScript)) {
+foreach ($requiredScript in @($installScript, $loginTestScript, $hardwareScript, $runbookScript, $syncScript)) {
     if (-not (Test-Path $requiredScript)) {
         throw "Missing helper script: $requiredScript"
     }
@@ -109,6 +110,12 @@ $content = @"
 Set-Content -Path $reportPath -Value $content -Encoding UTF8
 
 $runbookPath = & $runbookScript `
+    -EvidencePackPath $reportPath `
+    -ReleaseVersion $ReleaseVersion `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
+
+$reportPath = & $syncScript `
     -EvidencePackPath $reportPath `
     -ReleaseVersion $ReleaseVersion `
     -RepoRoot $RepoRoot `

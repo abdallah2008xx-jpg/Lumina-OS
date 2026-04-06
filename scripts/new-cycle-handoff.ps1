@@ -210,6 +210,9 @@ Optional but recommended before release prep:
     .\scripts\new-release-evidence-pack.ps1 -Mode __MODE__ -VmType __VM_TYPE__ -Firmware __FIRMWARE__ -RunLabel __RUN_LABEL__ -ReleaseVersion "__RELEASE_VERSION__"
 
 This will generate a shared evidence pack and a ready-to-run `release-evidence-runbook-*.md` under `status/evidence-packs/`.
+After you update any of the linked reports, refresh the pack state:
+
+    .\scripts\sync-release-evidence-pack.ps1 -EvidencePackPath "C:\Path\To\release-evidence-pack-__RUN_LABEL__.md" -ReleaseVersion "__RELEASE_VERSION__"
 
 ## Step 8: Audit Release Evidence
 __RELEASE_GUARD__

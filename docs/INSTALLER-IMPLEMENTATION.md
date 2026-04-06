@@ -13,10 +13,12 @@
 - Before `archinstall` opens, the launcher now checks that the network is ready and performs a package-database sync preflight.
 - The launcher now also initializes and populates the `pacman-key` keyring automatically if the live session keyring is missing or unreadable.
 - If the sync fails, the launcher stops early and shows a clearer connectivity error instead of dropping the user into a partial installer failure.
+- The launcher now writes a live-session preflight report under `~/.local/state/ahmados/lumina-installer-preflight.md` so installer verification has a concrete handoff even before the target boots.
 - The live image now ships a small active `mirrorlist` override so the installer is not blocked by a fully commented default mirror list.
 - The launcher now tells the user to choose `Exit archinstall` after installation, not `Reboot system`, so Lumina-OS can finalize the target automatically.
 - A new `lumina-finalize-install` pass now installs the expected Plasma/SDDM baseline into the target, enables the graphical services, copies Lumina-specific assets into the installed system, and applies defaults to `/etc/skel` plus any created users.
 - The finalize pass now refreshes `/etc/.updated` and `/var/.updated` inside the target and queues a one-shot `ahmados-update-markers.service` pass for first boot, so Lumina-OS avoids long `ConditionNeedsUpdate` work such as `ldconfig.service` after `machine-id` and similar early writes land.
+- The finalize pass now writes a clearer target-side report under `/root/lumina-install-finalize-report.md`, and the live session exposes a `Lumina-OS Install Finalize Report` launcher for recovery and verification.
 - A recovery launcher named `Finalize Installed Lumina-OS` is also available from the live session if the user already rebooted before the finalize step.
 - The live user already has passwordless sudo through the existing live-session setup.
 - Installer logs are written by `archinstall` under `/var/log/archinstall`.

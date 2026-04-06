@@ -262,6 +262,7 @@ report_path="${target_root}/root/lumina-install-finalize-report.md"
 cat > "${report_path}" <<EOF
 # Lumina-OS Install Finalize Report
 
+- Generated At: $(date -Is)
 - Target root: ${target_root}
 - Graphical packages: installed
 - Services enabled: NetworkManager, sddm
@@ -271,6 +272,11 @@ cat > "${report_path}" <<EOF
 - Update markers refreshed: yes
 - Custom Lumina assets: copied
 - User defaults: applied to /etc/skel and existing users
+
+## Next Steps
+- Detach the live ISO before the first boot if your VM keeps preferring the virtual DVD drive.
+- Boot from the installed disk and confirm the system reaches the graphical login or Plasma path.
+- If you need to inspect this report from the live session, open `Lumina-OS Install Finalize Report`.
 EOF
 
 printf '\n'

@@ -72,6 +72,8 @@ $content = @"
 - [ ] Base package installation completes
 - [ ] Bootloader installation completes
 - [ ] Installer reaches a clean completion message
+- [ ] Live preflight report is captured
+- [ ] Finalize report is written to the installed target
 
 ## First Boot After Install
 - [ ] VM reboots from the installed disk instead of the ISO

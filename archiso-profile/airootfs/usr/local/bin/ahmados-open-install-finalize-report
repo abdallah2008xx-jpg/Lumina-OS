@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+target_root=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --target-root)
+            target_root="${2:-}"
+            shift 2
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+if [[ -z "${target_root}" ]]; then
+    for candidate in /mnt /mnt/archinstall; do
+        if [[ -f "${candidate}/root/lumina-install-finalize-report.md" ]]; then
+            target_root="${candidate}"
+            break
+        fi
+    done
+fi
+
+if [[ -z "${target_root}" ]]; then
+    printf '%s\n' 'No finalized Lumina-OS installation report was found under /mnt or /mnt/archinstall.' >&2
+    exit 1
+fi
+
+report_file="${target_root}/root/lumina-install-finalize-report.md"
+report_dir="$(dirname "${report_file}")"
+
+if [[ -f "${report_file}" ]]; then
+    if command -v dolphin >/dev/null 2>&1; then
+        dolphin "${report_file}" >/dev/null 2>&1 &
+        exit 0
+    fi
+
+    if command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "${report_file}" >/dev/null 2>&1 &
+        exit 0
+    fi
+fi
+
+if command -v dolphin >/dev/null 2>&1; then
+    dolphin "${report_dir}" >/dev/null 2>&1 &
+    exit 0
+fi
+
+if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${report_dir}" >/dev/null 2>&1 &
+    exit 0
+fi
+
+printf '%s\n' 'Unable to open the Lumina-OS install finalize report automatically.' >&2
+exit 1

@@ -125,6 +125,8 @@ chmod 755 /usr/local/bin/ahmados-windows-daily-home
 chmod 755 /usr/local/bin/lumina-windows-daily-home
 chmod 755 /usr/local/bin/ahmados-windows-daily-home-refresh
 chmod 755 /usr/local/bin/lumina-windows-daily-home-refresh
+chmod 755 /usr/local/bin/ahmados-open-install-finalize-report
+chmod 755 /usr/local/bin/lumina-open-install-finalize-report
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

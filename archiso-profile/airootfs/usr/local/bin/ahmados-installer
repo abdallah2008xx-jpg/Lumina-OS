@@ -13,6 +13,33 @@ wait_for_enter() {
     read -r -p "Press Enter to close this window..." _
 }
 
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+mkdir -p "${state_root}"
+preflight_report="${state_root}/lumina-installer-preflight.md"
+network_status="not-checked"
+keyring_status="not-checked"
+package_db_status="not-checked"
+finalize_status="not-run"
+finalize_report_path="not-created-yet"
+
+write_preflight_report() {
+    cat > "${preflight_report}" <<PREFLIGHT_EOF
+# Lumina-OS Installer Preflight
+
+- Generated At: $(date -Is)
+- Network Status: ${network_status}
+- Keyring Status: ${keyring_status}
+- Package Database Status: ${package_db_status}
+- Finalize Status: ${finalize_status}
+- Finalize Report Path: ${finalize_report_path}
+
+## Notes
+- This report is written by the live-session installer launcher before and after archinstall.
+- If installation succeeds, choose "Exit archinstall" so Lumina-OS can finalize the installed system automatically.
+- If you reboot too early, boot the live ISO again and run "Finalize Installed Lumina-OS".
+PREFLIGHT_EOF
+}
+
 clear
 printf '%s\n' '========================================'
 printf '%s\n' '        Install Lumina-OS'
@@ -30,11 +57,16 @@ printf '\n'
 printf '%s\n' 'Important: when archinstall completes, choose "Exit archinstall".'
 printf '%s\n' 'Lumina-OS will then finalize the installed system automatically.'
 printf '%s\n' 'If you reboot directly from archinstall, boot the live ISO again and run "Finalize Installed Lumina-OS".'
+printf '%s\n' "A live preflight report will be written to: ${preflight_report}"
 printf '\n'
+
+write_preflight_report
 
 if command -v nm-online >/dev/null 2>&1; then
     printf '%s\n' 'Checking network readiness...'
     if ! nm-online -q --timeout=20; then
+        network_status="not-ready"
+        write_preflight_report
         printf '\n'
         printf '%s\n' 'Network is not ready yet.'
         printf '%s\n' 'Connect the VM or device to the internet, then retry the installer.'
@@ -42,6 +74,8 @@ if command -v nm-online >/dev/null 2>&1; then
         wait_for_enter
         exit 1
     fi
+    network_status="ready"
+    write_preflight_report
     printf '%s\n' 'Network looks ready.'
     printf '\n'
 fi
@@ -50,6 +84,8 @@ printf '%s\n' 'Checking pacman keyring readiness...'
 if ! sudo pacman-key --list-keys >/tmp/lumina-installer-keyring-check.log 2>&1; then
     printf '%s\n' 'Pacman keyring is not ready yet. Initializing it now...'
     if ! sudo pacman-key --init >/tmp/lumina-installer-keyring-init.log 2>&1; then
+        keyring_status="init-failed"
+        write_preflight_report
         printf '\n'
         printf '%s\n' 'Failed to initialize the pacman keyring.'
         printf '%s\n' 'Inspect: /tmp/lumina-installer-keyring-init.log'
@@ -60,6 +96,8 @@ if ! sudo pacman-key --list-keys >/tmp/lumina-installer-keyring-check.log 2>&1; 
     fi
 
     if ! sudo pacman-key --populate archlinux >/tmp/lumina-installer-keyring-populate.log 2>&1; then
+        keyring_status="populate-failed"
+        write_preflight_report
         printf '\n'
         printf '%s\n' 'Failed to populate the Arch Linux pacman keyring.'
         printf '%s\n' 'Inspect: /tmp/lumina-installer-keyring-populate.log'
@@ -68,13 +106,19 @@ if ! sudo pacman-key --list-keys >/tmp/lumina-installer-keyring-check.log 2>&1; 
         wait_for_enter
         exit 1
     fi
+    keyring_status="initialized"
+else
+    keyring_status="ready"
 fi
 
 printf '%s\n' 'Pacman keyring looks ready.'
 printf '\n'
+write_preflight_report
 
 printf '%s\n' 'Refreshing the Arch package database before opening the installer...'
 if ! sudo pacman -Sy --noconfirm > /tmp/lumina-installer-pacman.log 2>&1; then
+    package_db_status="sync-failed"
+    write_preflight_report
     printf '\n'
     printf '%s\n' 'Failed to sync the Arch Linux package database.'
     printf '%s\n' 'This usually means the live session has no internet access yet or the mirror request failed.'
@@ -85,6 +129,8 @@ if ! sudo pacman -Sy --noconfirm > /tmp/lumina-installer-pacman.log 2>&1; then
     exit 1
 fi
 
+package_db_status="ready"
+write_preflight_report
 printf '%s\n' 'Package database refreshed successfully.'
 printf '\n'
 
@@ -105,6 +151,9 @@ if [[ "${archinstall_status}" -eq 0 && -n "${finalize_target}" ]]; then
     printf '\n'
     printf '%s\n' 'Finalizing the installed Lumina-OS system...'
     if ! sudo /usr/local/bin/lumina-finalize-install > /tmp/lumina-installer-finalize.log 2>&1; then
+        finalize_status="failed"
+        finalize_report_path="${finalize_target}/root/lumina-install-finalize-report.md"
+        write_preflight_report
         printf '\n'
         printf '%s\n' 'Lumina-OS could not finish the post-install finalize step automatically.'
         printf '%s\n' 'Inspect: /tmp/lumina-installer-finalize.log'
@@ -115,18 +164,30 @@ if [[ "${archinstall_status}" -eq 0 && -n "${finalize_target}" ]]; then
         exit 1
     fi
 
+    finalize_status="completed"
+    finalize_report_path="${finalize_target}/root/lumina-install-finalize-report.md"
+    write_preflight_report
     printf '\n'
     printf '%s\n' 'Lumina-OS finalize completed.'
+    printf '%s\n' "Finalize report: ${finalize_report_path}"
     printf '%s\n' 'You can now reboot into the installed system.'
     wait_for_enter
     exit 0
 fi
 
 if [[ -n "${finalize_target}" ]]; then
+    finalize_status="detected-but-not-run"
+    finalize_report_path="${finalize_target}/root/lumina-install-finalize-report.md"
+    write_preflight_report
     printf '\n'
     printf '%s\n' 'An installed target was detected, but the automatic Lumina finalize step did not run.'
     printf '%s\n' 'From the live session, run "Finalize Installed Lumina-OS" and then reboot.'
     wait_for_enter
+fi
+
+if [[ "${archinstall_status}" -ne 0 ]]; then
+    finalize_status="skipped"
+    write_preflight_report
 fi
 
 exit "${archinstall_status}"

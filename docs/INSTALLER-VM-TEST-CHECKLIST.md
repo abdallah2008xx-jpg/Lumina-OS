@@ -36,6 +36,8 @@ Use this checklist when validating the first full installation path, not just th
 5. Confirm package installation completes without fatal errors.
 6. Confirm bootloader installation completes.
 7. Confirm `archinstall` exits with a clear success state.
+8. Confirm the live preflight report exists under `~/.local/state/ahmados/lumina-installer-preflight.md`.
+9. Confirm the finalize report exists under `/root/lumina-install-finalize-report.md` in the installed target after finalize.
 
 ## Post-Install Boot
 1. Power off or reboot as instructed by the installer.

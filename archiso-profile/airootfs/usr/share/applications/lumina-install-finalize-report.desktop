@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Lumina-OS Install Finalize Report
+Comment=Open the Lumina-OS post-install finalize report
+Exec=/usr/local/bin/lumina-open-install-finalize-report
+Icon=documentinfo
+Terminal=false
+Categories=Qt;KDE;System;Utility;
+StartupNotify=true

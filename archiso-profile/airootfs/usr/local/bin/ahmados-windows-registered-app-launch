@@ -43,6 +43,7 @@ profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
 launch_report="${state_root}/windows-registered-app-launch.md"
 warm_start_report="${state_root}/windows-vm-warm-start.md"
 launch_sync_report="${state_root}/windows-launch-results-sync.md"
+compat_report="${state_root}/windows-compat-report.md"
 
 selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
 if [[ -z "${selected_row}" ]]; then
@@ -94,11 +95,30 @@ if [[ -z "${launch_target}" || "${launch_target}" == "<fill after install>" ]]; 
     launch_target=""
 fi
 
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+resource_summary="$(awk -F': ' '/^- Resource Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+[[ -n "${resource_class}" ]] || resource_class="balanced"
+[[ -n "${resource_summary}" ]] || resource_summary="No host resource summary captured."
+
+app_weight_class="light"
+case "${app_category}" in
+    "Creator Apps"|"Audio and Studio"|"Gaming and Launchers")
+        app_weight_class="heavy"
+        ;;
+esac
+
 launch_outcome="needs-manifest-target"
 launch_note="The app manifest still needs the real Windows launch target."
 pending_requests="0"
 guest_launch_status="not-run"
 guest_launch_message="The app launch request was not sent."
+warm_start_status="not-run"
+pressure_state="unknown"
+workflow_guard="unknown"
+launch_queue_health="unknown"
+queue_note="No queue note captured."
+launch_policy="ready"
+session_phase="preflight"
 
 share_launch_root="${share_path}/launch-broker"
 share_launch_requests_dir="${share_launch_root}/requests"
@@ -109,12 +129,20 @@ share_request_env_path="${share_launch_requests_dir}/request-${request_id}.env"
 if [[ ! -f "${vm_created_marker}" ]]; then
     launch_outcome="vm-missing"
     launch_note="The Windows VM still needs to be created before registered apps can launch."
+    session_phase="vm-missing"
 elif [[ ! -f "${vm_configured_marker}" ]]; then
     launch_outcome="vm-needs-config"
     launch_note="The Windows VM exists, but the post-create configuration step is not complete yet."
+    session_phase="vm-needs-config"
 elif [[ -z "${launch_target}" ]]; then
     launch_outcome="manifest-missing-target"
     launch_note="Fill the real Windows launch target inside the app manifest before using this app launcher."
+    session_phase="manifest-needs-target"
+elif [[ "${resource_class}" == "light" && "${app_weight_class}" == "heavy" && "${registration_state}" != "published" ]]; then
+    launch_outcome="deferred-heavy-app-review"
+    launch_note="This is a heavier Windows app on a light machine, and its launch target is not published yet. Lumina is keeping the flow honest and asking for library review first."
+    launch_policy="review-heavy-app-on-light"
+    session_phase="deferred-preflight"
 else
     {
         printf 'LUMINA_WINDOWS_PROFILE_ID=%q\n' "${profile_id}"
@@ -129,18 +157,38 @@ else
     } > "${share_request_env_path}"
 
     /usr/local/bin/ahmados-windows-vm-warm-start --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+    warm_start_status="$(awk -F': ' '/^- Warm Start Status:/ {print $2; exit}' "${warm_start_report}" 2>/dev/null || true)"
+    pressure_state="$(awk -F': ' '/^- Pressure State:/ {print $2; exit}' "${warm_start_report}" 2>/dev/null || true)"
+    workflow_guard="$(awk -F': ' '/^- Workflow Guard:/ {print $2; exit}' "${warm_start_report}" 2>/dev/null || true)"
     /usr/local/bin/ahmados-windows-launch-results-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
     pending_requests="$(awk -F': ' '/^- Pending Requests:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
     guest_launch_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
     guest_launch_message="$(awk -F': ' '/^- Message:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+    launch_queue_health="$(awk -F': ' '/^- Launch Queue Health:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+    queue_note="$(awk -F': ' '/^- Queue Note:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+    [[ -n "${warm_start_status}" ]] || warm_start_status="unknown"
+    [[ -n "${pressure_state}" ]] || pressure_state="unknown"
+    [[ -n "${workflow_guard}" ]] || workflow_guard="unknown"
+    [[ -n "${launch_queue_health}" ]] || launch_queue_health="unknown"
+    [[ -n "${queue_note}" ]] || queue_note="No queue note captured."
+    session_phase="staged-sync"
 
-    if [[ "${pending_requests:-0}" != "0" && ( -z "${guest_launch_status}" || "${guest_launch_status}" == "none" ) ]]; then
+    if [[ "${warm_start_status}" == "deferred-single-workflow" ]]; then
+        launch_outcome="deferred-for-smoothness"
+        launch_note="Lumina kept the current lightweight workflow stable and refused to warm a second Windows workspace for this app right now."
+        launch_policy="defer-heavy-runtime"
+        guest_launch_status="deferred"
+        guest_launch_message="Warm start was deferred to protect a weak machine from multiple Windows workflows."
+        session_phase="deferred-runtime"
+    elif [[ "${pending_requests:-0}" != "0" && ( -z "${guest_launch_status}" || "${guest_launch_status}" == "none" ) ]]; then
         launch_outcome="waiting-for-guest-agent"
         launch_note="The registered app request is queued, but the Windows guest still needs to consume it."
+        launch_policy="await-guest-agent"
     else
         launch_outcome="registered-launch-staged"
         launch_note="Lumina sent a named registered-app request and synced back the latest guest-side launch feedback."
+        launch_policy="staged-and-synced"
     fi
 fi
 
@@ -151,17 +199,30 @@ fi
     printf -- '- Profile Id: %s\n' "${profile_id}"
     printf -- '- App Id: %s\n' "${app_id}"
     printf -- '- App Name: %s\n' "${app_name}"
+    printf -- '- App Category: %s\n' "${app_category}"
+    printf -- '- App Weight Class: %s\n' "${app_weight_class}"
     printf -- '- Registration State: %s\n' "${registration_state}"
     printf -- '- Manifest Path: %s\n' "${manifest_path}"
     printf -- '- Windows Launch Target: %s\n' "${launch_target:-missing}"
     printf -- '- VM Name: %s\n' "${vm_name}"
+    printf -- '- Session Phase: %s\n' "${session_phase}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Resource Summary: %s\n' "${resource_summary}"
+    printf -- '- Launch Policy: %s\n' "${launch_policy}"
+    printf -- '- Warm Start Status: %s\n' "${warm_start_status}"
+    printf -- '- Pressure State: %s\n' "${pressure_state}"
+    printf -- '- Workflow Guard: %s\n' "${workflow_guard}"
+    printf -- '- Launch Queue Health: %s\n' "${launch_queue_health}"
     printf -- '- Launch Outcome: %s\n' "${launch_outcome}"
     printf -- '- Pending Requests: %s\n' "${pending_requests:-unknown}"
     printf -- '- Guest Launch Status: %s\n' "${guest_launch_status:-unknown}"
     printf -- '- Guest Launch Message: %s\n' "${guest_launch_message:-unknown}"
     printf '\n## Launch Note\n'
     printf -- '- %s\n' "${launch_note}"
+    printf '\n## Queue Note\n'
+    printf -- '- %s\n' "${queue_note}"
     printf '\n## Related Reports\n'
+    printf -- '- Windows Compatibility Report: %s\n' "${compat_report}"
     printf -- '- VM Warm Start Report: %s\n' "${warm_start_report}"
     printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
 } > "${launch_report}"
@@ -173,6 +234,12 @@ if command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}
             ;;
         waiting-for-guest-agent)
             kdialog --title "Lumina Windows Apps" --passivepopup "Registered app queued. Finish the guest-agent setup once to make this hands-free." 4 2>/dev/null || true
+            ;;
+        deferred-for-smoothness)
+            kdialog --title "Lumina Windows Apps" --passivepopup "Lumina deferred ${app_name} so a weak machine stays smooth." 4 2>/dev/null || true
+            ;;
+        deferred-heavy-app-review)
+            kdialog --title "Lumina Windows Apps" --passivepopup "Lumina wants a library review before launching this heavier app on a weak machine." 4 2>/dev/null || true
             ;;
     esac
 fi

@@ -93,6 +93,7 @@ The current phase adds:
 - a lightweight broker policy that can defer an auto-guessed heavy Windows workflow on weak hardware instead of auto-starting background load blindly
 - a pressure-aware guidance layer so the workflow hub and next-action surfaces can recommend cooldown or Linux-first validation on weak machines
 - a launch-queue cleanup layer that moves stale staged requests out of the active queue and prunes old launch-result artifacts automatically
+- a pressure-aware registered-app runtime layer that can defer heavier named app launches on weak machines until the Windows path is ready enough to stay smooth
 
 ## Current Limits
 
@@ -124,6 +125,7 @@ The current phase adds:
 - It now lets the EXE broker pause and redirect an auto-guessed heavy workflow on weak hardware so the default click path stays honest and smoother.
 - It now lets the main workflow guidance surfaces recommend cooldown or Linux-first validation when a weak machine is already under Windows-workflow pressure.
 - It now trims stale launch requests and old result artifacts automatically so weak machines do not keep carrying dead Windows launch pressure forever.
+- It now lets named registered-app launches read category weight, resource class, queue pressure, and guest readiness before pretending a Windows app should just start immediately.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 - Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.
 

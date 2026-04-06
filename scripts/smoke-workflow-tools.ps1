@@ -85,6 +85,7 @@ $githubArtifactCycleFinishScript = Join-Path $PSScriptRoot "finish-github-action
 $prepareReleasePackageScript = Join-Path $PSScriptRoot "prepare-release-package.ps1"
 $releaseEvidenceAuditScript = Join-Path $PSScriptRoot "audit-release-evidence.ps1"
 $releaseReadinessAuditScript = Join-Path $PSScriptRoot "audit-release-readiness.ps1"
+$syncReleaseReadinessStatusScript = Join-Path $PSScriptRoot "sync-release-readiness-status.ps1"
 $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
 $releaseCandidateScript = Join-Path $PSScriptRoot "prepare-release-candidate.ps1"
 $syncReleaseCandidateScript = Join-Path $PSScriptRoot "sync-release-candidate-status.ps1"
@@ -171,6 +172,10 @@ if (-not (Test-Path $releaseEvidenceAuditScript)) {
 
 if (-not (Test-Path $releaseReadinessAuditScript)) {
     throw "Missing smoke-test target: $releaseReadinessAuditScript"
+}
+
+if (-not (Test-Path $syncReleaseReadinessStatusScript)) {
+    throw "Missing smoke-test target: $syncReleaseReadinessStatusScript"
 }
 
 if (-not (Test-Path $cycleChainAuditScript)) {
@@ -594,6 +599,12 @@ try {
     Assert-Condition -Condition ($releaseReadinessAuditContent -match [regex]::Escape("- Evidence Pack: $releaseEvidencePackPath")) -Message "Release readiness audit did not record the evidence pack path."
     Assert-Condition -Condition ($releaseReadinessAuditContent -match [regex]::Escape("- Soft Gate State: passed")) -Message "Release readiness audit did not record the soft gate state."
     Assert-Condition -Condition ($releaseReadinessAuditContent -match [regex]::Escape("- Strict Gate State: passed")) -Message "Release readiness audit did not record the strict gate state."
+    $currentReleaseReadinessPath = Join-Path $tempRoot "status\\releases\\CURRENT-RELEASE-READINESS.md"
+    Assert-Condition -Condition (Test-Path $currentReleaseReadinessPath) -Message "Current release readiness summary was not created."
+    $currentReleaseReadinessContent = Get-Content -Raw $currentReleaseReadinessPath
+    Assert-Condition -Condition ($currentReleaseReadinessContent -match [regex]::Escape("- Overall Readiness: ready-to-publish")) -Message "Current release readiness summary did not record the expected readiness state."
+    Assert-Condition -Condition ($currentReleaseReadinessContent -match [regex]::Escape("- Release Readiness Audit: $releaseReadinessAuditPath")) -Message "Current release readiness summary did not point to the latest readiness audit."
+    Assert-Condition -Condition ($currentReleaseReadinessContent -match [regex]::Escape("- Evidence Pack: $releaseEvidencePackPath")) -Message "Current release readiness summary did not record the evidence-pack path."
 
     $releaseManifestPath = Get-MetadataValue -Content $candidateContent -Label "Release Manifest"
     $validationReportPath = Get-MetadataValue -Content $candidateContent -Label "Validation Report"

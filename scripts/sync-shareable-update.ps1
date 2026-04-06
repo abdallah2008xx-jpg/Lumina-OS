@@ -185,8 +185,14 @@ else {
 }
 
 $resolvedReleaseReadinessAuditPath = if ([string]::IsNullOrWhiteSpace($ReleaseReadinessAuditPath)) {
-    $latestReadinessAudit = Get-LatestFile -Path (Join-Path $RepoRoot "status\releases") -Filter "release-readiness-audit.md"
-    if ($latestReadinessAudit) { $latestReadinessAudit.FullName } else { "" }
+    $currentReadinessPath = Join-Path $RepoRoot "status\releases\CURRENT-RELEASE-READINESS.md"
+    if (Test-Path $currentReadinessPath) {
+        $currentReadinessPath
+    }
+    else {
+        $latestReadinessAudit = Get-LatestFile -Path (Join-Path $RepoRoot "status\releases") -Filter "release-readiness-audit.md"
+        if ($latestReadinessAudit) { $latestReadinessAudit.FullName } else { "" }
+    }
 }
 else {
     $ReleaseReadinessAuditPath

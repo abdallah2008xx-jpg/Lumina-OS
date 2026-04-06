@@ -88,6 +88,11 @@ if (-not (Test-Path $releaseEvidenceAuditScript)) {
     throw "Missing helper: $releaseEvidenceAuditScript"
 }
 
+$readinessStatusScript = Join-Path $PSScriptRoot "sync-release-readiness-status.ps1"
+if (-not (Test-Path $readinessStatusScript)) {
+    throw "Missing helper: $readinessStatusScript"
+}
+
 $resolvedReadinessPath = if ([string]::IsNullOrWhiteSpace($ReadinessPath)) {
     Join-Path $RepoRoot "status\readiness\CURRENT-READINESS.md"
 }
@@ -265,6 +270,11 @@ $(Format-Items -Items $nextItems)
 "@
 
 Set-Content -Path $readinessAuditPath -Value $reportContent -Encoding UTF8
+
+$null = & $readinessStatusScript `
+    -ReleaseReadinessAuditPath $readinessAuditPath `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
 
 if ($OutputPathOnly) {
     Write-Output $readinessAuditPath

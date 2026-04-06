@@ -38,6 +38,8 @@ hub_report="${state_root}/windows-workflow-hub.md"
 daily_surface_report="${state_root}/windows-daily-surface.md"
 daily_runtime_report="${state_root}/windows-daily-runtime.md"
 daily_recent_report="${state_root}/windows-daily-recent-sync.md"
+launch_sync_report="${state_root}/windows-launch-results-sync.md"
+vm_warm_start_report="${state_root}/windows-vm-warm-start.md"
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="adobe-creator"
@@ -64,12 +66,22 @@ surface_mode="$(awk -F': ' '/^- Surface Mode:/ {print $2; exit}' "${daily_surfac
 recent_app_ready="$(awk -F': ' '/^- Recent App Ready:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
 recent_app_name="$(awk -F': ' '/^- Recent App Name:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
 workflow_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${state_report}" 2>/dev/null || true)"
+launch_queue_health="$(awk -F': ' '/^- Launch Queue Health:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+pending_requests="$(awk -F': ' '/^- Pending Requests:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+queue_note="$(awk -F': ' '/^- Queue Note:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+pressure_state="$(awk -F': ' '/^- Pressure State:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
+workflow_guard="$(awk -F': ' '/^- Workflow Guard:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
 
 [[ -n "${resource_class}" ]] || resource_class="balanced"
 [[ -n "${surface_mode}" ]] || surface_mode="guided-setup"
 [[ -n "${recent_app_ready}" ]] || recent_app_ready="no"
 [[ -n "${recent_app_name}" ]] || recent_app_name="none"
 [[ -n "${workflow_status}" ]] || workflow_status="unknown"
+[[ -n "${launch_queue_health}" ]] || launch_queue_health="unknown"
+[[ -n "${pending_requests}" ]] || pending_requests="0"
+[[ -n "${queue_note}" ]] || queue_note="No queue note captured."
+[[ -n "${pressure_state}" ]] || pressure_state="unknown"
+[[ -n "${workflow_guard}" ]] || workflow_guard="unknown"
 
 quick_mode="guided-surface"
 quick_reason="This workflow is not in daily mode yet, so Lumina should hand off to the guided surface instead of pretending daily launch is ready."
@@ -78,7 +90,15 @@ executed_mode="report-only"
 launch_outcome="not-run"
 launch_note="No quick launch was executed."
 
-if [[ "${surface_mode}" == "daily-launch" && "${resource_class}" == "light" && "${recent_app_ready}" == "yes" ]]; then
+if [[ "${launch_queue_health}" == "pressure" ]]; then
+    quick_mode="queue-sync"
+    quick_reason="Lumina detected launch-queue pressure, so the smoothest honest quick path is to sync and shrink the queue before trying another Windows app launch."
+    quick_command="/usr/local/bin/lumina-windows-launch-results-sync --profile-id ${profile_id}"
+elif [[ "${resource_class}" == "light" && "${launch_queue_health}" == "awaiting-guest" && "${pending_requests}" != "0" ]]; then
+    quick_mode="awaiting-guest-sync"
+    quick_reason="A previous Windows launch is still waiting on the guest agent, so on this light machine Lumina syncs first instead of stacking a new request."
+    quick_command="/usr/local/bin/lumina-windows-launch-results-sync --profile-id ${profile_id}"
+elif [[ "${surface_mode}" == "daily-launch" && "${resource_class}" == "light" && "${recent_app_ready}" == "yes" ]]; then
     quick_mode="recent-app"
     quick_reason="On a light machine, Lumina prefers reopening the recent published daily app to minimize overhead and keep the path smooth."
     quick_command="/usr/local/bin/lumina-windows-daily-recent-sync --profile-id ${profile_id} --launch-recent"
@@ -102,6 +122,18 @@ if [[ ${perform_launch} -eq 1 ]]; then
             launch_outcome="$(awk -F': ' '/^- Runtime Outcome:/ {print $2; exit}' "${daily_runtime_report}" 2>/dev/null || true)"
             launch_note="$(awk 'found && /^- / {sub(/^- /,""); print; exit} /^## Runtime Note/ {found=1}' "${daily_runtime_report}" 2>/dev/null || true)"
             ;;
+        queue-sync|awaiting-guest-sync)
+            /usr/local/bin/ahmados-windows-launch-results-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+            executed_mode="${quick_mode}"
+            launch_queue_health="$(awk -F': ' '/^- Launch Queue Health:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+            pending_requests="$(awk -F': ' '/^- Pending Requests:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+            queue_note="$(awk -F': ' '/^- Queue Note:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+            [[ -n "${launch_queue_health}" ]] || launch_queue_health="unknown"
+            [[ -n "${pending_requests}" ]] || pending_requests="0"
+            [[ -n "${queue_note}" ]] || queue_note="No queue note captured."
+            launch_outcome="queue-${launch_queue_health}"
+            launch_note="${queue_note}"
+            ;;
         *)
             /usr/local/bin/ahmados-windows-daily-surface --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
             executed_mode="guided-surface"
@@ -124,6 +156,10 @@ touch "${quick_launch_marker}"
     printf -- '- Resource Class: %s\n' "${resource_class}"
     printf -- '- Workflow Status: %s\n' "${workflow_status}"
     printf -- '- Surface Mode: %s\n' "${surface_mode}"
+    printf -- '- Launch Queue Health: %s\n' "${launch_queue_health}"
+    printf -- '- Pending Requests: %s\n' "${pending_requests}"
+    printf -- '- Pressure State: %s\n' "${pressure_state}"
+    printf -- '- Workflow Guard: %s\n' "${workflow_guard}"
     printf -- '- Recent App Ready: %s\n' "${recent_app_ready}"
     printf -- '- Recent App Name: %s\n' "${recent_app_name}"
     printf -- '- Quick Launch Mode: %s\n' "${quick_mode}"
@@ -134,6 +170,7 @@ touch "${quick_launch_marker}"
     printf '\n## Quick Launch Note\n'
     printf -- '- %s\n' "${quick_reason}"
     printf -- '- %s\n' "${launch_note}"
+    printf -- '- Queue Note: %s\n' "${queue_note}"
     printf '\n## Related Reports\n'
     printf -- '- Windows Compatibility Report: %s\n' "${compat_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
@@ -141,6 +178,8 @@ touch "${quick_launch_marker}"
     printf -- '- Daily Surface Report: %s\n' "${daily_surface_report}"
     printf -- '- Daily Runtime Report: %s\n' "${daily_runtime_report}"
     printf -- '- Daily Recent Sync Report: %s\n' "${daily_recent_report}"
+    printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
+    printf -- '- VM Warm Start Report: %s\n' "${vm_warm_start_report}"
 } > "${quick_launch_report}"
 
 printf '%s\n' '========================================'

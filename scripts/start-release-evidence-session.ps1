@@ -72,9 +72,10 @@ function Get-SafeFileSegment {
 $newPackScript = Join-Path $PSScriptRoot "new-release-evidence-pack.ps1"
 $runbookScript = Join-Path $PSScriptRoot "new-release-evidence-runbook.ps1"
 $syncPackScript = Join-Path $PSScriptRoot "sync-release-evidence-pack.ps1"
+$syncSessionStatusScript = Join-Path $PSScriptRoot "sync-release-evidence-session-status.ps1"
 $syncControlCenterScript = Join-Path $PSScriptRoot "sync-release-control-center.ps1"
 
-foreach ($requiredScript in @($newPackScript, $runbookScript, $syncPackScript, $syncControlCenterScript)) {
+foreach ($requiredScript in @($newPackScript, $runbookScript, $syncPackScript, $syncSessionStatusScript, $syncControlCenterScript)) {
     if (-not (Test-Path $requiredScript)) {
         throw "Missing helper script: $requiredScript"
     }
@@ -169,6 +170,11 @@ $content = @"
 "@
 
 Set-Content -Path $sessionPath -Value $content -Encoding UTF8
+
+$null = & $syncSessionStatusScript `
+    -EvidenceSessionPath $sessionPath `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
 
 if ($OutputPathOnly) {
     Write-Output $sessionPath

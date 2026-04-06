@@ -73,6 +73,7 @@ $hardwareTestScript = Join-Path $PSScriptRoot "new-hardware-test-report.ps1"
 $releaseEvidencePackScript = Join-Path $PSScriptRoot "new-release-evidence-pack.ps1"
 $releaseEvidenceRunbookScript = Join-Path $PSScriptRoot "new-release-evidence-runbook.ps1"
 $releaseEvidenceSessionScript = Join-Path $PSScriptRoot "start-release-evidence-session.ps1"
+$syncReleaseEvidenceSessionStatusScript = Join-Path $PSScriptRoot "sync-release-evidence-session-status.ps1"
 $syncReleaseEvidencePackScript = Join-Path $PSScriptRoot "sync-release-evidence-pack.ps1"
 $syncReleaseEvidencePackStatusScript = Join-Path $PSScriptRoot "sync-release-evidence-pack-status.ps1"
 $syncReleaseControlCenterScript = Join-Path $PSScriptRoot "sync-release-control-center.ps1"
@@ -127,6 +128,10 @@ if (-not (Test-Path $releaseEvidenceRunbookScript)) {
 
 if (-not (Test-Path $releaseEvidenceSessionScript)) {
     throw "Missing smoke-test target: $releaseEvidenceSessionScript"
+}
+
+if (-not (Test-Path $syncReleaseEvidenceSessionStatusScript)) {
+    throw "Missing smoke-test target: $syncReleaseEvidenceSessionStatusScript"
 }
 
 if (-not (Test-Path $syncReleaseEvidencePackScript)) {
@@ -369,6 +374,11 @@ try {
     Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Runbook Path: $releaseEvidenceRunbookPath")) -Message "Release evidence session did not record the runbook path."
     Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Session State: ready-to-collect-evidence")) -Message "Release evidence session did not record the expected session state."
     Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("CURRENT-RELEASE-CONTROL-CENTER.md")) -Message "Release evidence session did not point to the release control center."
+    $currentEvidenceSessionPath = Join-Path $tempRoot "status\\evidence-packs\\CURRENT-EVIDENCE-SESSION.md"
+    Assert-Condition -Condition (Test-Path $currentEvidenceSessionPath) -Message "Current evidence session summary was not created."
+    $currentEvidenceSessionContent = Get-Content -Raw $currentEvidenceSessionPath
+    Assert-Condition -Condition ($currentEvidenceSessionContent -match [regex]::Escape("- Session State: ready-to-collect-evidence")) -Message "Current evidence session summary did not record the expected session state."
+    Assert-Condition -Condition ($currentEvidenceSessionContent -match [regex]::Escape("- Evidence Session: $releaseEvidenceSessionPath")) -Message "Current evidence session summary did not record the latest session path."
 
     $releaseLoginTestReportContent = (Get-Content -Raw $releaseLoginTestReportPath) -replace '(?m)^- Overall Status: .+$', '- Overall Status: completed'
     Set-Content -Path $releaseLoginTestReportPath -Value $releaseLoginTestReportContent -Encoding UTF8

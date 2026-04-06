@@ -141,6 +141,7 @@ function Get-LatestFile {
 }
 
 $controlCenterPath = Join-Path $RepoRoot "status\releases\CURRENT-RELEASE-CONTROL-CENTER.md"
+$currentEvidenceSessionPath = Join-Path $RepoRoot "status\evidence-packs\CURRENT-EVIDENCE-SESSION.md"
 
 $resolvedStatusPath = if ([string]::IsNullOrWhiteSpace($StatusPath)) {
     Join-Path $RepoRoot "status\CURRENT-STATUS.md"
@@ -244,6 +245,12 @@ $readinessState = Get-MetadataValue -Content $readinessContent -Label "Readiness
 $validationState = Get-MetadataValue -Content $validationContent -Label "Overall State"
 $candidateState = Get-MetadataValue -Content $releaseCandidateContent -Label "Candidate State"
 $evidencePackState = Get-MetadataValue -Content $releaseEvidencePackContent -Label "Evidence Pack State"
+$evidenceSessionState = if (Test-Path $currentEvidenceSessionPath) {
+    Get-MetadataValue -Content (Get-Content -Raw $currentEvidenceSessionPath) -Label "Session State"
+}
+else {
+    ""
+}
 $evidenceAuditState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Evidence Audit State"
 $evidenceSoftGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Soft Gate State"
 $evidenceStrictGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Strict Gate State"
@@ -329,6 +336,8 @@ $content = @"
 - Readiness State: $(Get-ResolvedPathOrDefault -Value $readinessState -DefaultValue "not-recorded-yet")
 - Validation Matrix State: $(Get-ResolvedPathOrDefault -Value $validationState -DefaultValue "not-recorded-yet")
 - Release Candidate State: $(Get-ResolvedPathOrDefault -Value $candidateState -DefaultValue "not-recorded-yet")
+- Release Evidence Session: $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
+- Release Evidence Session State: $(Get-ResolvedPathOrDefault -Value $evidenceSessionState -DefaultValue "not-recorded-yet")
 - Release Evidence Pack: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidencePackPath -DefaultValue "not-recorded-yet")
 - Release Evidence Pack State: $(Get-ResolvedPathOrDefault -Value $evidencePackState -DefaultValue "not-recorded-yet")
 - Release Evidence Audit: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidenceAuditPath -DefaultValue "not-recorded-yet")
@@ -354,6 +363,7 @@ $(Format-Items -Items $recentProgress)
 - Release evidence audit can now show soft vs strict gating before candidate prep.
 - Release readiness audit can now summarize the final go/no-go state before publish.
 - Release control center now keeps the current evidence, readiness, and candidate decision in one place.
+- Release evidence session now keeps the current practical collection step visible next to the evidence pack itself.
 - GitHub publish now has local release-context validation before release creation.
 
 ## What Is Still Missing

@@ -207,6 +207,12 @@ __MODE_REVIEW_NOTES__
 ## Step 7: Create Shared Evidence Pack
 Optional but recommended before release prep:
 
+    .\scripts\start-release-evidence-session.ps1 -Mode __MODE__ -VmType __VM_TYPE__ -Firmware __FIRMWARE__ -RunLabel __RUN_LABEL__ -ReleaseVersion "__RELEASE_VERSION__"
+
+This will generate a shared evidence session, an evidence pack, and a ready-to-run `release-evidence-runbook-*.md`.
+
+You can still create the evidence pack directly if needed:
+
     .\scripts\new-release-evidence-pack.ps1 -Mode __MODE__ -VmType __VM_TYPE__ -Firmware __FIRMWARE__ -RunLabel __RUN_LABEL__ -ReleaseVersion "__RELEASE_VERSION__"
 
 This will generate a shared evidence pack and a ready-to-run `release-evidence-runbook-*.md` under `status/evidence-packs/`.
@@ -237,6 +243,7 @@ Use this after candidate prep to get a direct go/no-go summary:
 
 ## Step 11: Review Candidate Output
 Review these files before publishing:
+- `status/evidence-packs/CURRENT-EVIDENCE-SESSION.md`
 - `status/evidence-packs/CURRENT-EVIDENCE-PACK.md`
 - `status/releases/CURRENT-RELEASE-EVIDENCE.md`
 - `status/releases/CURRENT-RELEASE-READINESS.md`

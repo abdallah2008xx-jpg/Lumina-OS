@@ -92,11 +92,13 @@ function Format-Items {
 }
 
 $currentEvidencePackPath = Join-Path $RepoRoot "status\evidence-packs\CURRENT-EVIDENCE-PACK.md"
+$currentEvidenceSessionPath = Join-Path $RepoRoot "status\evidence-packs\CURRENT-EVIDENCE-SESSION.md"
 $currentEvidenceAuditPath = Join-Path $RepoRoot "status\releases\CURRENT-RELEASE-EVIDENCE.md"
 $currentReadinessPath = Join-Path $RepoRoot "status\releases\CURRENT-RELEASE-READINESS.md"
 $currentCandidatePath = Join-Path $RepoRoot "status\release-candidates\CURRENT-RELEASE-CANDIDATE.md"
 
 $evidencePackContent = Get-ContentIfExists -Path $currentEvidencePackPath
+$evidenceSessionContent = Get-ContentIfExists -Path $currentEvidenceSessionPath
 $evidenceAuditContent = Get-ContentIfExists -Path $currentEvidenceAuditPath
 $readinessContent = Get-ContentIfExists -Path $currentReadinessPath
 $candidateContent = Get-ContentIfExists -Path $currentCandidatePath
@@ -123,6 +125,7 @@ $runLabel = Get-FirstNonEmptyValue @(
 )
 
 $packState = Get-MetadataValue -Content $evidencePackContent -Label "Evidence Pack State"
+$sessionState = Get-MetadataValue -Content $evidenceSessionContent -Label "Session State"
 $evidenceAuditState = Get-MetadataValue -Content $evidenceAuditContent -Label "Evidence Audit State"
 $readinessState = Get-MetadataValue -Content $readinessContent -Label "Overall Readiness"
 $candidateState = Get-MetadataValue -Content $candidateContent -Label "Candidate State"
@@ -138,6 +141,7 @@ $controlState = switch ($true) {
 }
 
 $summaryItems = [System.Collections.Generic.List[string]]::new()
+$summaryItems.Add("Evidence Session State: $(Get-ResolvedValue -Value $sessionState)") | Out-Null
 $summaryItems.Add("Evidence Pack State: $(Get-ResolvedValue -Value $packState)") | Out-Null
 $summaryItems.Add("Evidence Audit State: $(Get-ResolvedValue -Value $evidenceAuditState)") | Out-Null
 $summaryItems.Add("Release Readiness: $(Get-ResolvedValue -Value $readinessState)") | Out-Null
@@ -190,6 +194,7 @@ $summaryContent = @"
 - Version: $(Get-ResolvedValue -Value $version)
 - Mode: $(Get-ResolvedValue -Value $mode)
 - Run Label: $(Get-ResolvedValue -Value $runLabel)
+- Current Evidence Session: $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
 - Current Evidence Pack: $(if (Test-Path $currentEvidencePackPath) { $currentEvidencePackPath } else { "not-recorded-yet" })
 - Current Release Evidence: $(if (Test-Path $currentEvidenceAuditPath) { $currentEvidenceAuditPath } else { "not-recorded-yet" })
 - Current Release Readiness: $(if (Test-Path $currentReadinessPath) { $currentReadinessPath } else { "not-recorded-yet" })
@@ -211,6 +216,7 @@ $currentContent = @"
 - Version: $(Get-ResolvedValue -Value $version)
 - Mode: $(Get-ResolvedValue -Value $mode)
 - Run Label: $(Get-ResolvedValue -Value $runLabel)
+- Current Evidence Session: $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
 - Current Evidence Pack: $(if (Test-Path $currentEvidencePackPath) { $currentEvidencePackPath } else { "not-recorded-yet" })
 - Current Release Evidence: $(if (Test-Path $currentEvidenceAuditPath) { $currentEvidenceAuditPath } else { "not-recorded-yet" })
 - Current Release Readiness: $(if (Test-Path $currentReadinessPath) { $currentReadinessPath } else { "not-recorded-yet" })

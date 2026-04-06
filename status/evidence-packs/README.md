@@ -11,13 +11,15 @@ Keep one manifest here when you want to prepare `login-test`, `install`, and `ha
    - `scripts/audit-release-evidence.ps1 -EvidencePackPath "<path-to-pack>"`
    - `scripts/audit-release-readiness.ps1 -EvidencePackPath "<path-to-pack>"`
    - `scripts/prepare-release-candidate.ps1 -EvidencePackPath "<path-to-pack>"`
-6. Review `CURRENT-EVIDENCE-PACK.md` when you want the latest synced pack summary in one place
-7. Review `../releases/CURRENT-RELEASE-CONTROL-CENTER.md` when you want the top-level release state after evidence, readiness, and candidate syncs
+6. Review `CURRENT-EVIDENCE-SESSION.md` when you want the latest practical evidence-session summary in one place
+7. Review `CURRENT-EVIDENCE-PACK.md` when you want the latest synced pack summary in one place
+8. Review `../releases/CURRENT-RELEASE-CONTROL-CENTER.md` when you want the top-level release state after evidence, readiness, and candidate syncs
 
 ## Intended Contents
 - one manifest per shared evidence set
 - one generated runbook per shared evidence set
 - one generated session note per shared evidence set
+- one current pointer to the latest evidence session
 - one synced state snapshot per shared evidence set
 - a current pointer to the latest synced evidence pack
 - links to login-test, install, and hardware reports

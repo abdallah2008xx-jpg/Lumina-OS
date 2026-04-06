@@ -63,6 +63,7 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Record blockers immediately if any core hardware path fails
 
 ## Release Gate
+- [ ] Optional but recommended: create one shared evidence pack with `.\scripts\new-release-evidence-pack.ps1 -Mode stable -RunLabel "<run-label>"`
 - [ ] `status/readiness/CURRENT-READINESS.md` is no longer `needs-build`
 - [ ] `status/validation-matrix/CURRENT-VALIDATION-MATRIX.md` shows acceptable mode coverage
 - [ ] No blocking issue remains for the chosen release candidate

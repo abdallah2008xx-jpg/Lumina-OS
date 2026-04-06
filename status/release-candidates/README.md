@@ -9,11 +9,12 @@ Keep the latest prepared release candidate state here.
 
 ## Recommended Flow
 1. Finish a real labeled build and VM evidence chain
-2. Run `scripts/audit-release-evidence.ps1` to inspect soft vs strict evidence readiness
-3. Run `scripts/prepare-release-candidate.ps1`
-4. Run `scripts/audit-release-readiness.ps1` to confirm the final go/no-go state
-5. Review `CURRENT-RELEASE-CANDIDATE.md`
-6. Validate the GitHub publish context against the current candidate
-7. If the candidate is clean, publish it with `scripts/publish-github-release.ps1`
-8. Let `scripts/sync-release-candidate-status.ps1` refresh the candidate to `published`
-9. Keep the candidate summary as the release trace even after publish
+2. Optionally create a shared evidence manifest with `scripts/new-release-evidence-pack.ps1`
+3. Run `scripts/audit-release-evidence.ps1` to inspect soft vs strict evidence readiness
+4. Run `scripts/prepare-release-candidate.ps1`
+5. Run `scripts/audit-release-readiness.ps1` to confirm the final go/no-go state
+6. Review `CURRENT-RELEASE-CANDIDATE.md`
+7. Validate the GitHub publish context against the current candidate
+8. If the candidate is clean, publish it with `scripts/publish-github-release.ps1`
+9. Let `scripts/sync-release-candidate-status.ps1` refresh the candidate to `published`
+10. Keep the candidate summary as the release trace even after publish

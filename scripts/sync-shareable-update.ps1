@@ -177,8 +177,14 @@ else {
 }
 
 $resolvedReleaseEvidenceAuditPath = if ([string]::IsNullOrWhiteSpace($ReleaseEvidenceAuditPath)) {
-    $latestAudit = Get-LatestFile -Path (Join-Path $RepoRoot "status\releases") -Filter "release-evidence-audit.md"
-    if ($latestAudit) { $latestAudit.FullName } else { "" }
+    $currentEvidenceAuditPath = Join-Path $RepoRoot "status\releases\CURRENT-RELEASE-EVIDENCE.md"
+    if (Test-Path $currentEvidenceAuditPath) {
+        $currentEvidenceAuditPath
+    }
+    else {
+        $latestAudit = Get-LatestFile -Path (Join-Path $RepoRoot "status\releases") -Filter "release-evidence-audit.md"
+        if ($latestAudit) { $latestAudit.FullName } else { "" }
+    }
 }
 else {
     $ReleaseEvidenceAuditPath
@@ -236,6 +242,7 @@ $readinessState = Get-MetadataValue -Content $readinessContent -Label "Readiness
 $validationState = Get-MetadataValue -Content $validationContent -Label "Overall State"
 $candidateState = Get-MetadataValue -Content $releaseCandidateContent -Label "Candidate State"
 $evidencePackState = Get-MetadataValue -Content $releaseEvidencePackContent -Label "Evidence Pack State"
+$evidenceAuditState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Evidence Audit State"
 $evidenceSoftGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Soft Gate State"
 $evidenceStrictGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Strict Gate State"
 $evidenceAuditRunLabel = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Run Label"
@@ -269,6 +276,10 @@ $shareableSummary.Add("Release candidate state: $(Get-ResolvedPathOrDefault -Val
 
 if (-not [string]::IsNullOrWhiteSpace($evidencePackState)) {
     $shareableSummary.Add("Current evidence pack: $evidencePackState") | Out-Null
+}
+
+if (-not [string]::IsNullOrWhiteSpace($evidenceAuditState)) {
+    $shareableSummary.Add("Current evidence audit: $evidenceAuditState") | Out-Null
 }
 
 if (-not [string]::IsNullOrWhiteSpace($releaseReadinessState)) {
@@ -309,6 +320,7 @@ $content = @"
 - Release Evidence Pack: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidencePackPath -DefaultValue "not-recorded-yet")
 - Release Evidence Pack State: $(Get-ResolvedPathOrDefault -Value $evidencePackState -DefaultValue "not-recorded-yet")
 - Release Evidence Audit: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidenceAuditPath -DefaultValue "not-recorded-yet")
+- Release Evidence Audit State: $(Get-ResolvedPathOrDefault -Value $evidenceAuditState -DefaultValue "not-recorded-yet")
 - Release Readiness Audit: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseReadinessAuditPath -DefaultValue "not-recorded-yet")
 - Release Readiness State: $(Get-ResolvedPathOrDefault -Value $releaseReadinessState -DefaultValue "not-recorded-yet")
 - Release Evidence Soft Gate: $(Get-ResolvedPathOrDefault -Value $evidenceSoftGateState -DefaultValue "not-recorded-yet")

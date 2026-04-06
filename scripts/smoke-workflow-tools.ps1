@@ -84,6 +84,7 @@ $githubArtifactCycleScript = Join-Path $PSScriptRoot "start-github-actions-vm-cy
 $githubArtifactCycleFinishScript = Join-Path $PSScriptRoot "finish-github-actions-vm-cycle.ps1"
 $prepareReleasePackageScript = Join-Path $PSScriptRoot "prepare-release-package.ps1"
 $releaseEvidenceAuditScript = Join-Path $PSScriptRoot "audit-release-evidence.ps1"
+$syncReleaseEvidenceAuditStatusScript = Join-Path $PSScriptRoot "sync-release-evidence-audit-status.ps1"
 $releaseReadinessAuditScript = Join-Path $PSScriptRoot "audit-release-readiness.ps1"
 $syncReleaseReadinessStatusScript = Join-Path $PSScriptRoot "sync-release-readiness-status.ps1"
 $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
@@ -168,6 +169,10 @@ if (-not (Test-Path $prepareReleasePackageScript)) {
 
 if (-not (Test-Path $releaseEvidenceAuditScript)) {
     throw "Missing smoke-test target: $releaseEvidenceAuditScript"
+}
+
+if (-not (Test-Path $syncReleaseEvidenceAuditStatusScript)) {
+    throw "Missing smoke-test target: $syncReleaseEvidenceAuditStatusScript"
 }
 
 if (-not (Test-Path $releaseReadinessAuditScript)) {
@@ -388,6 +393,12 @@ try {
     $releaseEvidenceAuditContent = Get-Content -Raw $releaseEvidenceAuditPath
     Assert-Condition -Condition ($releaseEvidenceAuditContent -match [regex]::Escape("- Soft Gate State: passed")) -Message "Release evidence audit soft gate did not pass."
     Assert-Condition -Condition ($releaseEvidenceAuditContent -match [regex]::Escape("- Strict Gate State: passed")) -Message "Release evidence audit strict gate did not pass."
+    $currentReleaseEvidencePath = Join-Path $tempRoot "status\\releases\\CURRENT-RELEASE-EVIDENCE.md"
+    Assert-Condition -Condition (Test-Path $currentReleaseEvidencePath) -Message "Current release evidence summary was not created."
+    $currentReleaseEvidenceContent = Get-Content -Raw $currentReleaseEvidencePath
+    Assert-Condition -Condition ($currentReleaseEvidenceContent -match [regex]::Escape("- Evidence Audit State: soft-and-strict-passed")) -Message "Current release evidence summary did not record the expected evidence state."
+    Assert-Condition -Condition ($currentReleaseEvidenceContent -match [regex]::Escape("- Release Evidence Audit: $releaseEvidenceAuditPath")) -Message "Current release evidence summary did not point to the latest evidence audit."
+    Assert-Condition -Condition ($currentReleaseEvidenceContent -match [regex]::Escape("- Evidence Pack: $releaseEvidencePackPath")) -Message "Current release evidence summary did not record the evidence-pack path."
 
     $importedBuildPath = (
         & $buildManifestImportScript `
@@ -692,6 +703,7 @@ try {
     $shareableContent = Get-Content -Raw $shareableUpdatePath
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Candidate State: published")) -Message "Shareable update did not include the published release-candidate state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Evidence Pack State: ready-for-rc-gating")) -Message "Shareable update did not include the evidence-pack state."
+    Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Evidence Audit State: soft-and-strict-passed")) -Message "Shareable update did not include the evidence-audit state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Readiness State: ready-to-publish")) -Message "Shareable update did not include the release readiness state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Evidence Soft Gate: passed")) -Message "Shareable update did not include the soft evidence gate state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Evidence Strict Gate: passed")) -Message "Shareable update did not include the strict evidence gate state."
@@ -707,6 +719,7 @@ try {
     $shareableBriefContent = Get-Content -Raw $shareableBriefPath
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Candidate State: published")) -Message "English shareable brief did not include the published release-candidate state."
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Evidence Pack State: ready-for-rc-gating")) -Message "English shareable brief did not include the evidence-pack state."
+    Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Evidence Audit State: soft-and-strict-passed")) -Message "English shareable brief did not include the evidence-audit state."
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Readiness State: ready-to-publish")) -Message "English shareable brief did not include the release readiness state."
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Evidence Soft Gate: passed")) -Message "English shareable brief did not include the soft evidence gate state."
 
@@ -715,6 +728,7 @@ try {
     $shareableArabicBriefContent = Get-Content -Raw $shareableArabicBriefPath
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Candidate State: published")) -Message "Arabic shareable brief did not include the published release-candidate state."
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Evidence Pack State: ready-for-rc-gating")) -Message "Arabic shareable brief did not include the evidence-pack state."
+    Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Evidence Audit State: soft-and-strict-passed")) -Message "Arabic shareable brief did not include the evidence-audit state."
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Readiness State: ready-to-publish")) -Message "Arabic shareable brief did not include the release readiness state."
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Evidence Soft Gate: passed")) -Message "Arabic shareable brief did not include the soft evidence gate state."
 }

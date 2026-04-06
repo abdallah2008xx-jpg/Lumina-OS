@@ -289,6 +289,7 @@ required_paths=(
     "${repo_root}/scripts/import-diagnostics-bundle.ps1"
     "${repo_root}/scripts/prepare-release-package.ps1"
     "${repo_root}/scripts/audit-release-evidence.ps1"
+    "${repo_root}/scripts/sync-release-evidence-audit-status.ps1"
     "${repo_root}/scripts/audit-release-readiness.ps1"
     "${repo_root}/scripts/sync-release-readiness-status.ps1"
     "${repo_root}/scripts/prepare-release-candidate.ps1"

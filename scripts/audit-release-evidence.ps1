@@ -123,6 +123,7 @@ function Invoke-ReleaseValidationPass {
 
 $prepareScript = Join-Path $PSScriptRoot "prepare-release-package.ps1"
 $validateScript = Join-Path $PSScriptRoot "validate-release-package.ps1"
+$evidenceStatusScript = Join-Path $PSScriptRoot "sync-release-evidence-audit-status.ps1"
 
 if (-not (Test-Path $prepareScript)) {
     throw "Missing helper: $prepareScript"
@@ -130,6 +131,10 @@ if (-not (Test-Path $prepareScript)) {
 
 if (-not (Test-Path $validateScript)) {
     throw "Missing helper: $validateScript"
+}
+
+if (-not (Test-Path $evidenceStatusScript)) {
+    throw "Missing helper: $evidenceStatusScript"
 }
 
 $prepareArgs = @{
@@ -239,6 +244,11 @@ $reportContent = @"
 - Version: $Version
 - Mode: $Mode
 - Run Label: $(Get-ResolvedPathOrDefault -Value $runLabelValue -DefaultValue "not-recorded-yet")
+- Evidence Audit State: $(switch ($true) {
+    { $softValidation.State -eq "passed" -and $strictValidation.State -eq "passed" } { "soft-and-strict-passed"; break }
+    { $softValidation.State -eq "passed" } { "soft-passed-strict-pending"; break }
+    default { "not-ready" }
+})
 - Release Manifest: $resolvedManifestPath
 - Soft Validation Report: $(Get-ResolvedPathOrDefault -Value $softValidation.ReportPath -DefaultValue "not-recorded-yet")
 - Soft Gate State: $($softValidation.State)
@@ -274,6 +284,11 @@ $(Format-Items -Items $recommendationItems)
 "@
 
 Set-Content -Path $auditReportPath -Value $reportContent -Encoding UTF8
+
+$null = & $evidenceStatusScript `
+    -ReleaseEvidenceAuditPath $auditReportPath `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
 
 if ($OutputPathOnly) {
     Write-Output $auditReportPath

@@ -353,6 +353,7 @@ $(Format-Items -Items $recentProgress)
 - Linked evidence now covers build manifests, VM reports, session audits, blockers, readiness, validation matrix, and release-candidate state.
 - Release evidence audit can now show soft vs strict gating before candidate prep.
 - Release readiness audit can now summarize the final go/no-go state before publish.
+- Release control center now keeps the current evidence, readiness, and candidate decision in one place.
 - GitHub publish now has local release-context validation before release creation.
 
 ## What Is Still Missing

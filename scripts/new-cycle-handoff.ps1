@@ -237,7 +237,10 @@ Use this after candidate prep to get a direct go/no-go summary:
 
 ## Step 11: Review Candidate Output
 Review these files before publishing:
+- `status/evidence-packs/CURRENT-EVIDENCE-PACK.md`
+- `status/releases/CURRENT-RELEASE-EVIDENCE.md`
 - `status/releases/CURRENT-RELEASE-READINESS.md`
+- `status/releases/CURRENT-RELEASE-CONTROL-CENTER.md`
 - `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md`
 - generated `release-evidence-audit.md` under `status/releases/`
 - generated `release-readiness-audit.md` under `status/releases/`

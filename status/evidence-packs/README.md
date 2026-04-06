@@ -11,6 +11,7 @@ Keep one manifest here when you want to prepare `login-test`, `install`, and `ha
    - `scripts/audit-release-readiness.ps1 -EvidencePackPath "<path-to-pack>"`
    - `scripts/prepare-release-candidate.ps1 -EvidencePackPath "<path-to-pack>"`
 5. Review `CURRENT-EVIDENCE-PACK.md` when you want the latest synced pack summary in one place
+6. Review `../releases/CURRENT-RELEASE-CONTROL-CENTER.md` when you want the top-level release state after evidence, readiness, and candidate syncs
 
 ## Intended Contents
 - one manifest per shared evidence set

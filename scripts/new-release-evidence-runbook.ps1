@@ -108,6 +108,8 @@ Soft + strict evidence view from the same pack:
 .\scripts\audit-release-evidence.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel "__RUN_LABEL__" -EvidencePackPath "__EVIDENCE_PACK__"
 ```
 
+Review `status/releases/CURRENT-RELEASE-EVIDENCE.md` after this step.
+
 ## Step 3: Prepare Release Candidate
 Standard candidate pass from the same pack:
 
@@ -128,6 +130,8 @@ Go/no-go summary from the same pack:
 .\scripts\audit-release-readiness.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel "__RUN_LABEL__" -IsoPath "__ISO_PATH__" -EvidencePackPath "__EVIDENCE_PACK__"
 ```
 
+Review `status/releases/CURRENT-RELEASE-READINESS.md` and `status/releases/CURRENT-RELEASE-CONTROL-CENTER.md` after this step.
+
 ## Step 5: Validate GitHub Release Context
 Use this after the candidate is ready:
 
@@ -140,6 +144,7 @@ Use this after the candidate is ready:
 - keep this pack and its runbook on the same `Run Label`
 - if any evidence file is replaced, rerun `new-release-evidence-runbook.ps1`
 - review `status/evidence-packs/CURRENT-EVIDENCE-PACK.md` after sync when you want the latest pack summary in one place
+- review `status/releases/CURRENT-RELEASE-CONTROL-CENTER.md` when you want the top-level release decision from one place
 '@
 
 $content = $template.Replace("__GENERATED_AT__", (Get-Date -Format s)).

@@ -29,6 +29,7 @@ profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
 refresh_report="${state_root}/windows-daily-refresh.md"
 daily_menu_export_report="${state_root}/windows-daily-menu-export.md"
 daily_app_pack_report="${state_root}/windows-daily-app-pack.md"
+daily_recent_report="${state_root}/windows-daily-recent-sync.md"
 daily_surface_report="${state_root}/windows-daily-surface.md"
 state_report="${state_root}/windows-workflow-state.md"
 hub_report="${state_root}/windows-workflow-hub.md"
@@ -52,17 +53,22 @@ mkdir -p "${workflow_state_root}"
 
 /usr/local/bin/ahmados-windows-daily-menu-export --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-daily-app-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-daily-recent-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-daily-surface --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
 surface_mode="$(awk -F': ' '/^- Surface Mode:/ {print $2; exit}' "${daily_surface_report}" 2>/dev/null || true)"
 selected_action="$(awk -F': ' '/^- Selected Action:/ {print $2; exit}' "${daily_surface_report}" 2>/dev/null || true)"
 exported_daily_apps="$(awk -F': ' '/^- Exported App Count:/ {print $2; exit}' "${daily_app_pack_report}" 2>/dev/null || true)"
 recommended_collection="$(awk -F': ' '/^- Recommended Collection:/ {print $2; exit}' "${daily_menu_export_report}" 2>/dev/null || true)"
+recent_app_name="$(awk -F': ' '/^- Recent App Name:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+recent_app_ready="$(awk -F': ' '/^- Recent App Ready:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
 
 [[ -n "${surface_mode}" ]] || surface_mode="unknown"
 [[ -n "${selected_action}" ]] || selected_action="none"
 [[ -n "${exported_daily_apps}" ]] || exported_daily_apps="0"
 [[ -n "${recommended_collection}" ]] || recommended_collection="none"
+[[ -n "${recent_app_name}" ]] || recent_app_name="none"
+[[ -n "${recent_app_ready}" ]] || recent_app_ready="no"
 
 touch "${refresh_marker}"
 /usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
@@ -76,15 +82,19 @@ touch "${refresh_marker}"
     printf -- '- Selected Action: %s\n' "${selected_action}"
     printf -- '- Exported Daily Apps: %s\n' "${exported_daily_apps}"
     printf -- '- Recommended Collection: %s\n' "${recommended_collection}"
+    printf -- '- Recent App Name: %s\n' "${recent_app_name}"
+    printf -- '- Recent App Ready: %s\n' "${recent_app_ready}"
     printf -- '- Daily Refresh Marker: %s\n' "${refresh_marker}"
     printf '\n## Refresh Flow\n'
     printf -- '1. Refresh the daily menu shortcuts.\n'
     printf -- '2. Refresh the smaller daily app pack.\n'
-    printf -- '3. Refresh the daily surface summary.\n'
-    printf -- '4. Mark the workflow as daily-refresh ready.\n'
+    printf -- '3. Refresh the recent daily app fast path.\n'
+    printf -- '4. Refresh the daily surface summary.\n'
+    printf -- '5. Mark the workflow as daily-refresh ready.\n'
     printf '\n## Related Reports\n'
     printf -- '- Daily Menu Export Report: %s\n' "${daily_menu_export_report}"
     printf -- '- Daily App Pack Report: %s\n' "${daily_app_pack_report}"
+    printf -- '- Daily Recent Sync Report: %s\n' "${daily_recent_report}"
     printf -- '- Daily Surface Report: %s\n' "${daily_surface_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"

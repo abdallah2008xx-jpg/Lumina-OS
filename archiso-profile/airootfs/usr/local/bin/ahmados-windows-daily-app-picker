@@ -39,8 +39,11 @@ profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
 picker_report="${state_root}/windows-daily-app-picker.md"
 daily_app_pack_report="${state_root}/windows-daily-app-pack.md"
 launch_report="${state_root}/windows-registered-app-launch.md"
+recent_sync_report="${state_root}/windows-daily-recent-sync.md"
 state_report="${state_root}/windows-workflow-state.md"
 hub_report="${state_root}/windows-workflow-hub.md"
+launch_sync_report="${state_root}/windows-launch-results-sync.md"
+compat_report="${state_root}/windows-compat-report.md"
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="adobe-creator"
@@ -55,6 +58,7 @@ fi
 IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
 
 /usr/local/bin/ahmados-windows-daily-app-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-launch-results-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
 workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
 registry_root="${workspace_root}/app-registry"
@@ -64,6 +68,14 @@ daily_app_pack_marker="${workflow_state_root}/daily-app-pack-ready.marker"
 
 data_root="${XDG_DATA_HOME:-$HOME/.local/share}"
 export_dir="${data_root}/applications/lumina-windows-daily-apps/${profile_id}"
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+launch_queue_health="$(awk -F': ' '/^- Launch Queue Health:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+pending_requests="$(awk -F': ' '/^- Pending Requests:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+queue_note="$(awk -F': ' '/^- Queue Note:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+[[ -n "${resource_class}" ]] || resource_class="balanced"
+[[ -n "${launch_queue_health}" ]] || launch_queue_health="unknown"
+[[ -n "${pending_requests}" ]] || pending_requests="0"
+[[ -n "${queue_note}" ]] || queue_note="No queue note captured."
 
 selected_app_id=""
 selected_app_name=""
@@ -117,20 +129,34 @@ guest_launch_status="not-run"
 picker_mode="report-only"
 
 if [[ -n "${selected_app_id}" ]]; then
-    if [[ ${choose_app} -eq 1 ]]; then
-        picker_mode="choose-app"
+    if [[ "${launch_queue_health}" == "pressure" ]]; then
+        picker_mode="deferred-queue-pressure"
+        launch_outcome="deferred-queue-pressure"
+        guest_launch_status="deferred"
+        launch_note="Lumina paused daily app launch because the Windows launch queue is already under pressure."
+    elif [[ "${resource_class}" == "light" && "${launch_queue_health}" == "awaiting-guest" && "${pending_requests}" != "0" ]]; then
+        picker_mode="deferred-awaiting-guest"
+        launch_outcome="deferred-awaiting-guest"
+        guest_launch_status="deferred"
+        launch_note="Lumina paused daily app launch because a previous Windows request is still waiting for the guest agent on a light machine."
     else
-        picker_mode="launch-best"
-    fi
+        if [[ ${choose_app} -eq 1 ]]; then
+            picker_mode="choose-app"
+        else
+            picker_mode="launch-best"
+        fi
 
-    /usr/local/bin/ahmados-windows-registered-app-launch --profile-id "${profile_id}" --app-id "${selected_app_id}" --no-open >/dev/null 2>&1 || true
-    launch_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${launch_report}" 2>/dev/null || true)"
-    guest_launch_status="$(awk -F': ' '/^- Guest Launch Status:/ {print $2; exit}' "${launch_report}" 2>/dev/null || true)"
-    launch_note="$(awk 'found && /^- / {sub(/^- /,""); print; exit} /^## Launch Note/ {found=1}' "${launch_report}" 2>/dev/null || true)"
-    [[ -n "${launch_outcome}" ]] || launch_outcome="unknown"
-    [[ -n "${guest_launch_status}" ]] || guest_launch_status="unknown"
-    [[ -n "${launch_note}" ]] || launch_note="No launch note was captured."
+        /usr/local/bin/ahmados-windows-registered-app-launch --profile-id "${profile_id}" --app-id "${selected_app_id}" --no-open >/dev/null 2>&1 || true
+        launch_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${launch_report}" 2>/dev/null || true)"
+        guest_launch_status="$(awk -F': ' '/^- Guest Launch Status:/ {print $2; exit}' "${launch_report}" 2>/dev/null || true)"
+        launch_note="$(awk 'found && /^- / {sub(/^- /,""); print; exit} /^## Launch Note/ {found=1}' "${launch_report}" 2>/dev/null || true)"
+        [[ -n "${launch_outcome}" ]] || launch_outcome="unknown"
+        [[ -n "${guest_launch_status}" ]] || guest_launch_status="unknown"
+        [[ -n "${launch_note}" ]] || launch_note="No launch note was captured."
+    fi
 fi
+
+/usr/local/bin/ahmados-windows-daily-recent-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
 {
     printf '# Lumina Windows Daily App Picker\n\n'
@@ -139,6 +165,9 @@ fi
     printf -- '- Profile Id: %s\n' "${profile_id}"
     printf -- '- Picker Mode: %s\n' "${picker_mode}"
     printf -- '- Daily App Pack Marker: %s\n' "${daily_app_pack_marker}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Launch Queue Health: %s\n' "${launch_queue_health}"
+    printf -- '- Pending Requests: %s\n' "${pending_requests}"
     printf -- '- Selected App Id: %s\n' "${selected_app_id:-none}"
     printf -- '- Selected App Name: %s\n' "${selected_app_name:-none}"
     printf -- '- Selected Category: %s\n' "${selected_app_category:-none}"
@@ -149,8 +178,12 @@ fi
     printf '\n## Related Reports\n'
     printf -- '- Daily App Pack Report: %s\n' "${daily_app_pack_report}"
     printf -- '- Registered App Launch Report: %s\n' "${launch_report}"
+    printf -- '- Daily Recent Sync Report: %s\n' "${recent_sync_report}"
+    printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+    printf '\n## Queue Note\n'
+    printf -- '- %s\n' "${queue_note}"
 } > "${picker_report}"
 
 printf '%s\n' '========================================'

@@ -1,0 +1,208 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+launch_recent=0
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --launch-recent)
+            launch_recent=1
+            shift
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+data_root="${XDG_DATA_HOME:-$HOME/.local/share}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+recent_report="${state_root}/windows-daily-recent-sync.md"
+picker_report="${state_root}/windows-daily-app-picker.md"
+launch_report="${state_root}/windows-registered-app-launch.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+daily_app_pack_report="${state_root}/windows-daily-app-pack.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-daily-app-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+registry_root="${workspace_root}/app-registry"
+registry_index_path="${registry_root}/registry-index.tsv"
+export_dir="${data_root}/applications/lumina-windows-daily-apps/${profile_id}"
+recent_env_path="${workflow_state_root}/daily-recent-app.env"
+recent_marker="${workflow_state_root}/daily-recent-ready.marker"
+
+mkdir -p "${workflow_state_root}" "${registry_root}" "${export_dir}"
+
+current_profile_id="$(awk -F': ' '/^- Profile Id:/ {print $2; exit}' "${picker_report}" 2>/dev/null || true)"
+candidate_app_id="$(awk -F': ' '/^- Selected App Id:/ {print $2; exit}' "${picker_report}" 2>/dev/null || true)"
+candidate_app_name="$(awk -F': ' '/^- Selected App Name:/ {print $2; exit}' "${picker_report}" 2>/dev/null || true)"
+candidate_app_category="$(awk -F': ' '/^- Selected Category:/ {print $2; exit}' "${picker_report}" 2>/dev/null || true)"
+candidate_capture_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${picker_report}" 2>/dev/null || true)"
+candidate_guest_status="$(awk -F': ' '/^- Guest Launch Status:/ {print $2; exit}' "${picker_report}" 2>/dev/null || true)"
+
+recent_app_id=""
+recent_app_name=""
+recent_app_category=""
+recent_registration_state="unknown"
+recent_capture_source="daily-app-picker"
+recent_capture_outcome="not-captured"
+recent_capture_guest_status="unknown"
+recent_app_ready="no"
+recent_shortcut_path=""
+recent_launch_executed="no"
+recent_launch_outcome="not-run"
+recent_launch_status="not-run"
+recent_launch_note="No recent daily app launch has been attempted yet."
+
+if [[ "${current_profile_id}" == "${profile_id}" && -n "${candidate_app_id}" && "${candidate_app_id}" != "none" ]]; then
+    candidate_registry_row="$(awk -F'|' -v target="${candidate_app_id}" 'NF >= 6 && $1 == target {print; exit}' "${registry_index_path}" 2>/dev/null || true)"
+    if [[ -n "${candidate_registry_row}" ]]; then
+        IFS='|' read -r row_app_id row_app_name row_app_category row_registration_state row_preferred_route row_manifest_path <<< "${candidate_registry_row}"
+        recent_shortcut_path="${export_dir}/lumina-windows-daily-app-${profile_id}-${row_app_id}.desktop"
+        if [[ "${row_registration_state}" == "published" && -f "${recent_shortcut_path}" ]]; then
+            recent_app_ready="yes"
+        else
+            recent_app_ready="no"
+        fi
+
+        {
+            printf 'LUMINA_WINDOWS_PROFILE_ID=%q\n' "${profile_id}"
+            printf 'LUMINA_WINDOWS_APP_ID=%q\n' "${row_app_id}"
+            printf 'LUMINA_WINDOWS_APP_NAME=%q\n' "${candidate_app_name:-${row_app_name}}"
+            printf 'LUMINA_WINDOWS_APP_CATEGORY=%q\n' "${candidate_app_category:-${row_app_category}}"
+            printf 'LUMINA_WINDOWS_REGISTRATION_STATE=%q\n' "${row_registration_state}"
+            printf 'LUMINA_WINDOWS_CAPTURE_SOURCE=%q\n' "${recent_capture_source}"
+            printf 'LUMINA_WINDOWS_CAPTURE_OUTCOME=%q\n' "${candidate_capture_outcome:-unknown}"
+            printf 'LUMINA_WINDOWS_CAPTURE_GUEST_STATUS=%q\n' "${candidate_guest_status:-unknown}"
+            printf 'LUMINA_WINDOWS_APP_READY=%q\n' "${recent_app_ready}"
+            printf 'LUMINA_WINDOWS_SHORTCUT_PATH=%q\n' "${recent_shortcut_path}"
+            printf 'LUMINA_WINDOWS_CAPTURED_AT=%q\n' "$(date -Is)"
+        } > "${recent_env_path}"
+    fi
+fi
+
+if [[ -f "${recent_env_path}" ]]; then
+    # shellcheck disable=SC1090
+    source "${recent_env_path}"
+    recent_app_id="${LUMINA_WINDOWS_APP_ID:-}"
+    recent_app_name="${LUMINA_WINDOWS_APP_NAME:-}"
+    recent_app_category="${LUMINA_WINDOWS_APP_CATEGORY:-}"
+    recent_registration_state="${LUMINA_WINDOWS_REGISTRATION_STATE:-unknown}"
+    recent_capture_source="${LUMINA_WINDOWS_CAPTURE_SOURCE:-daily-app-picker}"
+    recent_capture_outcome="${LUMINA_WINDOWS_CAPTURE_OUTCOME:-unknown}"
+    recent_capture_guest_status="${LUMINA_WINDOWS_CAPTURE_GUEST_STATUS:-unknown}"
+    recent_app_ready="${LUMINA_WINDOWS_APP_READY:-no}"
+    recent_shortcut_path="${LUMINA_WINDOWS_SHORTCUT_PATH:-}"
+
+    if [[ -n "${recent_app_id}" ]]; then
+        current_shortcut_path="${export_dir}/lumina-windows-daily-app-${profile_id}-${recent_app_id}.desktop"
+        if [[ "${recent_registration_state}" == "published" && -f "${current_shortcut_path}" ]]; then
+            recent_app_ready="yes"
+            recent_shortcut_path="${current_shortcut_path}"
+        else
+            recent_app_ready="no"
+            recent_shortcut_path="${current_shortcut_path}"
+        fi
+    fi
+fi
+
+if [[ "${recent_app_ready}" == "yes" ]]; then
+    touch "${recent_marker}"
+else
+    rm -f "${recent_marker}"
+fi
+
+if [[ ${launch_recent} -eq 1 ]]; then
+    if [[ -z "${recent_app_id}" ]]; then
+        recent_launch_outcome="no-recent-app"
+        recent_launch_status="not-run"
+        recent_launch_note="No recent daily Windows app has been captured yet for this workflow."
+    elif [[ "${recent_app_ready}" != "yes" ]]; then
+        recent_launch_outcome="recent-app-not-ready"
+        recent_launch_status="deferred"
+        recent_launch_note="Lumina remembers the recent app, but it is not published-ready in the current daily pack yet."
+    else
+        /usr/local/bin/ahmados-windows-registered-app-launch --profile-id "${profile_id}" --app-id "${recent_app_id}" --no-open >/dev/null 2>&1 || true
+        recent_launch_executed="yes"
+        recent_launch_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${launch_report}" 2>/dev/null || true)"
+        recent_launch_status="$(awk -F': ' '/^- Guest Launch Status:/ {print $2; exit}' "${launch_report}" 2>/dev/null || true)"
+        recent_launch_note="$(awk 'found && /^- / {sub(/^- /,""); print; exit} /^## Launch Note/ {found=1}' "${launch_report}" 2>/dev/null || true)"
+        [[ -n "${recent_launch_outcome}" ]] || recent_launch_outcome="unknown"
+        [[ -n "${recent_launch_status}" ]] || recent_launch_status="unknown"
+        [[ -n "${recent_launch_note}" ]] || recent_launch_note="No launch note was captured."
+    fi
+fi
+
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows Daily Recent Sync\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Recent App Id: %s\n' "${recent_app_id:-none}"
+    printf -- '- Recent App Name: %s\n' "${recent_app_name:-none}"
+    printf -- '- Recent App Category: %s\n' "${recent_app_category:-none}"
+    printf -- '- Recent Registration State: %s\n' "${recent_registration_state}"
+    printf -- '- Recent Capture Source: %s\n' "${recent_capture_source}"
+    printf -- '- Recent Capture Outcome: %s\n' "${recent_capture_outcome}"
+    printf -- '- Recent Capture Guest Status: %s\n' "${recent_capture_guest_status}"
+    printf -- '- Recent App Ready: %s\n' "${recent_app_ready}"
+    printf -- '- Recent Shortcut Path: %s\n' "${recent_shortcut_path:-none}"
+    printf -- '- Recent Marker: %s\n' "${recent_marker}"
+    printf -- '- Recent Launch Executed: %s\n' "${recent_launch_executed}"
+    printf -- '- Recent Launch Outcome: %s\n' "${recent_launch_outcome}"
+    printf -- '- Recent Launch Status: %s\n' "${recent_launch_status}"
+    printf '\n## Recent Note\n'
+    printf -- '- %s\n' "${recent_launch_note}"
+    printf '\n## Related Reports\n'
+    printf -- '- Daily App Picker Report: %s\n' "${picker_report}"
+    printf -- '- Registered App Launch Report: %s\n' "${launch_report}"
+    printf -- '- Daily App Pack Report: %s\n' "${daily_app_pack_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${recent_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '  Lumina Windows Daily Recent Sync'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Recent app: %s\n' "${recent_app_name:-none}"
+printf 'Launch outcome: %s\n' "${recent_launch_outcome}"
+printf 'Report: %s\n' "${recent_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${recent_report}" >/dev/null 2>&1 || true
+fi

@@ -33,6 +33,9 @@ hub_report="${state_root}/windows-workflow-hub.md"
 app_library_report="${state_root}/windows-app-library.md"
 daily_app_pack_report="${state_root}/windows-daily-app-pack.md"
 daily_app_picker_report="${state_root}/windows-daily-app-picker.md"
+recent_sync_report="${state_root}/windows-daily-recent-sync.md"
+launch_sync_report="${state_root}/windows-launch-results-sync.md"
+vm_warm_start_report="${state_root}/windows-vm-warm-start.md"
 
 if [[ -z "${selected_profile_id}" ]]; then
     selected_profile_id="adobe-creator"
@@ -50,6 +53,8 @@ IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studi
 /usr/local/bin/ahmados-windows-workflow-hub --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-app-library --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-daily-app-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-launch-results-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-daily-recent-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
 workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
 workflow_state_root="${workspace_root}/state"
@@ -57,23 +62,50 @@ app_library_marker="${workflow_state_root}/app-library-ready.marker"
 workflow_proof_marker="${workflow_state_root}/workflow-proof-ready.marker"
 checklist_complete_marker="${workflow_state_root}/checklist-complete.marker"
 daily_app_pack_marker="${workflow_state_root}/daily-app-pack-ready.marker"
+daily_recent_marker="${workflow_state_root}/daily-recent-ready.marker"
 
 resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
 resource_summary="$(awk -F': ' '/^- Resource Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
 current_phase="$(awk -F': ' '/^- Current Phase:/ {print $2; exit}' "${state_report}" 2>/dev/null || true)"
 workflow_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${state_report}" 2>/dev/null || true)"
+launch_queue_health="$(awk -F': ' '/^- Launch Queue Health:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+pending_requests="$(awk -F': ' '/^- Pending Requests:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+queue_note="$(awk -F': ' '/^- Queue Note:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+pressure_state="$(awk -F': ' '/^- Pressure State:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
+workflow_guard="$(awk -F': ' '/^- Workflow Guard:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
+recent_app_ready="$(awk -F': ' '/^- Recent App Ready:/ {print $2; exit}' "${recent_sync_report}" 2>/dev/null || true)"
+recent_app_name="$(awk -F': ' '/^- Recent App Name:/ {print $2; exit}' "${recent_sync_report}" 2>/dev/null || true)"
 [[ -n "${resource_class}" ]] || resource_class="balanced"
 [[ -n "${resource_summary}" ]] || resource_summary="No host resource summary captured."
 [[ -n "${current_phase}" ]] || current_phase="unknown"
 [[ -n "${workflow_status}" ]] || workflow_status="unknown"
+[[ -n "${launch_queue_health}" ]] || launch_queue_health="unknown"
+[[ -n "${pending_requests}" ]] || pending_requests="0"
+[[ -n "${queue_note}" ]] || queue_note="No queue note captured."
+[[ -n "${pressure_state}" ]] || pressure_state="unknown"
+[[ -n "${workflow_guard}" ]] || workflow_guard="unknown"
+[[ -n "${recent_app_ready}" ]] || recent_app_ready="$([[ -f "${daily_recent_marker}" ]] && printf yes || printf no)"
+[[ -n "${recent_app_name}" ]] || recent_app_name="none"
 
 runtime_mode="guided-setup"
 runtime_command="/usr/local/bin/ahmados-windows-workflow-hub --profile-id ${profile_id} --no-open"
 runtime_note="The workflow is not mature enough yet, so Lumina keeps the user on the guided setup path."
 runtime_outcome="guided-handoff"
 
-if [[ -f "${app_library_marker}" && -f "${workflow_proof_marker}" && -f "${checklist_complete_marker}" ]]; then
-    if [[ "${resource_class}" == "light" && -f "${daily_app_pack_marker}" ]]; then
+if [[ "${launch_queue_health}" == "pressure" ]]; then
+    runtime_mode="queue-sync"
+    runtime_command="/usr/local/bin/ahmados-windows-launch-results-sync --profile-id ${profile_id} --no-open"
+    runtime_note="Lumina detected queue pressure, so it syncs and cleans the Windows launch queue before attempting another daily launch."
+elif [[ "${resource_class}" == "light" && "${launch_queue_health}" == "awaiting-guest" && "${pending_requests}" != "0" ]]; then
+    runtime_mode="awaiting-guest"
+    runtime_command="/usr/local/bin/ahmados-windows-launch-results-sync --profile-id ${profile_id} --no-open"
+    runtime_note="A previous Windows launch is still waiting for the guest agent on a light machine, so Lumina syncs first instead of piling on more load."
+elif [[ -f "${app_library_marker}" && -f "${workflow_proof_marker}" && -f "${checklist_complete_marker}" ]]; then
+    if [[ "${resource_class}" == "light" && "${recent_app_ready}" == "yes" ]]; then
+        runtime_mode="recent-app"
+        runtime_command="/usr/local/bin/ahmados-windows-daily-recent-sync --profile-id ${profile_id} --launch-recent --no-open"
+        runtime_note="This machine is light and Lumina already has a recent published-ready daily app, so it reuses that faster path first."
+    elif [[ "${resource_class}" == "light" && -f "${daily_app_pack_marker}" ]]; then
         runtime_mode="daily-app"
         runtime_command="/usr/local/bin/ahmados-windows-daily-app-picker --profile-id ${profile_id} --launch-best --no-open"
         runtime_note="This machine is light, so Lumina prefers the lightest published daily app path."
@@ -87,6 +119,10 @@ fi
 eval "${runtime_command}" >/dev/null 2>&1 || true
 
 case "${runtime_mode}" in
+    recent-app)
+        runtime_outcome="$(awk -F': ' '/^- Recent Launch Outcome:/ {print $2; exit}' "${recent_sync_report}" 2>/dev/null || true)"
+        [[ -n "${runtime_outcome}" ]] || runtime_outcome="unknown"
+        ;;
     daily-app)
         runtime_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${daily_app_picker_report}" 2>/dev/null || true)"
         [[ -n "${runtime_outcome}" ]] || runtime_outcome="unknown"
@@ -94,6 +130,15 @@ case "${runtime_mode}" in
     daily-collection)
         runtime_outcome="$(awk -F': ' '/^- Collection Launch Outcome:/ {print $2; exit}' "${app_library_report}" 2>/dev/null || true)"
         [[ -n "${runtime_outcome}" ]] || runtime_outcome="unknown"
+        ;;
+    queue-sync|awaiting-guest)
+        launch_queue_health="$(awk -F': ' '/^- Launch Queue Health:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+        pending_requests="$(awk -F': ' '/^- Pending Requests:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+        queue_note="$(awk -F': ' '/^- Queue Note:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+        [[ -n "${launch_queue_health}" ]] || launch_queue_health="unknown"
+        [[ -n "${pending_requests}" ]] || pending_requests="0"
+        [[ -n "${queue_note}" ]] || queue_note="No queue note captured."
+        runtime_outcome="queue-${launch_queue_health}"
         ;;
 esac
 
@@ -106,17 +151,27 @@ esac
     printf -- '- Resource Summary: %s\n' "${resource_summary}"
     printf -- '- Current Phase: %s\n' "${current_phase}"
     printf -- '- Workflow Status: %s\n' "${workflow_status}"
+    printf -- '- Launch Queue Health: %s\n' "${launch_queue_health}"
+    printf -- '- Pending Requests: %s\n' "${pending_requests}"
+    printf -- '- Pressure State: %s\n' "${pressure_state}"
+    printf -- '- Workflow Guard: %s\n' "${workflow_guard}"
+    printf -- '- Recent App Ready: %s\n' "${recent_app_ready}"
+    printf -- '- Recent App Name: %s\n' "${recent_app_name}"
     printf -- '- Runtime Mode: %s\n' "${runtime_mode}"
     printf -- '- Runtime Command: %s\n' "${runtime_command}"
     printf -- '- Runtime Outcome: %s\n' "${runtime_outcome}"
     printf '\n## Runtime Note\n'
     printf -- '- %s\n' "${runtime_note}"
+    printf -- '- Queue Note: %s\n' "${queue_note}"
     printf '\n## Related Reports\n'
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
     printf -- '- App Library Report: %s\n' "${app_library_report}"
     printf -- '- Daily App Pack Report: %s\n' "${daily_app_pack_report}"
     printf -- '- Daily App Picker Report: %s\n' "${daily_app_picker_report}"
+    printf -- '- Daily Recent Sync Report: %s\n' "${recent_sync_report}"
+    printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
+    printf -- '- VM Warm Start Report: %s\n' "${vm_warm_start_report}"
 } > "${runtime_report}"
 
 printf '%s\n' '========================================'

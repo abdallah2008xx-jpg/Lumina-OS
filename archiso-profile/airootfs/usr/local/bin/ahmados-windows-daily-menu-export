@@ -30,6 +30,7 @@ profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
 daily_menu_export_report="${state_root}/windows-daily-menu-export.md"
 daily_surface_report="${state_root}/windows-daily-surface.md"
 app_library_report="${state_root}/windows-app-library.md"
+daily_recent_report="${state_root}/windows-daily-recent-sync.md"
 hub_report="${state_root}/windows-workflow-hub.md"
 state_report="${state_root}/windows-workflow-state.md"
 compat_report="${state_root}/windows-compat-report.md"
@@ -47,6 +48,7 @@ fi
 IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
 
 /usr/local/bin/ahmados-windows-app-library --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-daily-recent-sync --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-daily-surface --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
 workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
@@ -61,9 +63,13 @@ find "${export_dir}" -maxdepth 1 -type f -name "lumina-windows-daily-${profile_i
 resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
 surface_mode="$(awk -F': ' '/^- Surface Mode:/ {print $2; exit}' "${daily_surface_report}" 2>/dev/null || true)"
 recommended_collection="$(awk -F': ' '/^- Recommended Collection:/ {print $2; exit}' "${app_library_report}" 2>/dev/null || true)"
+recent_app_name="$(awk -F': ' '/^- Recent App Name:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+recent_app_ready="$(awk -F': ' '/^- Recent App Ready:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
 [[ -n "${resource_class}" ]] || resource_class="balanced"
 [[ -n "${surface_mode}" ]] || surface_mode="guided-setup"
 [[ -n "${recommended_collection}" ]] || recommended_collection="none"
+[[ -n "${recent_app_name}" ]] || recent_app_name="none"
+[[ -n "${recent_app_ready}" ]] || recent_app_ready="no"
 
 comment_suffix="Resource class ${resource_class}; surface mode ${surface_mode}."
 
@@ -93,6 +99,20 @@ Terminal=false
 Categories=Utility;System;
 StartupNotify=true
 Keywords=Windows;Lumina;Smart;Daily;${profile_name};
+EOF
+
+cat > "${export_dir}/lumina-windows-daily-${profile_id}-recent.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Recent ${profile_name} Daily App (Lumina)
+Comment=Reopen the recent daily Windows app for ${profile_name}. Recent ready: ${recent_app_ready}; app: ${recent_app_name}. ${comment_suffix}
+Exec=/usr/local/bin/lumina-windows-daily-recent-sync --profile-id ${profile_id} --launch-recent
+Icon=document-open-recent
+Terminal=false
+Categories=Utility;System;
+StartupNotify=true
+Keywords=Windows;Lumina;Recent;Daily;${profile_name};
 EOF
 
 cat > "${export_dir}/lumina-windows-daily-${profile_id}-best.desktop" <<EOF
@@ -152,16 +172,20 @@ touch "${daily_menu_export_marker}"
     printf -- '- Resource Class: %s\n' "${resource_class}"
     printf -- '- Surface Mode: %s\n' "${surface_mode}"
     printf -- '- Recommended Collection: %s\n' "${recommended_collection}"
+    printf -- '- Recent App Name: %s\n' "${recent_app_name}"
+    printf -- '- Recent App Ready: %s\n' "${recent_app_ready}"
     printf -- '- Export Directory: %s\n' "${export_dir}"
     printf -- '- Daily Menu Export Marker: %s\n' "${daily_menu_export_marker}"
     printf '\n## Exported Shortcuts\n'
     printf -- '- Daily Surface: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-surface.desktop"
     printf -- '- Smart Daily Launch: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-smart.desktop"
+    printf -- '- Recent Daily App: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-recent.desktop"
     printf -- '- Best Collection Launch: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-best.desktop"
     printf -- '- Collection Chooser: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-choose.desktop"
     printf -- '- Daily App Picker: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-pick-app.desktop"
     printf '\n## Related Reports\n'
     printf -- '- Daily Surface Report: %s\n' "${daily_surface_report}"
+    printf -- '- Daily Recent Sync Report: %s\n' "${daily_recent_report}"
     printf -- '- App Library Report: %s\n' "${app_library_report}"
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"

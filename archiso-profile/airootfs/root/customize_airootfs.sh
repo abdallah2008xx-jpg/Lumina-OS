@@ -113,6 +113,8 @@ chmod 755 /usr/local/bin/ahmados-windows-daily-app-pack
 chmod 755 /usr/local/bin/lumina-windows-daily-app-pack
 chmod 755 /usr/local/bin/ahmados-windows-daily-app-picker
 chmod 755 /usr/local/bin/lumina-windows-daily-app-picker
+chmod 755 /usr/local/bin/ahmados-windows-daily-recent-sync
+chmod 755 /usr/local/bin/lumina-windows-daily-recent-sync
 chmod 755 /usr/local/bin/ahmados-windows-daily-runtime
 chmod 755 /usr/local/bin/lumina-windows-daily-runtime
 chmod 755 /usr/local/bin/ahmados-windows-daily-refresh

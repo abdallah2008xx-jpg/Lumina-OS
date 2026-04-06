@@ -38,8 +38,10 @@ fi
 recent_daily_profile="$(awk -F= '/^RECENT_WORKFLOW_ID=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
 recent_daily_mode="$(awk -F= '/^RECENT_WORKFLOW_MODE=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
 recent_daily_outcome="$(awk -F= '/^RECENT_LAUNCH_OUTCOME=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
+pinned_daily_profile="$(awk -F= '/^PINNED_WORKFLOW_ID=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
 preferred_daily_profile="${default_daily_profile}"
 recent_daily_reusable="yes"
+pinned_daily_reusable="yes"
 
 case "${recent_daily_outcome}" in
     deferred-for-smoothness|queue-sync|awaiting-guest-sync|awaiting-guest|not-run|failed|error)
@@ -47,7 +49,21 @@ case "${recent_daily_outcome}" in
         ;;
 esac
 
-if [[ -n "${recent_daily_profile}" && "${recent_daily_reusable}" == "yes" ]]; then
+if [[ -n "${pinned_daily_profile}" ]]; then
+    pinned_row="$(awk -F'|' -v target="${pinned_daily_profile}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path:-/usr/share/lumina/windows-apps/profiles.tsv}" 2>/dev/null || true)"
+    if [[ -n "${pinned_row}" ]]; then
+        pinned_state_root="${documents_root}/Lumina Windows Workflows/${pinned_daily_profile}/state"
+        if [[ ! -f "${pinned_state_root}/daily-quick-launch-ready.marker" && ! -f "${pinned_state_root}/daily-recent-ready.marker" && ! -f "${pinned_state_root}/app-library-ready.marker" ]]; then
+            pinned_daily_reusable="no"
+        fi
+    else
+        pinned_daily_reusable="no"
+    fi
+fi
+
+if [[ -n "${pinned_daily_profile}" && "${pinned_daily_reusable}" == "yes" ]]; then
+    preferred_daily_profile="${pinned_daily_profile}"
+elif [[ -n "${recent_daily_profile}" && "${recent_daily_reusable}" == "yes" ]]; then
     recent_row="$(awk -F'|' -v target="${recent_daily_profile}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path:-/usr/share/lumina/windows-apps/profiles.tsv}" 2>/dev/null || true)"
     if [[ -n "${recent_row}" && ( "${recent_daily_mode}" == "quick-launch" || "${recent_daily_mode}" == "daily-surface" ) ]]; then
         preferred_daily_profile="${recent_daily_profile}"
@@ -104,6 +120,8 @@ fi
     printf -- '- VM Lab Prep: %s\n' "${vm_lab_prep}"
     printf -- '- Daily Runtime Prep: %s\n' "${daily_runtime_prep}"
     printf -- '- Default Daily Profile: %s\n' "${default_daily_profile}"
+    printf -- '- Pinned Daily Profile: %s\n' "${pinned_daily_profile:-none}"
+    printf -- '- Pinned Daily Reusable: %s\n' "${pinned_daily_reusable}"
     printf -- '- Recent Daily Profile: %s\n' "${recent_daily_profile:-none}"
     printf -- '- Recent Daily Mode: %s\n' "${recent_daily_mode:-none}"
     printf -- '- Recent Daily Outcome: %s\n' "${recent_daily_outcome:-none}"

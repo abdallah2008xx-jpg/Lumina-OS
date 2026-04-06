@@ -116,6 +116,7 @@ The current phase adds:
 - a guarded daily-home memory policy that refuses to reuse the last workflow blindly when the last outcome already showed queue pressure or smoothness deferral
 - a workflow-chooser surface and desktop action so users can override the automatic daily choice cleanly when they want a different Windows workflow today
 - a pinned-workflow policy so users can deliberately keep one workflow as their default daily Windows path without losing the smoothness guards
+- a desktop-level pinning surface so users can choose, pin, or clear the default Windows workflow straight from the launcher actions
 
 ## Current Limits
 

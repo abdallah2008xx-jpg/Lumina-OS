@@ -8,11 +8,19 @@ Icon=applications-other
 Terminal=false
 Categories=Qt;KDE;System;Utility;
 StartupNotify=true
-Actions=ChooseWorkflow;OpenDailyHome;
+Actions=ChooseWorkflow;ChooseAndPinWorkflow;ClearPinnedWorkflow;OpenDailyHome;
 
 [Desktop Action ChooseWorkflow]
 Name=Choose Workflow
 Exec=/usr/local/bin/lumina-windows-daily-home --choose-workflow --launch
+
+[Desktop Action ChooseAndPinWorkflow]
+Name=Choose and Pin Workflow
+Exec=/usr/local/bin/lumina-windows-daily-home --choose-workflow --pin-current --launch
+
+[Desktop Action ClearPinnedWorkflow]
+Name=Clear Pinned Workflow
+Exec=/usr/local/bin/lumina-windows-daily-home --clear-pin
 
 [Desktop Action OpenDailyHome]
 Name=Open Daily Home Report

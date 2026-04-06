@@ -8,3 +8,8 @@ Icon=applications-other
 Terminal=false
 Categories=Qt;KDE;System;Utility;
 StartupNotify=true
+Actions=ChooseAndPin;
+
+[Desktop Action ChooseAndPin]
+Name=Choose and Pin Workflow
+Exec=/usr/local/bin/lumina-windows-daily-home --choose-workflow --pin-current --launch

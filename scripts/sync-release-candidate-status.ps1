@@ -103,7 +103,11 @@ $isoPathLabel = Get-MetadataValue -Content $manifestContent -Label "ISO Path"
 $buildManifestLabel = Get-MetadataValue -Content $manifestContent -Label "Build Manifest"
 $vmReportLabel = Get-MetadataValue -Content $manifestContent -Label "VM Report"
 $installReportLabel = Get-MetadataValue -Content $manifestContent -Label "Install Report"
+$installReportRunLabel = Get-MetadataValue -Content $manifestContent -Label "Install Report Run Label"
+$installReportSelection = Get-MetadataValue -Content $manifestContent -Label "Install Report Selection"
 $hardwareReportLabel = Get-MetadataValue -Content $manifestContent -Label "Hardware Report"
+$hardwareReportRunLabel = Get-MetadataValue -Content $manifestContent -Label "Hardware Report Run Label"
+$hardwareReportSelection = Get-MetadataValue -Content $manifestContent -Label "Hardware Report Selection"
 $sessionSummaryLabel = Get-MetadataValue -Content $manifestContent -Label "Session Summary"
 $sessionAuditLabel = Get-MetadataValue -Content $manifestContent -Label "Session Audit"
 $cycleChainAuditLabel = Get-MetadataValue -Content $manifestContent -Label "Cycle Chain Audit"
@@ -169,6 +173,14 @@ if (-not [string]::IsNullOrWhiteSpace($hardwareReportState)) {
     $summaryItems.Add("Hardware Report Status: $hardwareReportState") | Out-Null
 }
 
+if (-not [string]::IsNullOrWhiteSpace($installReportSelection)) {
+    $summaryItems.Add("Install Report Selection: $installReportSelection") | Out-Null
+}
+
+if (-not [string]::IsNullOrWhiteSpace($hardwareReportSelection)) {
+    $summaryItems.Add("Hardware Report Selection: $hardwareReportSelection") | Out-Null
+}
+
 if ((Test-Path $resolvedPublishRecordPath) -and -not [string]::IsNullOrWhiteSpace($publishUrl)) {
     $summaryItems.Add("Published Release URL: $publishUrl") | Out-Null
 }
@@ -205,7 +217,11 @@ $summaryContent = @"
 - Build Manifest: $(Get-ResolvedPathOrDefault -Value $buildManifestLabel -DefaultValue "not-recorded-yet")
 - VM Report: $(Get-ResolvedPathOrDefault -Value $vmReportLabel -DefaultValue "not-recorded-yet")
 - Install Report: $(Get-ResolvedPathOrDefault -Value $installReportLabel -DefaultValue "not-recorded-yet")
+- Install Report Run Label: $(Get-ResolvedPathOrDefault -Value $installReportRunLabel -DefaultValue "not-recorded-yet")
+- Install Report Selection: $(Get-ResolvedPathOrDefault -Value $installReportSelection -DefaultValue "not-recorded-yet")
 - Hardware Report: $(Get-ResolvedPathOrDefault -Value $hardwareReportLabel -DefaultValue "not-recorded-yet")
+- Hardware Report Run Label: $(Get-ResolvedPathOrDefault -Value $hardwareReportRunLabel -DefaultValue "not-recorded-yet")
+- Hardware Report Selection: $(Get-ResolvedPathOrDefault -Value $hardwareReportSelection -DefaultValue "not-recorded-yet")
 - Session Summary: $(Get-ResolvedPathOrDefault -Value $sessionSummaryLabel -DefaultValue "not-recorded-yet")
 - Session Audit: $(Get-ResolvedPathOrDefault -Value $sessionAuditLabel -DefaultValue "not-recorded-yet")
 - Cycle Chain Audit: $(Get-ResolvedPathOrDefault -Value $cycleChainAuditLabel -DefaultValue "not-recorded-yet")

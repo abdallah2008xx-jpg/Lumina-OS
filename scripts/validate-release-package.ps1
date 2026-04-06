@@ -94,11 +94,15 @@ function Test-EvidenceReport {
         return @{
             Path = ""
             Status = ""
+            RunLabel = ""
+            Selection = ""
         }
     }
 
     $content = Get-Content -Raw $resolvedPath
     $status = Get-StateValue -Content $content -Labels $StatusLabels
+    $runLabel = Get-MetadataValue -Content $content -Label "Run Label"
+    $selection = Get-MetadataValue -Content $manifestContent -Label ($Label + " Selection")
     $normalizedStatus = if ([string]::IsNullOrWhiteSpace($status)) { "" } else { $status.Trim().ToLowerInvariant() }
 
     if ([string]::IsNullOrWhiteSpace($normalizedStatus)) {
@@ -120,6 +124,8 @@ function Test-EvidenceReport {
     return @{
         Path = $resolvedPath
         Status = $status
+        RunLabel = $runLabel
+        Selection = $selection
     }
 }
 
@@ -153,6 +159,8 @@ $installEvidence = Test-EvidenceReport `
     -Notes $notes
 $installReportPath = $installEvidence.Path
 $installReportState = $installEvidence.Status
+$installReportRunLabel = $installEvidence.RunLabel
+$installReportSelection = $installEvidence.Selection
 
 $hardwareEvidence = Test-EvidenceReport `
     -Label "Hardware Report" `
@@ -166,6 +174,8 @@ $hardwareEvidence = Test-EvidenceReport `
     -Notes $notes
 $hardwareReportPath = $hardwareEvidence.Path
 $hardwareReportState = $hardwareEvidence.Status
+$hardwareReportRunLabel = $hardwareEvidence.RunLabel
+$hardwareReportSelection = $hardwareEvidence.Selection
 
 $sessionPath = Resolve-ExistingPath -Label "Session Summary" -Value (Get-MetadataValue -Content $manifestContent -Label "Session Summary") -Errors $errors
 $auditPath = Resolve-ExistingPath -Label "Session Audit" -Value (Get-MetadataValue -Content $manifestContent -Label "Session Audit") -Errors $errors
@@ -175,6 +185,18 @@ $validationMatrixPath = Resolve-ExistingPath -Label "Validation Matrix" -Value (
 
 if ([string]::IsNullOrWhiteSpace($version)) {
     Add-ValidationItem -Bucket $errors -Message "Version is missing from the release manifest."
+}
+
+if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
+    -not [string]::IsNullOrWhiteSpace($installReportRunLabel) -and
+    $installReportRunLabel -ne $runLabel) {
+    Add-ValidationItem -Bucket $warnings -Message "Install Report Run Label does not match the release manifest Run Label."
+}
+
+if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
+    -not [string]::IsNullOrWhiteSpace($hardwareReportRunLabel) -and
+    $hardwareReportRunLabel -ne $runLabel) {
+    Add-ValidationItem -Bucket $warnings -Message "Hardware Report Run Label does not match the release manifest Run Label."
 }
 
 if (-not [string]::IsNullOrWhiteSpace($isoPath) -and -not [string]::IsNullOrWhiteSpace($checksumPath)) {
@@ -292,8 +314,12 @@ $report = @"
 - ISO Path: $(if ([string]::IsNullOrWhiteSpace($isoPath)) { "not-recorded-yet" } else { $isoPath })
 - Install Report: $(if ([string]::IsNullOrWhiteSpace($installReportPath)) { "not-recorded-yet" } else { $installReportPath })
 - Install Report Status: $(if ([string]::IsNullOrWhiteSpace($installReportState)) { "not-recorded-yet" } else { $installReportState })
+- Install Report Run Label: $(if ([string]::IsNullOrWhiteSpace($installReportRunLabel)) { "not-recorded-yet" } else { $installReportRunLabel })
+- Install Report Selection: $(if ([string]::IsNullOrWhiteSpace($installReportSelection)) { "not-recorded-yet" } else { $installReportSelection })
 - Hardware Report: $(if ([string]::IsNullOrWhiteSpace($hardwareReportPath)) { "not-recorded-yet" } else { $hardwareReportPath })
 - Hardware Report Status: $(if ([string]::IsNullOrWhiteSpace($hardwareReportState)) { "not-recorded-yet" } else { $hardwareReportState })
+- Hardware Report Run Label: $(if ([string]::IsNullOrWhiteSpace($hardwareReportRunLabel)) { "not-recorded-yet" } else { $hardwareReportRunLabel })
+- Hardware Report Selection: $(if ([string]::IsNullOrWhiteSpace($hardwareReportSelection)) { "not-recorded-yet" } else { $hardwareReportSelection })
 - Readiness State: $(if ([string]::IsNullOrWhiteSpace($readinessState)) { "not-recorded-yet" } else { $readinessState })
 - Validation Matrix State: $(if ([string]::IsNullOrWhiteSpace($validationState)) { "not-recorded-yet" } else { $validationState })
 - Blocker State: $(if ([string]::IsNullOrWhiteSpace($blockerState)) { "not-recorded-yet" } else { $blockerState })

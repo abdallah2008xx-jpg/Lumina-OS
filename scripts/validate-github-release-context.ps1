@@ -102,7 +102,11 @@ $version = Get-MetadataValue -Content $manifestContent -Label "Version"
 $runLabel = Get-MetadataValue -Content $manifestContent -Label "Run Label"
 $mode = Get-MetadataValue -Content $manifestContent -Label "Mode"
 $installReportPath = Resolve-RequiredPath -Label "Install Report" -Value (Get-MetadataValue -Content $manifestContent -Label "Install Report") -Errors $errors
+$installReportRunLabel = Get-MetadataValue -Content $manifestContent -Label "Install Report Run Label"
+$installReportSelection = Get-MetadataValue -Content $manifestContent -Label "Install Report Selection"
 $hardwareReportPath = Resolve-RequiredPath -Label "Hardware Report" -Value (Get-MetadataValue -Content $manifestContent -Label "Hardware Report") -Errors $errors
+$hardwareReportRunLabel = Get-MetadataValue -Content $manifestContent -Label "Hardware Report Run Label"
+$hardwareReportSelection = Get-MetadataValue -Content $manifestContent -Label "Hardware Report Selection"
 
 $releaseConfigPath = Join-Path $RepoRoot "archiso-profile\airootfs\etc\ahmados-release.conf"
 $resolvedOwner = if ([string]::IsNullOrWhiteSpace($Owner)) {
@@ -171,6 +175,18 @@ if ([string]::IsNullOrWhiteSpace($hardwareReportState) -or $hardwareReportState 
 }
 else {
     Add-ValidationItem -Bucket $notes -Message "Hardware report status resolved as $hardwareReportState."
+}
+
+if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
+    -not [string]::IsNullOrWhiteSpace($installReportRunLabel) -and
+    $installReportRunLabel -ne $runLabel) {
+    Add-ValidationItem -Bucket $warnings -Message "Install report Run Label does not match the release manifest."
+}
+
+if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
+    -not [string]::IsNullOrWhiteSpace($hardwareReportRunLabel) -and
+    $hardwareReportRunLabel -ne $runLabel) {
+    Add-ValidationItem -Bucket $warnings -Message "Hardware report Run Label does not match the release manifest."
 }
 
 if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
@@ -243,8 +259,12 @@ $report = @"
 - Token Source: $(if ([string]::IsNullOrWhiteSpace($tokenSource)) { "not-recorded-yet" } else { $tokenSource })
 - Install Report: $(if ([string]::IsNullOrWhiteSpace($installReportPath)) { "not-recorded-yet" } else { $installReportPath })
 - Install Report Status: $(if ([string]::IsNullOrWhiteSpace($installReportState)) { "not-recorded-yet" } else { $installReportState })
+- Install Report Run Label: $(if ([string]::IsNullOrWhiteSpace($installReportRunLabel)) { "not-recorded-yet" } else { $installReportRunLabel })
+- Install Report Selection: $(if ([string]::IsNullOrWhiteSpace($installReportSelection)) { "not-recorded-yet" } else { $installReportSelection })
 - Hardware Report: $(if ([string]::IsNullOrWhiteSpace($hardwareReportPath)) { "not-recorded-yet" } else { $hardwareReportPath })
 - Hardware Report Status: $(if ([string]::IsNullOrWhiteSpace($hardwareReportState)) { "not-recorded-yet" } else { $hardwareReportState })
+- Hardware Report Run Label: $(if ([string]::IsNullOrWhiteSpace($hardwareReportRunLabel)) { "not-recorded-yet" } else { $hardwareReportRunLabel })
+- Hardware Report Selection: $(if ([string]::IsNullOrWhiteSpace($hardwareReportSelection)) { "not-recorded-yet" } else { $hardwareReportSelection })
 - Release Manifest: $resolvedManifestPath
 - Release Validation Report: $(if ([string]::IsNullOrWhiteSpace($validationReportPath)) { "not-recorded-yet" } else { $validationReportPath })
 - Current Release Candidate: $(if ([string]::IsNullOrWhiteSpace($currentCandidatePath)) { "not-recorded-yet" } else { $currentCandidatePath })

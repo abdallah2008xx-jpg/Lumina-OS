@@ -128,6 +128,118 @@ function Get-MetadataValue {
     return ""
 }
 
+function Get-StateValue {
+    param(
+        [string]$Content,
+        [string[]]$Labels
+    )
+
+    foreach ($label in $Labels) {
+        $value = Get-MetadataValue -Content $Content -Label $label
+        if (-not [string]::IsNullOrWhiteSpace($value)) {
+            return $value
+        }
+    }
+
+    return ""
+}
+
+function Test-EvidencePassState {
+    param(
+        [string]$Content,
+        [string[]]$StatusLabels,
+        [string[]]$PassStates
+    )
+
+    $status = Get-StateValue -Content $Content -Labels $StatusLabels
+    if ([string]::IsNullOrWhiteSpace($status)) {
+        return $false
+    }
+
+    return ($PassStates -contains $status.Trim().ToLowerInvariant())
+}
+
+function Get-ReportMetadata {
+    param([string]$Path)
+
+    if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path $Path)) {
+        return @{
+            RunLabel = ""
+            Status = ""
+        }
+    }
+
+    $content = Get-Content -Raw $Path -ErrorAction SilentlyContinue
+    return @{
+        RunLabel = Get-MetadataValue -Content $content -Label "Run Label"
+        Status = Get-StateValue -Content $content -Labels @("Overall Status", "Hardware Readiness", "Overall State", "Result")
+    }
+}
+
+function Get-BestEvidenceFile {
+    param(
+        [string]$Path,
+        [string]$Filter,
+        [string]$RunLabel,
+        [string]$Mode,
+        [string[]]$StatusLabels,
+        [string[]]$PassStates,
+        [switch]$UseModeFilter
+    )
+
+    $result = @{
+        File = $null
+        Selection = "not-found"
+    }
+
+    if (-not (Test-Path $Path)) {
+        return $result
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($RunLabel)) {
+        $runMatch = Get-FileByRunLabel -Path $Path -Filter $Filter -RunLabel $RunLabel
+        if ($runMatch) {
+            $result.File = $runMatch
+            $result.Selection = "exact-run-label"
+            return $result
+        }
+    }
+
+    $files = Get-ChildItem -Path $Path -Filter $Filter -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -notlike "README.md" -and $_.Name -notlike "CURRENT-*.md" } |
+        Sort-Object LastWriteTime -Descending
+
+    if ($UseModeFilter.IsPresent -and -not [string]::IsNullOrWhiteSpace($Mode)) {
+        $escapedMode = [regex]::Escape($Mode)
+        $pattern = "-" + $escapedMode + "([\.-]|$)"
+        $files = $files | Where-Object {
+            if ($_.Name -match $pattern) {
+                return $true
+            }
+
+            $content = Get-Content -Raw $_.FullName -ErrorAction SilentlyContinue
+            return ($content -match ("(?m)^- Mode: " + $escapedMode + "$"))
+        }
+    }
+
+    foreach ($file in $files) {
+        $content = Get-Content -Raw $file.FullName -ErrorAction SilentlyContinue
+        if (Test-EvidencePassState -Content $content -StatusLabels $StatusLabels -PassStates $PassStates) {
+            $result.File = $file
+            $result.Selection = if ($UseModeFilter.IsPresent -and -not [string]::IsNullOrWhiteSpace($Mode)) { "latest-completed-mode" } else { "latest-completed" }
+            return $result
+        }
+    }
+
+    $fallback = $files | Select-Object -First 1
+    if ($fallback) {
+        $result.File = $fallback
+        $result.Selection = if ($UseModeFilter.IsPresent -and -not [string]::IsNullOrWhiteSpace($Mode)) { "latest-mode" } else { "latest-any" }
+    }
+
+    return $result
+}
+
 function Get-ResolvedPathOrDefault {
     param(
         [string]$Value,
@@ -233,30 +345,37 @@ if ([string]::IsNullOrWhiteSpace($resolvedVmReportPath)) {
 }
 
 $resolvedInstallReportPath = $InstallReportPath
+$installReportSelection = if ([string]::IsNullOrWhiteSpace($resolvedInstallReportPath)) { "auto" } else { "explicit-path" }
 if ([string]::IsNullOrWhiteSpace($resolvedInstallReportPath)) {
-    $candidate = if ([string]::IsNullOrWhiteSpace($RunLabel)) {
-        Get-LatestModeFile -Path (Join-Path $RepoRoot "status\install-tests") -Filter "*.md" -Mode $Mode
-    }
-    else {
-        Get-FileByRunLabel -Path (Join-Path $RepoRoot "status\install-tests") -Filter "*.md" -RunLabel $RunLabel
-    }
+    $candidateSelection = Get-BestEvidenceFile `
+        -Path (Join-Path $RepoRoot "status\install-tests") `
+        -Filter "*.md" `
+        -RunLabel $RunLabel `
+        -Mode $Mode `
+        -StatusLabels @("Overall Status", "Overall State", "Result") `
+        -PassStates @("pass", "passed", "complete", "completed", "success", "successful", "ready-for-release") `
+        -UseModeFilter
 
-    if ($candidate) {
-        $resolvedInstallReportPath = $candidate.FullName
+    if ($candidateSelection.File) {
+        $resolvedInstallReportPath = $candidateSelection.File.FullName
+        $installReportSelection = $candidateSelection.Selection
     }
 }
 
 $resolvedHardwareReportPath = $HardwareReportPath
+$hardwareReportSelection = if ([string]::IsNullOrWhiteSpace($resolvedHardwareReportPath)) { "auto" } else { "explicit-path" }
 if ([string]::IsNullOrWhiteSpace($resolvedHardwareReportPath)) {
-    $candidate = if ([string]::IsNullOrWhiteSpace($RunLabel)) {
-        Get-LatestFile -Path (Join-Path $RepoRoot "status\hardware-tests") -Filter "*.md"
-    }
-    else {
-        Get-FileByRunLabel -Path (Join-Path $RepoRoot "status\hardware-tests") -Filter "*.md" -RunLabel $RunLabel
-    }
+    $candidateSelection = Get-BestEvidenceFile `
+        -Path (Join-Path $RepoRoot "status\hardware-tests") `
+        -Filter "*.md" `
+        -RunLabel $RunLabel `
+        -Mode $Mode `
+        -StatusLabels @("Overall Status", "Hardware Readiness", "Overall State", "Result") `
+        -PassStates @("pass", "passed", "complete", "completed", "success", "successful", "ready-for-real-device-smoke", "ready-for-release") 
 
-    if ($candidate) {
-        $resolvedHardwareReportPath = $candidate.FullName
+    if ($candidateSelection.File) {
+        $resolvedHardwareReportPath = $candidateSelection.File.FullName
+        $hardwareReportSelection = $candidateSelection.Selection
     }
 }
 
@@ -372,11 +491,18 @@ New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
 $checksumContent = "$sha256 *$isoName"
 Set-Content -Path $checksumPath -Value $checksumContent -Encoding ASCII
 
+$installReportMetadata = Get-ReportMetadata -Path $resolvedInstallReportPath
+$hardwareReportMetadata = Get-ReportMetadata -Path $resolvedHardwareReportPath
+
 $releaseEvidenceLines = @(
     "- Build Manifest: $(Get-ResolvedPathOrDefault -Value $resolvedBuildManifestPath -DefaultValue "not-recorded-yet")",
     "- VM Report: $(Get-ResolvedPathOrDefault -Value $resolvedVmReportPath -DefaultValue "not-recorded-yet")",
     "- Install Report: $(Get-ResolvedPathOrDefault -Value $resolvedInstallReportPath -DefaultValue "not-recorded-yet")",
+    "- Install Report Run Label: $(Get-ResolvedPathOrDefault -Value $installReportMetadata.RunLabel -DefaultValue "not-recorded-yet")",
+    "- Install Report Selection: $(Get-ResolvedPathOrDefault -Value $installReportSelection -DefaultValue "not-recorded-yet")",
     "- Hardware Report: $(Get-ResolvedPathOrDefault -Value $resolvedHardwareReportPath -DefaultValue "not-recorded-yet")",
+    "- Hardware Report Run Label: $(Get-ResolvedPathOrDefault -Value $hardwareReportMetadata.RunLabel -DefaultValue "not-recorded-yet")",
+    "- Hardware Report Selection: $(Get-ResolvedPathOrDefault -Value $hardwareReportSelection -DefaultValue "not-recorded-yet")",
     "- Session Summary: $(Get-ResolvedPathOrDefault -Value $resolvedSessionPath -DefaultValue "not-recorded-yet")",
     "- Session Audit: $(Get-ResolvedPathOrDefault -Value $resolvedAuditPath -DefaultValue "not-recorded-yet")",
     "- Cycle Chain Audit: $(Get-ResolvedPathOrDefault -Value $resolvedCycleChainAuditPath -DefaultValue "not-recorded-yet")",

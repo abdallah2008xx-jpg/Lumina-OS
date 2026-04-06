@@ -81,6 +81,20 @@ StartupNotify=true
 Keywords=Windows;Lumina;Daily;${profile_name};
 EOF
 
+cat > "${export_dir}/lumina-windows-daily-${profile_id}-smart.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Smart ${profile_name} Windows Launch (Lumina)
+Comment=Let Lumina choose the smoothest daily Windows launch path for ${profile_name}. ${comment_suffix}
+Exec=/usr/local/bin/lumina-windows-daily-runtime --profile-id ${profile_id}
+Icon=system-run
+Terminal=false
+Categories=Utility;System;
+StartupNotify=true
+Keywords=Windows;Lumina;Smart;Daily;${profile_name};
+EOF
+
 cat > "${export_dir}/lumina-windows-daily-${profile_id}-best.desktop" <<EOF
 [Desktop Entry]
 Type=Application
@@ -142,6 +156,7 @@ touch "${daily_menu_export_marker}"
     printf -- '- Daily Menu Export Marker: %s\n' "${daily_menu_export_marker}"
     printf '\n## Exported Shortcuts\n'
     printf -- '- Daily Surface: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-surface.desktop"
+    printf -- '- Smart Daily Launch: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-smart.desktop"
     printf -- '- Best Collection Launch: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-best.desktop"
     printf -- '- Collection Chooser: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-choose.desktop"
     printf -- '- Daily App Picker: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-pick-app.desktop"

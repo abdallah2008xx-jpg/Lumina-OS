@@ -8,6 +8,7 @@ launch_best=0
 choose_collection=0
 launch_best_app=0
 choose_daily_app=0
+smart_launch=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -35,6 +36,10 @@ while [[ $# -gt 0 ]]; do
             choose_daily_app=1
             shift
             ;;
+        --smart-launch)
+            smart_launch=1
+            shift
+            ;;
         --no-open)
             open_surface=0
             shift
@@ -60,6 +65,7 @@ state_report="${state_root}/windows-workflow-state.md"
 app_library_report="${state_root}/windows-app-library.md"
 vm_lab_report="${state_root}/windows-vm-lab.md"
 daily_app_picker_report="${state_root}/windows-daily-app-picker.md"
+daily_runtime_report="${state_root}/windows-daily-runtime.md"
 
 choose_profile_with_kdialog() {
     local default_id="$1"
@@ -134,13 +140,8 @@ selected_action_outcome="not-run"
 if [[ -f "${app_library_marker}" && -f "${workflow_proof_marker}" && -f "${checklist_complete_marker}" ]]; then
     surface_mode="daily-launch"
     surface_summary="This workflow is mature enough for Lumina to treat Windows Apps like a daily-use launch surface."
-    if [[ "${resource_class}" == "light" ]]; then
-        recommended_action="Launch the best daily app"
-        recommended_command="/usr/local/bin/lumina-windows-daily-app-picker --profile-id ${profile_id} --launch-best"
-    else
-        recommended_action="Launch the best published collection"
-        recommended_command="/usr/local/bin/lumina-windows-app-library --profile-id ${profile_id} --launch-best"
-    fi
+    recommended_action="Launch the smart daily runtime"
+    recommended_command="/usr/local/bin/lumina-windows-daily-runtime --profile-id ${profile_id}"
 fi
 
 run_surface_action() {
@@ -157,6 +158,9 @@ run_surface_action() {
             ;;
         choose-daily-app)
             /usr/local/bin/ahmados-windows-daily-app-picker --profile-id "${profile_id}" --choose-app --no-open >/dev/null 2>&1 || true
+            ;;
+        smart-launch)
+            /usr/local/bin/ahmados-windows-daily-runtime --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
             ;;
         open-library)
             if command -v xdg-open >/dev/null 2>&1; then
@@ -200,10 +204,16 @@ if [[ ${open_surface} -eq 1 ]]; then
         selected_action_note="Lumina opened the daily app picker."
         run_surface_action "choose-daily-app"
         selected_action_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${daily_app_picker_report}" 2>/dev/null || true)"
+    elif [[ ${smart_launch} -eq 1 ]]; then
+        selected_action="smart-launch"
+        selected_action_note="Lumina ran the smart daily runtime."
+        run_surface_action "smart-launch"
+        selected_action_outcome="$(awk -F': ' '/^- Runtime Outcome:/ {print $2; exit}' "${daily_runtime_report}" 2>/dev/null || true)"
     elif command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
         if [[ "${surface_mode}" == "daily-launch" ]]; then
             chosen_surface="$(kdialog --title "Lumina Windows Apps" \
                 --menu "Choose how Lumina should open the Windows app surface for ${profile_name}." \
+                smart "Smart daily launch (Recommended)" \
                 bestapp "Launch the best daily app (Recommended on lighter machines)" \
                 choose "Choose a collection" \
                 chooseapp "Choose a daily app" \
@@ -220,6 +230,12 @@ if [[ ${open_surface} -eq 1 ]]; then
         fi
 
         case "${chosen_surface}" in
+            smart)
+                selected_action="smart-launch"
+                selected_action_note="Lumina ran the smart daily runtime."
+                run_surface_action "smart-launch"
+                selected_action_outcome="$(awk -F': ' '/^- Runtime Outcome:/ {print $2; exit}' "${daily_runtime_report}" 2>/dev/null || true)"
+                ;;
             bestapp)
                 selected_action="launch-best-app"
                 selected_action_note="Lumina used the daily app picker to launch the best published daily app."
@@ -265,17 +281,10 @@ if [[ ${open_surface} -eq 1 ]]; then
         esac
     else
         if [[ "${surface_mode}" == "daily-launch" ]]; then
-            if [[ "${resource_class}" == "light" ]]; then
-                selected_action="launch-best-app"
-                selected_action_note="Lumina used the daily app picker to launch the best published daily app."
-                run_surface_action "launch-best-app"
-                selected_action_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${daily_app_picker_report}" 2>/dev/null || true)"
-            else
-                selected_action="launch-best"
-                selected_action_note="Lumina used the daily app library surface to launch the best published collection."
-                run_surface_action "launch-best"
-                selected_action_outcome="$(awk -F': ' '/^- Collection Launch Outcome:/ {print $2; exit}' "${app_library_report}" 2>/dev/null || true)"
-            fi
+            selected_action="smart-launch"
+            selected_action_note="Lumina ran the smart daily runtime."
+            run_surface_action "smart-launch"
+            selected_action_outcome="$(awk -F': ' '/^- Runtime Outcome:/ {print $2; exit}' "${daily_runtime_report}" 2>/dev/null || true)"
         else
             selected_action="open-hub"
             selected_action_note="Lumina opened the workflow hub because the daily surface is not ready yet."
@@ -311,6 +320,7 @@ fi
     printf -- '- Workflow State Report: %s\n' "${state_report}"
     printf -- '- Windows App Library Report: %s\n' "${app_library_report}"
     printf -- '- Daily App Picker Report: %s\n' "${daily_app_picker_report}"
+    printf -- '- Daily Runtime Report: %s\n' "${daily_runtime_report}"
     printf -- '- Windows VM Lab Report: %s\n' "${vm_lab_report}"
 } > "${daily_surface_report}"
 

@@ -100,6 +100,7 @@ The current phase adds:
 - a daily-menu export layer that promotes the daily Windows surface and its best and chooser shortcuts into lightweight Lumina menu entries
 - a daily-app pack layer that promotes the best published Windows apps into a smaller daily launcher set for smoother direct use
 - a daily-app picker layer that can choose the best daily app or let the user pick one of the published-ready daily apps directly
+- a smart daily runtime layer that can decide whether the smoothest path today is a single daily app, a broader collection, or a guided handoff
 
 ## Current Limits
 
@@ -138,6 +139,7 @@ The current phase adds:
 - It now exports lightweight daily menu shortcuts for the mature Windows path, so the user can jump straight to the daily surface, the best launch path, or the collection chooser.
 - It now exports a smaller daily app pack from published ready apps, so Lumina can bias direct use toward the smoothest known Windows launches instead of showing every app equally.
 - It now gives the daily surface a direct daily-app picker, so weaker machines can bias toward one lighter published app instead of always reaching for a broader collection first.
+- It now has a smart daily runtime that chooses the smoothest daily path automatically once a workflow is mature enough, instead of making the user manually decide every time.
 - The guest still needs that generated launch agent installed once before staged requests become truly hands-free.
 - Lumina still does not project true seamless Windows app windows into KDE yet; the result path is tracked honestly through reports and workflow state.
 

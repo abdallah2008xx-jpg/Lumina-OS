@@ -6,6 +6,8 @@ open_surface=1
 launch_advanced_lab=0
 launch_best=0
 choose_collection=0
+launch_best_app=0
+choose_daily_app=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -23,6 +25,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --choose-collection)
             choose_collection=1
+            shift
+            ;;
+        --launch-best-app)
+            launch_best_app=1
+            shift
+            ;;
+        --choose-daily-app)
+            choose_daily_app=1
             shift
             ;;
         --no-open)
@@ -49,6 +59,7 @@ hub_report="${state_root}/windows-workflow-hub.md"
 state_report="${state_root}/windows-workflow-state.md"
 app_library_report="${state_root}/windows-app-library.md"
 vm_lab_report="${state_root}/windows-vm-lab.md"
+daily_app_picker_report="${state_root}/windows-daily-app-picker.md"
 
 choose_profile_with_kdialog() {
     local default_id="$1"
@@ -124,8 +135,8 @@ if [[ -f "${app_library_marker}" && -f "${workflow_proof_marker}" && -f "${check
     surface_mode="daily-launch"
     surface_summary="This workflow is mature enough for Lumina to treat Windows Apps like a daily-use launch surface."
     if [[ "${resource_class}" == "light" ]]; then
-        recommended_action="Choose a collection"
-        recommended_command="/usr/local/bin/lumina-windows-app-library --profile-id ${profile_id} --choose-collection"
+        recommended_action="Launch the best daily app"
+        recommended_command="/usr/local/bin/lumina-windows-daily-app-picker --profile-id ${profile_id} --launch-best"
     else
         recommended_action="Launch the best published collection"
         recommended_command="/usr/local/bin/lumina-windows-app-library --profile-id ${profile_id} --launch-best"
@@ -140,6 +151,12 @@ run_surface_action() {
             ;;
         choose-collection)
             /usr/local/bin/ahmados-windows-app-library --profile-id "${profile_id}" --choose-collection --no-open >/dev/null 2>&1 || true
+            ;;
+        launch-best-app)
+            /usr/local/bin/ahmados-windows-daily-app-picker --profile-id "${profile_id}" --launch-best --no-open >/dev/null 2>&1 || true
+            ;;
+        choose-daily-app)
+            /usr/local/bin/ahmados-windows-daily-app-picker --profile-id "${profile_id}" --choose-app --no-open >/dev/null 2>&1 || true
             ;;
         open-library)
             if command -v xdg-open >/dev/null 2>&1; then
@@ -173,12 +190,24 @@ if [[ ${open_surface} -eq 1 ]]; then
         selected_action_note="Lumina opened the collection chooser from the daily app library surface."
         run_surface_action "choose-collection"
         selected_action_outcome="$(awk -F': ' '/^- Collection Launch Outcome:/ {print $2; exit}' "${app_library_report}" 2>/dev/null || true)"
+    elif [[ ${launch_best_app} -eq 1 ]]; then
+        selected_action="launch-best-app"
+        selected_action_note="Lumina launched the best published daily app."
+        run_surface_action "launch-best-app"
+        selected_action_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${daily_app_picker_report}" 2>/dev/null || true)"
+    elif [[ ${choose_daily_app} -eq 1 ]]; then
+        selected_action="choose-daily-app"
+        selected_action_note="Lumina opened the daily app picker."
+        run_surface_action "choose-daily-app"
+        selected_action_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${daily_app_picker_report}" 2>/dev/null || true)"
     elif command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
         if [[ "${surface_mode}" == "daily-launch" ]]; then
             chosen_surface="$(kdialog --title "Lumina Windows Apps" \
                 --menu "Choose how Lumina should open the Windows app surface for ${profile_name}." \
-                best "Launch the best published collection (Recommended)" \
+                bestapp "Launch the best daily app (Recommended on lighter machines)" \
                 choose "Choose a collection" \
+                chooseapp "Choose a daily app" \
+                best "Launch the best published collection" \
                 library "Open the app library report" \
                 hub "Open the workflow hub" \
                 lab "Open the advanced VM Lab" 2>/dev/null || true)"
@@ -191,6 +220,18 @@ if [[ ${open_surface} -eq 1 ]]; then
         fi
 
         case "${chosen_surface}" in
+            bestapp)
+                selected_action="launch-best-app"
+                selected_action_note="Lumina used the daily app picker to launch the best published daily app."
+                run_surface_action "launch-best-app"
+                selected_action_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${daily_app_picker_report}" 2>/dev/null || true)"
+                ;;
+            chooseapp)
+                selected_action="choose-daily-app"
+                selected_action_note="Lumina opened the daily app picker."
+                run_surface_action "choose-daily-app"
+                selected_action_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${daily_app_picker_report}" 2>/dev/null || true)"
+                ;;
             best)
                 selected_action="launch-best"
                 selected_action_note="Lumina used the daily app library surface to launch the best published collection."
@@ -224,10 +265,17 @@ if [[ ${open_surface} -eq 1 ]]; then
         esac
     else
         if [[ "${surface_mode}" == "daily-launch" ]]; then
-            selected_action="launch-best"
-            selected_action_note="Lumina used the daily app library surface to launch the best published collection."
-            run_surface_action "launch-best"
-            selected_action_outcome="$(awk -F': ' '/^- Collection Launch Outcome:/ {print $2; exit}' "${app_library_report}" 2>/dev/null || true)"
+            if [[ "${resource_class}" == "light" ]]; then
+                selected_action="launch-best-app"
+                selected_action_note="Lumina used the daily app picker to launch the best published daily app."
+                run_surface_action "launch-best-app"
+                selected_action_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${daily_app_picker_report}" 2>/dev/null || true)"
+            else
+                selected_action="launch-best"
+                selected_action_note="Lumina used the daily app library surface to launch the best published collection."
+                run_surface_action "launch-best"
+                selected_action_outcome="$(awk -F': ' '/^- Collection Launch Outcome:/ {print $2; exit}' "${app_library_report}" 2>/dev/null || true)"
+            fi
         else
             selected_action="open-hub"
             selected_action_note="Lumina opened the workflow hub because the daily surface is not ready yet."
@@ -262,6 +310,7 @@ fi
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
     printf -- '- Windows App Library Report: %s\n' "${app_library_report}"
+    printf -- '- Daily App Picker Report: %s\n' "${daily_app_picker_report}"
     printf -- '- Windows VM Lab Report: %s\n' "${vm_lab_report}"
 } > "${daily_surface_report}"
 

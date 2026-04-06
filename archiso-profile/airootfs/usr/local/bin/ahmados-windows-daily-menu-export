@@ -109,6 +109,20 @@ StartupNotify=true
 Keywords=Windows;Lumina;Choose;Collection;${profile_name};
 EOF
 
+cat > "${export_dir}/lumina-windows-daily-${profile_id}-pick-app.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Pick ${profile_name} Daily App (Lumina)
+Comment=Choose one published daily Windows app for ${profile_name}. ${comment_suffix}
+Exec=/usr/local/bin/lumina-windows-daily-app-picker --profile-id ${profile_id} --choose-app
+Icon=view-list-details
+Terminal=false
+Categories=Utility;System;
+StartupNotify=true
+Keywords=Windows;Lumina;Daily;App;${profile_name};
+EOF
+
 if command -v update-desktop-database >/dev/null 2>&1; then
     update-desktop-database "${export_dir}" >/dev/null 2>&1 || true
 fi
@@ -130,6 +144,7 @@ touch "${daily_menu_export_marker}"
     printf -- '- Daily Surface: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-surface.desktop"
     printf -- '- Best Collection Launch: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-best.desktop"
     printf -- '- Collection Chooser: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-choose.desktop"
+    printf -- '- Daily App Picker: %s\n' "${export_dir}/lumina-windows-daily-${profile_id}-pick-app.desktop"
     printf '\n## Related Reports\n'
     printf -- '- Daily Surface Report: %s\n' "${daily_surface_report}"
     printf -- '- App Library Report: %s\n' "${app_library_report}"

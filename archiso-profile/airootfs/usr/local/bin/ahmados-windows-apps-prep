@@ -98,6 +98,7 @@ if [[ "${daily_runtime_prep}" != "deferred" ]]; then
     /usr/local/bin/ahmados-windows-daily-recent-sync --profile-id "${preferred_daily_profile}" --no-open >/dev/null 2>&1 || true
     /usr/local/bin/ahmados-windows-daily-quick-launch --profile-id "${preferred_daily_profile}" --no-open >/dev/null 2>&1 || true
 fi
+/usr/local/bin/ahmados-windows-daily-home-refresh --no-open >/dev/null 2>&1 || true
 
 experience_mode="$(awk -F': ' '/^- Experience Mode:/ {print $2; exit}' "${bridge_report}" 2>/dev/null || true)"
 

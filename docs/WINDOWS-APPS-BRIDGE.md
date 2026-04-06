@@ -117,6 +117,7 @@ The current phase adds:
 - a workflow-chooser surface and desktop action so users can override the automatic daily choice cleanly when they want a different Windows workflow today
 - a pinned-workflow policy so users can deliberately keep one workflow as their default daily Windows path without losing the smoothness guards
 - a desktop-level pinning surface so users can choose, pin, or clear the default Windows workflow straight from the launcher actions
+- a daily-home refresh layer so Lumina can refresh the unified daily home state in the background and open a fresh report instead of a stale one
 
 ## Current Limits
 

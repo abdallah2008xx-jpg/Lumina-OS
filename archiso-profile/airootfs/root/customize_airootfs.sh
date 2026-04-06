@@ -123,6 +123,8 @@ chmod 755 /usr/local/bin/ahmados-windows-daily-refresh
 chmod 755 /usr/local/bin/lumina-windows-daily-refresh
 chmod 755 /usr/local/bin/ahmados-windows-daily-home
 chmod 755 /usr/local/bin/lumina-windows-daily-home
+chmod 755 /usr/local/bin/ahmados-windows-daily-home-refresh
+chmod 755 /usr/local/bin/lumina-windows-daily-home-refresh
 chown -R live:live /home/live
 
 for optional_group in libvirt kvm; do

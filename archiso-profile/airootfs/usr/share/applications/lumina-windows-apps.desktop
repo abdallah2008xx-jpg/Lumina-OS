@@ -24,4 +24,4 @@ Exec=/usr/local/bin/lumina-windows-daily-home --clear-pin
 
 [Desktop Action OpenDailyHome]
 Name=Open Daily Home Report
-Exec=/usr/local/bin/lumina-windows-daily-home
+Exec=/usr/local/bin/lumina-windows-daily-home-refresh

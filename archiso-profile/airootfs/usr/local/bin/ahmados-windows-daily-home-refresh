@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+forward_args=()
+perform_launch=0
+open_report=1
+choose_workflow=0
+pin_current=0
+clear_pin=0
+selected_profile_id=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            forward_args+=("$1" "${2:-}")
+            shift 2
+            ;;
+        --choose-workflow)
+            choose_workflow=1
+            perform_launch=1
+            forward_args+=("$1")
+            shift
+            ;;
+        --pin-current)
+            pin_current=1
+            forward_args+=("$1")
+            shift
+            ;;
+        --clear-pin)
+            clear_pin=1
+            forward_args+=("$1")
+            shift
+            ;;
+        --launch)
+            perform_launch=1
+            forward_args+=("$1")
+            shift
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+daily_home_report="${state_root}/windows-daily-home.md"
+mkdir -p "${state_root}"
+
+if [[ ${perform_launch} -eq 1 || ${choose_workflow} -eq 1 || ${pin_current} -eq 1 || ${clear_pin} -eq 1 ]]; then
+    exec /usr/local/bin/ahmados-windows-daily-home "${forward_args[@]}"
+fi
+
+/usr/local/bin/ahmados-windows-daily-home "${forward_args[@]}" --no-open >/dev/null 2>&1 || true
+
+printf '%s\n' '========================================'
+printf '%s\n' '  Lumina Windows Daily Home Refresh'
+printf '%s\n' '========================================'
+printf '\n'
+if [[ -n "${selected_profile_id}" ]]; then
+    printf 'Profile hint: %s\n' "${selected_profile_id}"
+fi
+printf 'Report: %s\n' "${daily_home_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${daily_home_report}" >/dev/null 2>&1 || true
+fi

@@ -23,11 +23,31 @@ Rectangle {
     property int sessionIndex: session.index
     property string currentTimeText: ""
     property string currentDateText: ""
+    property real widthScale: Math.max(0.8, Math.min(1.0, width / 1600))
+    property real heightScale: Math.max(0.82, Math.min(1.0, height / 900))
+    property real uiScale: Math.min(widthScale, heightScale)
+    property bool compactMode: width < 1440 || height < 900
+    property int outerMargin: scalePx(28, 16)
+    property int topBarHeight: scalePx(70, 56)
+    property int topBarRadius: scalePx(28, 22)
+    property int cardRadius: scalePx(28, 22)
+    property int cardPadding: scalePx(28, 18)
+    property int contentSpacing: scalePx(12, 8)
+    property int controlHeight: scalePx(42, 38)
+    property int buttonHeight: scalePx(44, 40)
+    property int titleSize: scalePx(22, 18)
+    property int bodySize: scalePx(13, 11)
+    property int smallBodySize: scalePx(12, 10)
+    property int tinyBodySize: scalePx(11, 10)
 
     LayoutMirroring.enabled: Qt.locale().textDirection == Qt.RightToLeft
     LayoutMirroring.childrenInherit: true
 
     TextConstants { id: textConstants }
+
+    function scalePx(value, minimum) {
+        return Math.max(minimum, Math.round(value * uiScale))
+    }
 
     function refreshClockText() {
         var now = new Date()
@@ -118,9 +138,9 @@ Rectangle {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.margins: 28
-        height: 70
-        radius: 28
+        anchors.margins: root.outerMargin
+        height: root.topBarHeight
+        radius: root.topBarRadius
         color: "#18111C29"
         border.color: "#2CFFFFFF"
         border.width: 1
@@ -128,8 +148,8 @@ Rectangle {
         Row {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            anchors.leftMargin: 20
-            spacing: 12
+            anchors.leftMargin: root.scalePx(20, 14)
+            spacing: root.scalePx(12, 10)
 
             Rectangle {
                 width: 16
@@ -144,14 +164,14 @@ Rectangle {
                 Text {
                     text: "Lumina-OS"
                     color: root.primaryText
-                    font.pixelSize: 22
+                    font.pixelSize: root.titleSize
                     font.bold: true
                 }
 
                 Text {
                     text: "Live Session"
                     color: root.secondaryText
-                    font.pixelSize: 12
+                    font.pixelSize: root.smallBodySize
                 }
             }
         }
@@ -160,8 +180,8 @@ Rectangle {
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            anchors.rightMargin: 20
-            width: Math.min(parent.width * 0.34, 300)
+            anchors.rightMargin: root.scalePx(20, 14)
+            width: Math.min(parent.width * 0.34, root.scalePx(300, 220))
             clip: true
 
             Column {
@@ -172,7 +192,7 @@ Rectangle {
                 Text {
                     text: root.currentTimeText
                     color: root.primaryText
-                    font.pixelSize: 22
+                    font.pixelSize: root.titleSize
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
                 }
@@ -180,7 +200,7 @@ Rectangle {
                 Text {
                     text: root.currentDateText
                     color: root.secondaryText
-                    font.pixelSize: 12
+                    font.pixelSize: root.smallBodySize
                     horizontalAlignment: Text.AlignRight
                     wrapMode: Text.NoWrap
                     elide: Text.ElideRight
@@ -192,13 +212,13 @@ Rectangle {
 
     Rectangle {
         id: card
-        width: Math.min(parent.width - 72, 560)
+        width: Math.min(parent.width - (root.outerMargin * 2), root.scalePx(560, 440))
         anchors.top: topBar.bottom
-        anchors.topMargin: 22
+        anchors.topMargin: root.scalePx(22, 16)
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 20
+        anchors.bottomMargin: root.scalePx(20, 14)
         anchors.horizontalCenter: parent.horizontalCenter
-        radius: 28
+        radius: root.cardRadius
         color: "transparent"
         border.color: root.glassBorder
         border.width: 1
@@ -221,7 +241,7 @@ Rectangle {
 
         Flickable {
             anchors.fill: parent
-            anchors.margins: 28
+            anchors.margins: root.cardPadding
             clip: true
             contentWidth: width
             contentHeight: contentColumn.height
@@ -230,29 +250,29 @@ Rectangle {
             Column {
                 id: contentColumn
                 width: parent.width
-                spacing: 12
+                spacing: root.contentSpacing
 
                 Rectangle {
                     id: introCard
                     width: parent.width
-                    height: introCardContent.implicitHeight + 36
-                    radius: 18
+                    height: introCardContent.implicitHeight + root.scalePx(36, 26)
+                    radius: root.scalePx(18, 14)
                     color: "#284D6A8D"
                     border.color: "#44C8E5FF"
                     border.width: 1
 
                     Column {
                         id: introCardContent
-                        width: parent.width - 36
-                        anchors.margins: 18
+                        width: parent.width - root.scalePx(36, 26)
+                        anchors.margins: root.scalePx(18, 13)
                         anchors.fill: parent
-                        spacing: 6
+                        spacing: root.scalePx(6, 4)
 
                         Text {
                             width: parent.width
                             text: textConstants.welcomeText.arg(sddm.hostName)
                             color: root.primaryText
-                            font.pixelSize: 19
+                            font.pixelSize: root.scalePx(19, 16)
                             font.bold: true
                             wrapMode: Text.WordWrap
                         }
@@ -261,7 +281,7 @@ Rectangle {
                             width: parent.width
                             text: qsTr("Focused, calm, and ready for validation.")
                             color: root.secondaryText
-                            font.pixelSize: 13
+                            font.pixelSize: root.bodySize
                             wrapMode: Text.WordWrap
                         }
 
@@ -269,7 +289,7 @@ Rectangle {
                             width: parent.width
                             text: qsTr("Use this screen to validate the real login path for Lumina-OS, especially in login-test builds.")
                             color: root.primaryText
-                            font.pixelSize: 12
+                            font.pixelSize: root.smallBodySize
                             wrapMode: Text.WordWrap
                         }
 
@@ -277,7 +297,7 @@ Rectangle {
                             width: parent.width
                             text: qsTr("Choose a different session entry only when you are intentionally testing another login path.")
                             color: root.secondaryText
-                            font.pixelSize: 11
+                            font.pixelSize: root.tinyBodySize
                             wrapMode: Text.WordWrap
                         }
                     }
@@ -286,20 +306,20 @@ Rectangle {
                 Text {
                     text: textConstants.userName
                     color: root.secondaryText
-                    font.pixelSize: 13
+                    font.pixelSize: root.bodySize
                 }
 
                 TextBox {
                     id: name
                     width: parent.width
-                    height: 42
+                    height: root.controlHeight
                     text: userModel.lastUser
                     color: "#26F7F3ED"
                     textColor: root.primaryText
                     borderColor: "#20F7F3ED"
                     focusColor: root.accentColor
                     hoverColor: root.accentSecondary
-                    font.pixelSize: 16
+                    font.pixelSize: root.scalePx(16, 14)
 
                     KeyNavigation.backtab: rebootButton
                     KeyNavigation.tab: password
@@ -308,19 +328,19 @@ Rectangle {
                 Text {
                     text: textConstants.password
                     color: root.secondaryText
-                    font.pixelSize: 13
+                    font.pixelSize: root.bodySize
                 }
 
                 PasswordBox {
                     id: password
                     width: parent.width
-                    height: 42
+                    height: root.controlHeight
                     color: "#26F7F3ED"
                     textColor: root.primaryText
                     borderColor: "#20F7F3ED"
                     focusColor: root.accentColor
                     hoverColor: root.accentSecondary
-                    font.pixelSize: 16
+                    font.pixelSize: root.scalePx(16, 14)
 
                     KeyNavigation.backtab: name
                     KeyNavigation.tab: session
@@ -335,12 +355,12 @@ Rectangle {
 
                 Row {
                     width: parent.width
-                    spacing: 10
+                    spacing: root.scalePx(10, 8)
 
                     ComboBox {
                         id: session
                         width: keyboard.enabled && keyboard.layouts.length > 0 ? parent.width * 0.58 : parent.width
-                        height: 40
+                        height: root.scalePx(40, 36)
                         model: sessionModel
                         index: sessionModel.lastIndex
                         color: "#20F7F3ED"
@@ -348,7 +368,7 @@ Rectangle {
                         borderColor: "#20F7F3ED"
                         focusColor: root.accentColor
                         hoverColor: root.accentSecondary
-                        font.pixelSize: 14
+                        font.pixelSize: root.scalePx(14, 12)
 
                         KeyNavigation.backtab: password
                         KeyNavigation.tab: layoutBox.visible ? layoutBox : loginButton
@@ -358,13 +378,13 @@ Rectangle {
                         id: layoutBox
                         visible: keyboard.enabled && keyboard.layouts.length > 0
                         width: parent.width * 0.42 - 10
-                        height: 40
+                        height: root.scalePx(40, 36)
                         color: "#20F7F3ED"
                         textColor: root.primaryText
                         borderColor: "#20F7F3ED"
                         focusColor: root.accentColor
                         hoverColor: root.accentSecondary
-                        font.pixelSize: 14
+                        font.pixelSize: root.scalePx(14, 12)
 
                         KeyNavigation.backtab: session
                         KeyNavigation.tab: loginButton
@@ -376,25 +396,25 @@ Rectangle {
                     width: parent.width
                     text: textConstants.prompt
                     color: root.secondaryText
-                    font.pixelSize: 12
+                    font.pixelSize: root.smallBodySize
                     wrapMode: Text.WordWrap
                 }
 
                 Row {
                     width: parent.width
-                    spacing: 10
+                    spacing: root.scalePx(10, 8)
 
                     Button {
                         id: loginButton
                         width: parent.width * 0.5 - 5
-                        height: 44
+                        height: root.buttonHeight
                         text: textConstants.login
                         color: "#4A4D8FEA"
                         textColor: root.primaryText
                         borderColor: "#74C8E5FF"
                         pressedColor: root.accentWarm
                         activeColor: root.accentSecondary
-                        font.pixelSize: 16
+                        font.pixelSize: root.scalePx(16, 14)
 
                         onClicked: sddm.login(name.text, password.text, sessionIndex)
 
@@ -405,14 +425,14 @@ Rectangle {
                     Button {
                         id: shutdownButton
                         width: parent.width * 0.25 - 5
-                        height: 44
+                        height: root.buttonHeight
                         text: textConstants.shutdown
                         color: "#24111C29"
                         textColor: root.primaryText
                         borderColor: "#40FFFFFF"
                         pressedColor: root.dangerColor
                         activeColor: root.accentWarm
-                        font.pixelSize: 14
+                        font.pixelSize: root.scalePx(14, 12)
 
                         onClicked: sddm.powerOff()
 
@@ -423,14 +443,14 @@ Rectangle {
                     Button {
                         id: rebootButton
                         width: parent.width * 0.25 - 5
-                        height: 44
+                        height: root.buttonHeight
                         text: textConstants.reboot
                         color: "#24111C29"
                         textColor: root.primaryText
                         borderColor: "#40FFFFFF"
                         pressedColor: root.accentWarm
                         activeColor: root.accentSecondary
-                        font.pixelSize: 14
+                        font.pixelSize: root.scalePx(14, 12)
 
                         onClicked: sddm.reboot()
 
@@ -443,7 +463,7 @@ Rectangle {
                     width: parent.width
                     text: qsTr("Shutdown and reboot controls are intended for the current device or VM test pass.")
                     color: root.secondaryText
-                    font.pixelSize: 11
+                    font.pixelSize: root.tinyBodySize
                     wrapMode: Text.WordWrap
                 }
             }

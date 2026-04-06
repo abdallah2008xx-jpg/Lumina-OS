@@ -36,6 +36,7 @@ documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
 profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
 compat_report="${state_root}/windows-compat-report.md"
 daily_home_report="${state_root}/windows-daily-home.md"
+daily_home_state="${state_root}/windows-daily-home.env"
 
 mkdir -p "${state_root}"
 
@@ -52,6 +53,13 @@ default_profile_id="adobe-creator"
 if [[ "${resource_class}" == "light" ]]; then
     default_profile_id="office-productivity"
 fi
+
+recent_workflow_id="$(awk -F= '/^RECENT_WORKFLOW_ID=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
+recent_workflow_mode="$(awk -F= '/^RECENT_WORKFLOW_MODE=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
+recent_workflow_outcome="$(awk -F= '/^RECENT_LAUNCH_OUTCOME=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
+[[ -n "${recent_workflow_id}" ]] || recent_workflow_id="none"
+[[ -n "${recent_workflow_mode}" ]] || recent_workflow_mode="none"
+[[ -n "${recent_workflow_outcome}" ]] || recent_workflow_outcome="none"
 
 profile_state_summary() {
     local profile_id="$1"
@@ -162,6 +170,7 @@ chosen_profile_id="${selected_profile_id}"
 best_profile_id=""
 best_mode="workflow-hub"
 best_score=-999
+selection_policy="best-workflow"
 inventory_rows=""
 
 while IFS='|' read -r profile_id profile_name focus _; do
@@ -179,11 +188,35 @@ while IFS='|' read -r profile_id profile_name focus _; do
 done < "${profiles_path}"
 
 if [[ -z "${chosen_profile_id}" ]]; then
+    if [[ "${recent_workflow_id}" != "none" ]]; then
+        recent_row="$(awk -F'|' -v target="${recent_workflow_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+        if [[ -n "${recent_row}" ]]; then
+            recent_summary="$(profile_state_summary "${recent_workflow_id}")"
+            IFS='|' read -r recent_mode recent_score recent_note <<< "${recent_summary}"
+            if [[ "${recent_mode}" == "quick-launch" || "${recent_mode}" == "daily-surface" ]]; then
+                if [[ "${resource_class}" == "light" ]]; then
+                    if [[ "${recent_score}" -ge $((best_score - 1)) ]]; then
+                        chosen_profile_id="${recent_workflow_id}"
+                        selection_policy="recent-workflow-fast-path"
+                    fi
+                else
+                    if [[ "${recent_score}" -ge "${best_score}" ]]; then
+                        chosen_profile_id="${recent_workflow_id}"
+                        selection_policy="recent-workflow-fast-path"
+                    fi
+                fi
+            fi
+        fi
+    fi
+fi
+
+if [[ -z "${chosen_profile_id}" ]]; then
     chosen_profile_id="${best_profile_id}"
 fi
 
 if [[ ${choose_workflow} -eq 1 ]] && command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
     chosen_profile_id="$(choose_profile_with_kdialog "${best_profile_id}" || printf '%s' "${chosen_profile_id}")"
+    selection_policy="manual-choose-workflow"
 fi
 
 if [[ -z "${chosen_profile_id}" ]]; then
@@ -254,6 +287,13 @@ if [[ ${perform_launch} -eq 1 ]]; then
             ;;
     esac
     [[ -n "${launch_outcome}" ]] || launch_outcome="launched"
+
+    {
+        printf 'RECENT_WORKFLOW_ID=%s\n' "${chosen_id}"
+        printf 'RECENT_WORKFLOW_MODE=%s\n' "${chosen_mode}"
+        printf 'RECENT_LAUNCH_OUTCOME=%s\n' "${launch_outcome}"
+        printf 'RECENT_UPDATED_AT=%s\n' "$(date -Is)"
+    } > "${daily_home_state}"
 fi
 
 {
@@ -264,10 +304,14 @@ fi
     printf -- '- Resource Summary: %s\n' "${resource_summary}"
     printf -- '- Best Workflow Id: %s\n' "${best_profile_id}"
     printf -- '- Best Workflow Mode: %s\n' "${best_mode}"
+    printf -- '- Recent Workflow Id: %s\n' "${recent_workflow_id}"
+    printf -- '- Recent Workflow Mode: %s\n' "${recent_workflow_mode}"
+    printf -- '- Recent Launch Outcome: %s\n' "${recent_workflow_outcome}"
     printf -- '- Chosen Workflow Id: %s\n' "${chosen_id}"
     printf -- '- Chosen Workflow Name: %s\n' "${chosen_name}"
     printf -- '- Chosen Workflow Focus: %s\n' "${chosen_focus}"
     printf -- '- Chosen Daily Mode: %s\n' "${chosen_mode}"
+    printf -- '- Selection Policy: %s\n' "${selection_policy}"
     printf -- '- Recommended Action: %s\n' "${recommended_action}"
     printf -- '- Recommended Command: `%s`\n' "${recommended_command}"
     printf -- '- Launch Mode: %s\n' "${launch_mode}"
@@ -282,6 +326,7 @@ fi
     printf -- '- Workflow State Report: %s\n' "${state_root}/windows-workflow-state.md"
     printf -- '- Daily Surface Report: %s\n' "${state_root}/windows-daily-surface.md"
     printf -- '- Daily Quick Launch Report: %s\n' "${state_root}/windows-daily-quick-launch.md"
+    printf -- '- Daily Home State: %s\n' "${daily_home_state}"
 } > "${daily_home_report}"
 
 printf '%s\n' '========================================'

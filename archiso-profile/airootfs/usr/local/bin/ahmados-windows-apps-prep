@@ -16,6 +16,7 @@ compat_report="${state_root}/windows-compat-report.md"
 bridge_report="${state_root}/windows-apps-bridge.md"
 catalog_report="${state_root}/windows-app-catalog.md"
 lab_report="${state_root}/windows-vm-lab.md"
+daily_home_state="${state_root}/windows-daily-home.env"
 daily_refresh_report="${state_root}/windows-daily-refresh.md"
 daily_surface_report="${state_root}/windows-daily-surface.md"
 daily_app_pack_report="${state_root}/windows-daily-app-pack.md"
@@ -34,7 +35,18 @@ if [[ "${resource_class}" == "light" ]]; then
     default_daily_profile="office-productivity"
 fi
 
-daily_profile_state_root="${documents_root}/Lumina Windows Workflows/${default_daily_profile}/state"
+recent_daily_profile="$(awk -F= '/^RECENT_WORKFLOW_ID=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
+recent_daily_mode="$(awk -F= '/^RECENT_WORKFLOW_MODE=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
+preferred_daily_profile="${default_daily_profile}"
+
+if [[ -n "${recent_daily_profile}" ]]; then
+    recent_row="$(awk -F'|' -v target="${recent_daily_profile}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path:-/usr/share/lumina/windows-apps/profiles.tsv}" 2>/dev/null || true)"
+    if [[ -n "${recent_row}" && ( "${recent_daily_mode}" == "quick-launch" || "${recent_daily_mode}" == "daily-surface" ) ]]; then
+        preferred_daily_profile="${recent_daily_profile}"
+    fi
+fi
+
+daily_profile_state_root="${documents_root}/Lumina Windows Workflows/${preferred_daily_profile}/state"
 daily_app_library_marker="${daily_profile_state_root}/app-library-ready.marker"
 daily_workflow_proof_marker="${daily_profile_state_root}/workflow-proof-ready.marker"
 daily_checklist_complete_marker="${daily_profile_state_root}/checklist-complete.marker"
@@ -58,9 +70,9 @@ fi
 /usr/local/bin/ahmados-windows-apps --no-open >/dev/null 2>&1 || true
 
 if [[ "${daily_runtime_prep}" != "deferred" ]]; then
-    /usr/local/bin/ahmados-windows-daily-refresh --profile-id "${default_daily_profile}" --no-open >/dev/null 2>&1 || true
-    /usr/local/bin/ahmados-windows-daily-recent-sync --profile-id "${default_daily_profile}" --no-open >/dev/null 2>&1 || true
-    /usr/local/bin/ahmados-windows-daily-quick-launch --profile-id "${default_daily_profile}" --no-open >/dev/null 2>&1 || true
+    /usr/local/bin/ahmados-windows-daily-refresh --profile-id "${preferred_daily_profile}" --no-open >/dev/null 2>&1 || true
+    /usr/local/bin/ahmados-windows-daily-recent-sync --profile-id "${preferred_daily_profile}" --no-open >/dev/null 2>&1 || true
+    /usr/local/bin/ahmados-windows-daily-quick-launch --profile-id "${preferred_daily_profile}" --no-open >/dev/null 2>&1 || true
 fi
 
 experience_mode="$(awk -F': ' '/^- Experience Mode:/ {print $2; exit}' "${bridge_report}" 2>/dev/null || true)"
@@ -83,7 +95,10 @@ fi
     printf -- '- Resource Class: %s\n' "${resource_class}"
     printf -- '- VM Lab Prep: %s\n' "${vm_lab_prep}"
     printf -- '- Daily Runtime Prep: %s\n' "${daily_runtime_prep}"
-    printf -- '- Daily Profile Warmed: %s\n' "${default_daily_profile}"
+    printf -- '- Default Daily Profile: %s\n' "${default_daily_profile}"
+    printf -- '- Recent Daily Profile: %s\n' "${recent_daily_profile:-none}"
+    printf -- '- Recent Daily Mode: %s\n' "${recent_daily_mode:-none}"
+    printf -- '- Daily Profile Warmed: %s\n' "${preferred_daily_profile}"
     printf -- '- Experience Mode: %s\n' "${experience_mode:-unknown}"
     printf -- '- libvirt Probe: %s\n' "${libvirt_probe}"
     printf -- '- Goal: Keep the Windows Apps path warm in the background without opening extra windows.\n'

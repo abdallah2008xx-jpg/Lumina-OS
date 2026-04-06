@@ -112,6 +112,7 @@ The current phase adds:
 - a pressure-aware daily-quick-launch layer that falls back to queue sync first when Windows launch pressure is already high
 - a workflow-state and workflow-hub visibility layer that surfaces quick-launch mode, outcome, and command directly in the main daily reports instead of hiding them in a separate report only
 - a daily-home layer that lets the main `Lumina Windows Apps` entry choose the best mature workflow automatically instead of assuming one fixed profile forever
+- a daily-home memory layer that can reuse the last smooth workflow on later sessions instead of forcing a full cross-profile re-evaluation every time
 
 ## Current Limits
 

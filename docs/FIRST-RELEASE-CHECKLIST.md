@@ -63,7 +63,9 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Record blockers immediately if any core hardware path fails
 
 ## Release Gate
+- [ ] Recommended: start one combined release validation pass with `.\scripts\start-release-validation-pass.ps1 -Mode stable -RunLabel "<run-label>"`
 - [ ] Recommended: start one shared evidence session with `.\scripts\start-release-evidence-session.ps1 -Mode stable -RunLabel "<run-label>"`
+- [ ] Optional but recommended: review `status/releases/CURRENT-RELEASE-EXECUTION.md` after starting the combined validation pass
 - [ ] Optional but recommended: review `status/evidence-packs/CURRENT-EVIDENCE-SESSION.md` after starting the shared evidence session
 - [ ] Optional but recommended: create one shared evidence pack with `.\scripts\new-release-evidence-pack.ps1 -Mode stable -RunLabel "<run-label>"`
 - [ ] Optional but recommended: review the generated `release-evidence-runbook-*.md` from the shared evidence pack before RC prep

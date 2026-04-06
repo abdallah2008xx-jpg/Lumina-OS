@@ -52,6 +52,7 @@ mkdir -p "${state_root}"
 profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
 publish_sync_report="${state_root}/windows-app-publish-sync.md"
 publish_pack_report="${state_root}/windows-guest-app-publish-pack.md"
+daily_refresh_report="${state_root}/windows-daily-refresh.md"
 state_report="${state_root}/windows-workflow-state.md"
 hub_report="${state_root}/windows-workflow-hub.md"
 
@@ -147,6 +148,8 @@ if [[ -f "${publish_inventory_path}" ]]; then
     touch "${publish_sync_marker}"
 fi
 
+/usr/local/bin/ahmados-windows-daily-refresh --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
 if [[ -z "${published_lines}" ]]; then
     published_lines="- No published app targets were synced yet.\n"
 fi
@@ -174,6 +177,7 @@ fi
     printf '%b' "${pending_lines}"
     printf '\n## Related Reports\n'
     printf -- '- Guest App Publish Pack Report: %s\n' "${publish_pack_report}"
+    printf -- '- Daily Refresh Report: %s\n' "${daily_refresh_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
 } > "${publish_sync_report}"

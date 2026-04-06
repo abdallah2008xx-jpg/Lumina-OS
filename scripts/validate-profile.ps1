@@ -122,6 +122,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-daily-app-pack",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-daily-app-picker",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-daily-runtime",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-windows-daily-refresh",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
     "archiso-profile\airootfs\usr\local\bin\ahmados-open-firstboot-report",
     "archiso-profile\airootfs\usr\local\bin\ahmados-refresh-release-metadata",
@@ -183,6 +184,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-daily-app-pack",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-daily-app-picker",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-daily-runtime",
+    "archiso-profile\airootfs\usr\local\bin\lumina-windows-daily-refresh",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
     "archiso-profile\airootfs\usr\local\bin\lumina-refresh-release-metadata",
     "archiso-profile\airootfs\usr\local\bin\lumina-update-center",
@@ -550,7 +552,9 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/ahmados-windows-daily-app-picker",
         "/usr/local/bin/lumina-windows-daily-app-picker",
         "/usr/local/bin/ahmados-windows-daily-runtime",
-        "/usr/local/bin/lumina-windows-daily-runtime"
+        "/usr/local/bin/lumina-windows-daily-runtime",
+        "/usr/local/bin/ahmados-windows-daily-refresh",
+        "/usr/local/bin/lumina-windows-daily-refresh"
     )) {
         if ($customizeContent -notmatch [regex]::Escape("chmod 755 $requiredChmodTarget")) {
             Add-Error "customize_airootfs.sh does not enforce executable permissions for $requiredChmodTarget"

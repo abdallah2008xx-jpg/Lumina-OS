@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+refresh_report="${state_root}/windows-daily-refresh.md"
+daily_menu_export_report="${state_root}/windows-daily-menu-export.md"
+daily_app_pack_report="${state_root}/windows-daily-app-pack.md"
+daily_surface_report="${state_root}/windows-daily-surface.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+workflow_state_root="${workspace_root}/state"
+refresh_marker="${workflow_state_root}/daily-refresh-ready.marker"
+mkdir -p "${workflow_state_root}"
+
+/usr/local/bin/ahmados-windows-daily-menu-export --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-daily-app-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-daily-surface --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+surface_mode="$(awk -F': ' '/^- Surface Mode:/ {print $2; exit}' "${daily_surface_report}" 2>/dev/null || true)"
+selected_action="$(awk -F': ' '/^- Selected Action:/ {print $2; exit}' "${daily_surface_report}" 2>/dev/null || true)"
+exported_daily_apps="$(awk -F': ' '/^- Exported App Count:/ {print $2; exit}' "${daily_app_pack_report}" 2>/dev/null || true)"
+recommended_collection="$(awk -F': ' '/^- Recommended Collection:/ {print $2; exit}' "${daily_menu_export_report}" 2>/dev/null || true)"
+
+[[ -n "${surface_mode}" ]] || surface_mode="unknown"
+[[ -n "${selected_action}" ]] || selected_action="none"
+[[ -n "${exported_daily_apps}" ]] || exported_daily_apps="0"
+[[ -n "${recommended_collection}" ]] || recommended_collection="none"
+
+touch "${refresh_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows Daily Refresh\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Surface Mode: %s\n' "${surface_mode}"
+    printf -- '- Selected Action: %s\n' "${selected_action}"
+    printf -- '- Exported Daily Apps: %s\n' "${exported_daily_apps}"
+    printf -- '- Recommended Collection: %s\n' "${recommended_collection}"
+    printf -- '- Daily Refresh Marker: %s\n' "${refresh_marker}"
+    printf '\n## Refresh Flow\n'
+    printf -- '1. Refresh the daily menu shortcuts.\n'
+    printf -- '2. Refresh the smaller daily app pack.\n'
+    printf -- '3. Refresh the daily surface summary.\n'
+    printf -- '4. Mark the workflow as daily-refresh ready.\n'
+    printf '\n## Related Reports\n'
+    printf -- '- Daily Menu Export Report: %s\n' "${daily_menu_export_report}"
+    printf -- '- Daily App Pack Report: %s\n' "${daily_app_pack_report}"
+    printf -- '- Daily Surface Report: %s\n' "${daily_surface_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${refresh_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '     Lumina Windows Daily Refresh'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Surface mode: %s\n' "${surface_mode}"
+printf 'Daily apps: %s\n' "${exported_daily_apps}"
+printf 'Report: %s\n' "${refresh_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${refresh_report}" >/dev/null 2>&1 || true
+fi

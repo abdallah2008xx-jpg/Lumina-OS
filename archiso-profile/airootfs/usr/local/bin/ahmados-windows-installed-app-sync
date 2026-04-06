@@ -33,6 +33,7 @@ manifest_hydration_report="${state_root}/windows-app-manifest-hydration.md"
 launcher_pack_report="${state_root}/windows-app-launcher-pack.md"
 app_surfaces_report="${state_root}/windows-app-surfaces.md"
 app_menu_export_report="${state_root}/windows-app-menu-export.md"
+daily_refresh_report="${state_root}/windows-daily-refresh.md"
 state_report="${state_root}/windows-workflow-state.md"
 hub_report="${state_root}/windows-workflow-hub.md"
 
@@ -59,6 +60,7 @@ mkdir -p "${workflow_state_root}"
 /usr/local/bin/ahmados-windows-app-launcher-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-app-surfaces --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-app-menu-export --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-daily-refresh --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
 hydration_status="$(awk -F': ' '/^- Hydration Status:/ {print $2; exit}' "${manifest_hydration_report}" 2>/dev/null || true)"
 imported_results="$(awk -F': ' '/^- Imported Results Count:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
@@ -86,6 +88,7 @@ touch "${sync_marker}"
     printf -- '3. Hydrate registered manifests from discovery results.\n'
     printf -- '4. Rebuild workspace launchers and app surfaces.\n'
     printf -- '5. Re-export the Windows app launchers into the Lumina application menu.\n'
+    printf -- '6. Refresh the daily Windows launch surfaces and daily app pack.\n'
     printf '\n## Related Reports\n'
     printf -- '- Launch Results Sync Report: %s\n' "${launch_sync_report}"
     printf -- '- Guest App Discovery Report: %s\n' "${guest_discovery_report}"
@@ -93,6 +96,7 @@ touch "${sync_marker}"
     printf -- '- App Launcher Pack Report: %s\n' "${launcher_pack_report}"
     printf -- '- App Surfaces Report: %s\n' "${app_surfaces_report}"
     printf -- '- App Menu Export Report: %s\n' "${app_menu_export_report}"
+    printf -- '- Daily Refresh Report: %s\n' "${daily_refresh_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
 } > "${sync_report}"

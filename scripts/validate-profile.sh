@@ -134,6 +134,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-app-pack"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-app-picker"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-runtime"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-refresh"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
     "${profile_path}/airootfs/usr/local/bin/ahmados-open-firstboot-report"
     "${profile_path}/airootfs/usr/local/bin/ahmados-refresh-release-metadata"
@@ -195,6 +196,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-app-pack"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-app-picker"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-runtime"
+    "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-refresh"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
     "${profile_path}/airootfs/usr/local/bin/lumina-refresh-release-metadata"
     "${profile_path}/airootfs/usr/local/bin/lumina-update-center"
@@ -500,7 +502,9 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/ahmados-windows-daily-app-picker \
         /usr/local/bin/lumina-windows-daily-app-picker \
         /usr/local/bin/ahmados-windows-daily-runtime \
-        /usr/local/bin/lumina-windows-daily-runtime; do
+        /usr/local/bin/lumina-windows-daily-runtime \
+        /usr/local/bin/ahmados-windows-daily-refresh \
+        /usr/local/bin/lumina-windows-daily-refresh; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
             add_error "customize_airootfs.sh does not enforce executable permissions for ${required_chmod_target}"
         fi

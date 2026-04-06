@@ -6,6 +6,7 @@ param(
     [ValidateSet("BIOS", "UEFI")]
     [string]$Firmware = "UEFI",
     [string]$IsoPath = "",
+    [string]$ReleaseVersion = "",
     [string]$DeviceLabel = "real-device",
     [string]$BootSource = "live-usb-or-installed-disk",
     [string]$RunLabel = "",
@@ -36,8 +37,9 @@ function Get-SafeFileSegment {
 $installScript = Join-Path $PSScriptRoot "new-install-test-report.ps1"
 $loginTestScript = Join-Path $PSScriptRoot "new-login-test-report.ps1"
 $hardwareScript = Join-Path $PSScriptRoot "new-hardware-test-report.ps1"
+$runbookScript = Join-Path $PSScriptRoot "new-release-evidence-runbook.ps1"
 
-foreach ($requiredScript in @($installScript, $loginTestScript, $hardwareScript)) {
+foreach ($requiredScript in @($installScript, $loginTestScript, $hardwareScript, $runbookScript)) {
     if (-not (Test-Path $requiredScript)) {
         throw "Missing helper script: $requiredScript"
     }
@@ -49,6 +51,7 @@ $resolvedRunLabel = if ([string]::IsNullOrWhiteSpace($RunLabel)) { "$timeStamp-r
 $safeRunLabel = Get-SafeFileSegment $resolvedRunLabel
 $reportDir = Join-Path $RepoRoot ("status\evidence-packs\" + $dateStamp)
 $reportPath = Join-Path $reportDir ("release-evidence-pack-$safeRunLabel.md")
+$runbookPath = Join-Path $reportDir ("release-evidence-runbook-$safeRunLabel.md")
 
 New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
 
@@ -86,11 +89,13 @@ $content = @"
 - VM Type: $VmType
 - Firmware: $Firmware
 - ISO Path: $(if ([string]::IsNullOrWhiteSpace($IsoPath)) { "not-recorded-yet" } else { $IsoPath })
+- Release Version: $(if ([string]::IsNullOrWhiteSpace($ReleaseVersion)) { "not-recorded-yet" } else { $ReleaseVersion })
 - Device Label: $DeviceLabel
 - Boot Source: $BootSource
 - Login-Test Report: $loginTestReportPath
 - Install Report: $installReportPath
 - Hardware Report: $hardwareReportPath
+- Runbook Path: $runbookPath
 
 ## Purpose
 - keep `login-test`, `install`, and `hardware` evidence on the same `Run Label`
@@ -98,10 +103,16 @@ $content = @"
 
 ## Next Step
 - update these reports during the real run instead of creating separate unlabeled evidence later
-- feed the same paths or label into release evidence audit and release candidate prep
+- use the generated runbook to feed the same pack into release evidence audit and release candidate prep
 "@
 
 Set-Content -Path $reportPath -Value $content -Encoding UTF8
+
+$runbookPath = & $runbookScript `
+    -EvidencePackPath $reportPath `
+    -ReleaseVersion $ReleaseVersion `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
 
 if ($OutputPathOnly) {
     Write-Output $reportPath

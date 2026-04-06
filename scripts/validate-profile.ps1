@@ -252,6 +252,7 @@ $requiredPaths = @(
     "scripts\new-install-test-report.ps1",
     "scripts\new-hardware-test-report.ps1",
     "scripts\new-release-evidence-pack.ps1",
+    "scripts\new-release-evidence-runbook.ps1",
     "scripts\new-test-session.ps1",
     "scripts\start-vm-test-cycle.ps1",
     "scripts\finish-vm-test-cycle.ps1",

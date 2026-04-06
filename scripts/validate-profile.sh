@@ -263,6 +263,7 @@ required_paths=(
     "${repo_root}/scripts/new-install-test-report.ps1"
     "${repo_root}/scripts/new-hardware-test-report.ps1"
     "${repo_root}/scripts/new-release-evidence-pack.ps1"
+    "${repo_root}/scripts/new-release-evidence-runbook.ps1"
     "${repo_root}/scripts/new-test-session.ps1"
     "${repo_root}/scripts/start-vm-test-cycle.ps1"
     "${repo_root}/scripts/finish-vm-test-cycle.ps1"

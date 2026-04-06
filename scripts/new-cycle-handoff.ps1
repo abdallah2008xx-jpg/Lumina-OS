@@ -204,12 +204,21 @@ Review these files after finish:
 Mode-specific review notes:
 __MODE_REVIEW_NOTES__
 
-## Step 7: Audit Release Evidence
+## Step 7: Create Shared Evidence Pack
+Optional but recommended before release prep:
+
+    .\scripts\new-release-evidence-pack.ps1 -Mode __MODE__ -VmType __VM_TYPE__ -Firmware __FIRMWARE__ -RunLabel __RUN_LABEL__ -ReleaseVersion "__RELEASE_VERSION__"
+
+This will generate a shared evidence pack and a ready-to-run `release-evidence-runbook-*.md` under `status/evidence-packs/`.
+
+## Step 8: Audit Release Evidence
 __RELEASE_GUARD__
 
     .\scripts\audit-release-evidence.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel __RUN_LABEL__
 
-## Step 8: Prepare Release Candidate
+Or run the generated `release-evidence-runbook-*.md` from the evidence pack folder.
+
+## Step 9: Prepare Release Candidate
 Use the same label and keep evidence exact if possible:
 
     .\scripts\prepare-release-candidate.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel __RUN_LABEL__
@@ -218,19 +227,19 @@ For a strict release gate:
 
     .\scripts\prepare-release-candidate.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel __RUN_LABEL__ -RequireExactEvidenceRunLabel
 
-## Step 9: Audit Release Readiness
+## Step 10: Audit Release Readiness
 Use this after candidate prep to get a direct go/no-go summary:
 
     .\scripts\audit-release-readiness.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel __RUN_LABEL__
 
-## Step 10: Review Candidate Output
+## Step 11: Review Candidate Output
 Review these files before publishing:
 - `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md`
 - generated `release-evidence-audit.md` under `status/releases/`
 - generated `release-readiness-audit.md` under `status/releases/`
 - generated `release-validation.md` under `status/releases/`
 
-## Step 11: Publish GitHub Release
+## Step 12: Publish GitHub Release
 Use this only after the validation report passes and the token is available:
 
     .\scripts\publish-github-release.ps1 -ReleaseManifestPath "C:\Path\To\release-manifest.md"

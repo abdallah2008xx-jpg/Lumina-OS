@@ -71,6 +71,7 @@ $loginTestReportScript = Join-Path $PSScriptRoot "new-login-test-report.ps1"
 $installTestScript = Join-Path $PSScriptRoot "new-install-test-report.ps1"
 $hardwareTestScript = Join-Path $PSScriptRoot "new-hardware-test-report.ps1"
 $releaseEvidencePackScript = Join-Path $PSScriptRoot "new-release-evidence-pack.ps1"
+$releaseEvidenceRunbookScript = Join-Path $PSScriptRoot "new-release-evidence-runbook.ps1"
 $buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
 $buildHandoffImportScript = Join-Path $PSScriptRoot "import-build-handoff.ps1"
 $githubArtifactImportScript = Join-Path $PSScriptRoot "import-github-actions-artifact.ps1"
@@ -112,6 +113,10 @@ if (-not (Test-Path $hardwareTestScript)) {
 
 if (-not (Test-Path $releaseEvidencePackScript)) {
     throw "Missing smoke-test target: $releaseEvidencePackScript"
+}
+
+if (-not (Test-Path $releaseEvidenceRunbookScript)) {
+    throw "Missing smoke-test target: $releaseEvidenceRunbookScript"
 }
 
 if (-not (Test-Path $buildManifestImportScript)) {
@@ -297,6 +302,7 @@ try {
         -VmType VirtualBox `
         -Firmware UEFI `
         -IsoPath $isoPath `
+        -ReleaseVersion "0.1.0-ci" `
         -DeviceLabel "smoke-device" `
         -BootSource "live-usb" `
         -RunLabel $smokeRunLabel `
@@ -308,10 +314,16 @@ try {
     $releaseLoginTestReportPath = Get-MetadataValue -Content $releaseEvidencePackContent -Label "Login-Test Report"
     $releaseInstallReportPath = Get-MetadataValue -Content $releaseEvidencePackContent -Label "Install Report"
     $releaseHardwareReportPath = Get-MetadataValue -Content $releaseEvidencePackContent -Label "Hardware Report"
+    $releaseEvidenceRunbookPath = Get-MetadataValue -Content $releaseEvidencePackContent -Label "Runbook Path"
 
     Assert-Condition -Condition (-not [string]::IsNullOrWhiteSpace($releaseLoginTestReportPath) -and (Test-Path $releaseLoginTestReportPath)) -Message "Release evidence pack did not produce a login-test report."
     Assert-Condition -Condition (-not [string]::IsNullOrWhiteSpace($releaseInstallReportPath) -and (Test-Path $releaseInstallReportPath)) -Message "Release evidence pack did not produce an install report."
     Assert-Condition -Condition (-not [string]::IsNullOrWhiteSpace($releaseHardwareReportPath) -and (Test-Path $releaseHardwareReportPath)) -Message "Release evidence pack did not produce a hardware report."
+    Assert-Condition -Condition (-not [string]::IsNullOrWhiteSpace($releaseEvidenceRunbookPath) -and (Test-Path $releaseEvidenceRunbookPath)) -Message "Release evidence pack did not produce a runbook."
+
+    $releaseEvidenceRunbookContent = Get-Content -Raw $releaseEvidenceRunbookPath
+    Assert-Condition -Condition ($releaseEvidenceRunbookContent -match [regex]::Escape("- Evidence Pack: $releaseEvidencePackPath")) -Message "Release evidence runbook did not record the evidence pack path."
+    Assert-Condition -Condition ($releaseEvidenceRunbookContent -match [regex]::Escape('.\scripts\prepare-release-candidate.ps1 -Version "0.1.0-ci" -Mode stable -RunLabel "' + $smokeRunLabel + '" -IsoPath "' + $isoPath + '" -EvidencePackPath "' + $releaseEvidencePackPath + '"')) -Message "Release evidence runbook did not include the expected candidate command."
 
     $releaseLoginTestReportContent = (Get-Content -Raw $releaseLoginTestReportPath) -replace '(?m)^- Overall Status: .+$', '- Overall Status: completed'
     Set-Content -Path $releaseLoginTestReportPath -Value $releaseLoginTestReportContent -Encoding UTF8

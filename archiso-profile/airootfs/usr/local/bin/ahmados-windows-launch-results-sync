@@ -50,6 +50,10 @@ workflow_state_root="${workspace_root}/state"
 share_path="${workspace_root}/vm-share"
 workspace_env_path="${workspace_root}/workspace.env"
 vm_create_env_path="${workspace_root}/vm-create.env"
+stale_request_minutes="${LUMINA_WINDOWS_STALE_REQUEST_MINUTES:-45}"
+shared_result_retention_days="${LUMINA_WINDOWS_SHARED_RESULT_RETENTION_DAYS:-3}"
+imported_result_retention_days="${LUMINA_WINDOWS_IMPORTED_RESULT_RETENTION_DAYS:-14}"
+imported_archive_retention_days="${LUMINA_WINDOWS_IMPORTED_ARCHIVE_RETENTION_DAYS:-30}"
 
 if [[ -f "${workspace_env_path}" ]]; then
     # shellcheck disable=SC1090
@@ -73,6 +77,8 @@ mkdir -p "${workflow_state_root}" "${requests_dir}" "${results_dir}" "${archive_
 
 launch_result_seen_marker="${workflow_state_root}/launch-result-seen.marker"
 launch_request_pending_marker="${workflow_state_root}/launch-request-pending.marker"
+launch_queue_pressure_marker="${workflow_state_root}/launch-queue-pressure.marker"
+launch_queue_cleanup_marker="${workflow_state_root}/launch-queue-cleanup.marker"
 
 pending_requests=0
 shared_results_count=0
@@ -82,6 +88,40 @@ archived_requests_count=0
 latest_result_path=""
 latest_result_status="none"
 latest_result_message="none"
+stale_requests_moved=0
+old_shared_results_pruned=0
+old_imported_results_archived=0
+old_imported_archives_pruned=0
+launch_queue_health="clean"
+launch_queue_note="The launch queue is tidy."
+
+move_to_unique_destination() {
+    local source_path="$1"
+    local destination_dir="$2"
+    local base_name stem extension destination_path
+
+    base_name="$(basename "${source_path}")"
+    stem="${base_name%.*}"
+    extension=""
+
+    if [[ "${base_name}" == *.* ]]; then
+        extension=".${base_name##*.}"
+    else
+        stem="${base_name}"
+    fi
+
+    destination_path="${destination_dir}/${base_name}"
+    if [[ -e "${destination_path}" ]]; then
+        destination_path="${destination_dir}/${stem}-$(date +%Y%m%d%H%M%S)-$$${extension}"
+    fi
+
+    mv -f "${source_path}" "${destination_path}"
+}
+
+while IFS= read -r -d '' stale_request_path; do
+    move_to_unique_destination "${stale_request_path}" "${archive_dir}"
+    stale_requests_moved=$((stale_requests_moved + 1))
+done < <(find "${requests_dir}" -maxdepth 1 -type f -name 'request-*.env' -mmin "+${stale_request_minutes}" -print0 2>/dev/null)
 
 pending_requests="$(find "${requests_dir}" -maxdepth 1 -type f -name 'request-*.env' 2>/dev/null | wc -l | tr -d ' ')"
 shared_results_count="$(find "${results_dir}" -maxdepth 1 -type f -name 'result-*.md' 2>/dev/null | wc -l | tr -d ' ')"
@@ -101,6 +141,27 @@ while IFS= read -r -d '' result_path; do
     fi
 done < <(find "${results_dir}" -maxdepth 1 -type f -name 'result-*.md' -print0 2>/dev/null)
 
+while IFS= read -r -d '' shared_result_path; do
+    shared_result_name="$(basename "${shared_result_path}")"
+    imported_result_path="${imported_results_dir}/${shared_result_name}"
+
+    if [[ -f "${imported_result_path}" ]]; then
+        rm -f "${shared_result_path}"
+        old_shared_results_pruned=$((old_shared_results_pruned + 1))
+    fi
+done < <(find "${results_dir}" -maxdepth 1 -type f -name 'result-*.md' -mtime "+${shared_result_retention_days}" -print0 2>/dev/null)
+
+while IFS= read -r -d '' imported_result_path; do
+    move_to_unique_destination "${imported_result_path}" "${imported_archive_dir}"
+    old_imported_results_archived=$((old_imported_results_archived + 1))
+done < <(find "${imported_results_dir}" -maxdepth 1 -type f -name 'result-*.md' -mtime "+${imported_result_retention_days}" -print0 2>/dev/null)
+
+while IFS= read -r -d '' imported_archive_path; do
+    rm -f "${imported_archive_path}"
+    old_imported_archives_pruned=$((old_imported_archives_pruned + 1))
+done < <(find "${imported_archive_dir}" -maxdepth 1 -type f -name 'result-*.md' -mtime "+${imported_archive_retention_days}" -print0 2>/dev/null)
+
+shared_results_count="$(find "${results_dir}" -maxdepth 1 -type f -name 'result-*.md' 2>/dev/null | wc -l | tr -d ' ')"
 imported_results_count="$(find "${imported_results_dir}" -maxdepth 1 -type f -name 'result-*.md' 2>/dev/null | wc -l | tr -d ' ')"
 
 if [[ -n "${latest_result_path}" && -f "${latest_result_path}" ]]; then
@@ -122,6 +183,32 @@ else
     rm -f "${launch_result_seen_marker}"
 fi
 
+if [[ "${pending_requests}" -ge 3 ]]; then
+    launch_queue_health="pressure"
+    launch_queue_note="Multiple staged launch requests are still queued. Sync or cool down before adding more Windows background work."
+elif [[ "${pending_requests}" -gt 0 ]]; then
+    launch_queue_health="awaiting-guest"
+    launch_queue_note="Launch requests are queued and still waiting for the Windows guest-side agent to consume them."
+elif [[ "${stale_requests_moved}" -gt 0 ]]; then
+    launch_queue_health="stale-recovered"
+    launch_queue_note="Lumina cleaned stale launch requests before they could keep piling up."
+elif [[ "${old_shared_results_pruned}" -gt 0 || "${old_imported_results_archived}" -gt 0 || "${old_imported_archives_pruned}" -gt 0 ]]; then
+    launch_queue_health="cleaned"
+    launch_queue_note="Lumina trimmed old shared or imported launch records to keep the workflow light."
+fi
+
+if [[ "${launch_queue_health}" == "pressure" ]]; then
+    touch "${launch_queue_pressure_marker}"
+else
+    rm -f "${launch_queue_pressure_marker}"
+fi
+
+if [[ "${stale_requests_moved}" -gt 0 || "${old_shared_results_pruned}" -gt 0 || "${old_imported_results_archived}" -gt 0 || "${old_imported_archives_pruned}" -gt 0 ]]; then
+    touch "${launch_queue_cleanup_marker}"
+else
+    rm -f "${launch_queue_cleanup_marker}"
+fi
+
 {
     printf '# Lumina Windows Launch Results Sync\n\n'
     printf -- '- Generated At: %s\n' "$(date -Is)"
@@ -137,15 +224,30 @@ fi
     printf -- '- Imported Results Count: %s\n' "${imported_results_count}"
     printf -- '- New Results Imported: %s\n' "${new_results_count}"
     printf -- '- Archived Requests Count: %s\n' "${archived_requests_count}"
+    printf -- '- Stale Pending Requests Moved: %s\n' "${stale_requests_moved}"
+    printf -- '- Old Shared Results Pruned: %s\n' "${old_shared_results_pruned}"
+    printf -- '- Old Imported Results Archived: %s\n' "${old_imported_results_archived}"
+    printf -- '- Old Imported Archives Pruned: %s\n' "${old_imported_archives_pruned}"
+    printf -- '- Launch Queue Health: %s\n' "${launch_queue_health}"
     printf -- '- Launch Result Seen Marker: %s\n' "$([[ -f "${launch_result_seen_marker}" ]] && printf yes || printf no)"
     printf -- '- Launch Request Pending Marker: %s\n' "$([[ -f "${launch_request_pending_marker}" ]] && printf yes || printf no)"
+    printf -- '- Launch Queue Pressure Marker: %s\n' "$([[ -f "${launch_queue_pressure_marker}" ]] && printf yes || printf no)"
+    printf -- '- Launch Queue Cleanup Marker: %s\n' "$([[ -f "${launch_queue_cleanup_marker}" ]] && printf yes || printf no)"
     printf '\n## Latest Result\n'
     printf -- '- Result File: %s\n' "${latest_result_path:-none}"
     printf -- '- Status: %s\n' "${latest_result_status}"
     printf -- '- Message: %s\n' "${latest_result_message}"
+    printf '\n## Queue Notes\n'
+    printf -- '- Queue Note: %s\n' "${launch_queue_note}"
+    printf -- '- Cleanup Policy: move requests older than %s minutes, prune shared results older than %s days when imported, archive imported results older than %s days, and trim imported archives older than %s days.\n' \
+        "${stale_request_minutes}" \
+        "${shared_result_retention_days}" \
+        "${imported_result_retention_days}" \
+        "${imported_archive_retention_days}"
     printf '\n## Operator Notes\n'
     printf -- '- If pending requests stay above zero and imported results stay at zero, the guest-side launch agent is probably not installed or not running.\n'
     printf -- '- If imported results appear here, Lumina now has proof that the Windows side consumed a staged launch request.\n'
+    printf -- '- This sync pass now prunes stale launch queue data automatically so weak machines do not keep carrying dead Windows launch pressure forever.\n'
     printf -- '- Broker Report: %s\n' "${broker_report}"
 } > "${launch_sync_report}"
 

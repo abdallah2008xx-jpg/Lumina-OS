@@ -134,6 +134,8 @@ workflow_proof_marker="${workflow_state_root}/workflow-proof-ready.marker"
 guest_agent_pack_marker="${workflow_state_root}/guest-agent-pack-ready.marker"
 launch_result_seen_marker="${workflow_state_root}/launch-result-seen.marker"
 launch_request_pending_marker="${workflow_state_root}/launch-request-pending.marker"
+launch_queue_pressure_marker="${workflow_state_root}/launch-queue-pressure.marker"
+launch_queue_cleanup_marker="${workflow_state_root}/launch-queue-cleanup.marker"
 guest_onboarding_marker="${workflow_state_root}/guest-onboarding-ready.marker"
 guest_agent_installed_marker="${workflow_state_root}/guest-agent-installed.marker"
 guest_app_discovery_marker="${workflow_state_root}/guest-app-discovery-ready.marker"
@@ -154,6 +156,12 @@ workflow_status="$(awk -F': ' '/^- Status:/ {print $2; exit}' "${state_report}" 
 warm_start_status="$(awk -F': ' '/^- Warm Start Status:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
 pressure_state="$(awk -F': ' '/^- Pressure State:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
 workflow_guard="$(awk -F': ' '/^- Workflow Guard:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
+launch_queue_health="$(awk -F': ' '/^- Launch Queue Health:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+queue_note="$(awk -F': ' '/^- Queue Note:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+stale_requests_moved="$(awk -F': ' '/^- Stale Pending Requests Moved:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+[[ -n "${launch_queue_health}" ]] || launch_queue_health="unknown"
+[[ -n "${queue_note}" ]] || queue_note="No queue note captured."
+[[ -n "${stale_requests_moved}" ]] || stale_requests_moved="0"
 
 if [[ -z "${recommended_route}" ]]; then
     recommended_route="${basic_route}"
@@ -177,6 +185,10 @@ if [[ "${resource_class}" == "light" && "${route_mode}" != "linux-first" && -f "
     next_action="Cool down the idle Windows workspace"
     next_command="/usr/local/bin/lumina-windows-vm-runner --profile-id ${profile_id} --cooldown"
     operator_note="This Windows workspace is already warm on a light machine and no launch is pending, so reclaiming resources is the smoothest next move."
+elif [[ "${resource_class}" == "light" && -f "${launch_queue_pressure_marker}" ]]; then
+    next_action="Clear and sync the Windows launch queue"
+    next_command="/usr/local/bin/lumina-windows-launch-results-sync --profile-id ${profile_id}"
+    operator_note="Multiple staged launch requests are piling up on a light machine, so Lumina should sync and shrink the queue before opening more Windows load."
 elif [[ "${resource_class}" == "light" && "${route_mode}" == "linux-first" && ! -f "${linux_first_validated_marker}" ]]; then
     next_action="Validate the Linux-first route"
     next_command="/usr/local/bin/lumina-windows-workflow-mark --profile-id ${profile_id} --step linux-first-validated"
@@ -333,6 +345,7 @@ fi
     printf -- '- Warm Start Status: %s\n' "${warm_start_status:-not-run}"
     printf -- '- Pressure State: %s\n' "${pressure_state:-unknown}"
     printf -- '- Workflow Guard: %s\n' "${workflow_guard:-unknown}"
+    printf -- '- Launch Queue Health: %s\n' "${launch_queue_health}"
     printf '\n## Next Action\n'
     printf -- '- %s\n' "${next_action}"
     printf -- '- Suggested Command: `%s`\n' "${next_command}"
@@ -340,6 +353,7 @@ fi
     if [[ -n "${runtime_guard_note}" ]]; then
         printf -- '- Runtime Guard Note: %s\n' "${runtime_guard_note}"
     fi
+    printf -- '- Queue Note: %s\n' "${queue_note}"
     printf '\n## Marker Snapshot\n'
     printf -- '- Bootstrap Ready: %s\n' "$([[ -f "${bootstrap_marker}" ]] && printf yes || printf no)"
     printf -- '- Launch Recipe Ready: %s\n' "$([[ -f "${launch_recipe_marker}" ]] && printf yes || printf no)"
@@ -366,11 +380,17 @@ fi
     printf -- '- App Manifest Hydration Ready: %s\n' "$([[ -f "${app_manifest_hydration_marker}" ]] && printf yes || printf no)"
     printf -- '- Launch Result Seen: %s\n' "$([[ -f "${launch_result_seen_marker}" ]] && printf yes || printf no)"
     printf -- '- Launch Request Pending: %s\n' "$([[ -f "${launch_request_pending_marker}" ]] && printf yes || printf no)"
+    printf -- '- Launch Queue Pressure: %s\n' "$([[ -f "${launch_queue_pressure_marker}" ]] && printf yes || printf no)"
+    printf -- '- Launch Queue Cleanup: %s\n' "$([[ -f "${launch_queue_cleanup_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Created: %s\n' "$([[ -f "${vm_created_marker}" ]] && printf yes || printf no)"
     printf -- '- VM Configured: %s\n' "$([[ -f "${vm_configured_marker}" ]] && printf yes || printf no)"
     printf -- '- Apps Installed: %s\n' "$([[ -f "${apps_installed_marker}" ]] && printf yes || printf no)"
     printf -- '- Linux-First Validated: %s\n' "$([[ -f "${linux_first_validated_marker}" ]] && printf yes || printf no)"
     printf -- '- Checklist Complete: %s\n' "$([[ -f "${checklist_complete_marker}" ]] && printf yes || printf no)"
+    printf '\n## Launch Queue\n'
+    printf -- '- Launch Queue Health: %s\n' "${launch_queue_health}"
+    printf -- '- Queue Note: %s\n' "${queue_note}"
+    printf -- '- Stale Pending Requests Moved: %s\n' "${stale_requests_moved}"
     printf '\n## Core Reports\n'
     printf -- '- Workflow Profile Report: %s\n' "${profile_report}"
     printf -- '- Workflow Runbook Report: %s\n' "${runbook_report}"

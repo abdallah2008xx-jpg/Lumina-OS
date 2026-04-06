@@ -98,6 +98,7 @@ workflow_proof_marker="${workflow_state_root}/workflow-proof-ready.marker"
 guest_agent_pack_marker="${workflow_state_root}/guest-agent-pack-ready.marker"
 launch_result_seen_marker="${workflow_state_root}/launch-result-seen.marker"
 launch_request_pending_marker="${workflow_state_root}/launch-request-pending.marker"
+launch_queue_pressure_marker="${workflow_state_root}/launch-queue-pressure.marker"
 guest_onboarding_marker="${workflow_state_root}/guest-onboarding-ready.marker"
 guest_agent_installed_marker="${workflow_state_root}/guest-agent-installed.marker"
 guest_app_discovery_marker="${workflow_state_root}/guest-app-discovery-ready.marker"
@@ -114,12 +115,16 @@ resource_summary="$(awk -F': ' '/^- Resource Summary:/ {print $2; exit}' "${comp
 warm_start_status="$(awk -F': ' '/^- Warm Start Status:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
 pressure_state="$(awk -F': ' '/^- Pressure State:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
 workflow_guard="$(awk -F': ' '/^- Workflow Guard:/ {print $2; exit}' "${vm_warm_start_report}" 2>/dev/null || true)"
+launch_queue_health="$(awk -F': ' '/^- Launch Queue Health:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
+queue_note="$(awk -F': ' '/^- Queue Note:/ {print $2; exit}' "${launch_sync_report}" 2>/dev/null || true)"
 if [[ -z "${recommended_route}" ]]; then
     recommended_route="${basic_route}"
 fi
 [[ -n "${resource_class}" ]] || resource_class="balanced"
 [[ -n "${pressure_state}" ]] || pressure_state="unknown"
 [[ -n "${workflow_guard}" ]] || workflow_guard="unknown"
+[[ -n "${launch_queue_health}" ]] || launch_queue_health="unknown"
+[[ -n "${queue_note}" ]] || queue_note="No queue note captured."
 
 route_mode="linux-first"
 if [[ "${recommended_route}" == *"Out of scope"* ]]; then
@@ -142,6 +147,12 @@ if [[ "${resource_class}" == "light" && "${route_mode}" != "linux-first" && -f "
     action_target="/usr/local/bin/lumina-windows-vm-runner --profile-id ${profile_id} --cooldown"
     action_command="/usr/local/bin/lumina-windows-vm-runner --profile-id ${profile_id} --cooldown"
     action_reason="This Windows workspace is already warm on a light machine and no launch is pending, so reclaiming resources is the smoothest next move."
+elif [[ "${resource_class}" == "light" && -f "${launch_queue_pressure_marker}" ]]; then
+    action_label="Clear and sync the Windows launch queue"
+    action_kind="command"
+    action_target="/usr/local/bin/lumina-windows-launch-results-sync --profile-id ${profile_id}"
+    action_command="/usr/local/bin/lumina-windows-launch-results-sync --profile-id ${profile_id}"
+    action_reason="Multiple staged launch requests are piling up on a light machine, so Lumina should sync and shrink the queue before adding more Windows load."
 elif [[ "${resource_class}" == "light" && "${route_mode}" == "linux-first" && ! -f "${linux_first_validated_marker}" ]]; then
     action_label="Validate the Linux-first route first"
     action_kind="command"
@@ -347,11 +358,13 @@ fi
     printf -- '- Warm Start Status: %s\n' "${warm_start_status:-not-run}"
     printf -- '- Pressure State: %s\n' "${pressure_state}"
     printf -- '- Workflow Guard: %s\n' "${workflow_guard}"
+    printf -- '- Launch Queue Health: %s\n' "${launch_queue_health}"
     printf '\n## Selected Action\n'
     printf -- '- Label: %s\n' "${action_label}"
     printf -- '- Kind: %s\n' "${action_kind}"
     printf -- '- Target: %s\n' "${action_target}"
     printf -- '- Reason: %s\n' "${action_reason}"
+    printf -- '- Queue Note: %s\n' "${queue_note}"
     printf '\n## Reference Reports\n'
     printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
     printf -- '- Workflow State Report: %s\n' "${workflow_state_report}"

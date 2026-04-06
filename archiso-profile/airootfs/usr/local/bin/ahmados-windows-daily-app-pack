@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+data_root="${XDG_DATA_HOME:-$HOME/.local/share}"
+mkdir -p "${state_root}"
+
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+daily_app_pack_report="${state_root}/windows-daily-app-pack.md"
+app_library_report="${state_root}/windows-app-library.md"
+state_report="${state_root}/windows-workflow-state.md"
+hub_report="${state_root}/windows-workflow-hub.md"
+compat_report="${state_root}/windows-compat-report.md"
+
+if [[ -z "${selected_profile_id}" ]]; then
+    selected_profile_id="adobe-creator"
+fi
+
+selected_row="$(awk -F'|' -v target="${selected_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${selected_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studio_route notes <<< "${selected_row}"
+
+/usr/local/bin/ahmados-windows-app-library --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+registry_root="${workspace_root}/app-registry"
+registry_index_path="${registry_root}/registry-index.tsv"
+surfaces_index_path="${registry_root}/launcher-surfaces.tsv"
+workflow_state_root="${workspace_root}/state"
+export_dir="${data_root}/applications/lumina-windows-daily-apps/${profile_id}"
+daily_app_pack_marker="${workflow_state_root}/daily-app-pack-ready.marker"
+
+mkdir -p "${export_dir}" "${workflow_state_root}"
+find "${export_dir}" -maxdepth 1 -type f -name "lumina-windows-daily-app-${profile_id}-*.desktop" -delete 2>/dev/null || true
+
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+[[ -n "${resource_class}" ]] || resource_class="balanced"
+
+case "${resource_class}" in
+    light)
+        max_apps=3
+        preferred_order=("Productivity" "Utilities" "Creator Apps" "Audio and Studio" "Gaming and Launchers")
+        ;;
+    performance)
+        max_apps=7
+        preferred_order=("Creator Apps" "Productivity" "Audio and Studio" "Gaming and Launchers" "Utilities")
+        ;;
+    *)
+        max_apps=5
+        preferred_order=("Productivity" "Creator Apps" "Utilities" "Audio and Studio" "Gaming and Launchers")
+        ;;
+esac
+
+joined_inventory_path="$(mktemp)"
+selected_inventory_path="$(mktemp)"
+trap 'rm -f "${joined_inventory_path}" "${selected_inventory_path}"' EXIT
+
+awk -F'|' '
+    BEGIN { OFS="|" }
+    FNR == NR {
+        if (NF >= 6 && $1 !~ /^#/ && $1 != "") {
+            registration[$1]=$4
+            name[$1]=$2
+            category[$1]=$3
+            next
+        }
+    }
+    NF >= 7 && $1 !~ /^#/ && $1 != "" {
+        app_id=$1
+        app_name=$2
+        app_category=$3
+        surface_state=$4
+        if (registration[app_id] == "published" && surface_state == "ready") {
+            print app_id, app_name, app_category
+        }
+    }
+' "${registry_index_path}" "${surfaces_index_path}" > "${joined_inventory_path}"
+
+count_selected=0
+for preferred_category in "${preferred_order[@]}"; do
+    while IFS='|' read -r app_id app_name app_category; do
+        [[ "${app_category}" == "${preferred_category}" ]] || continue
+        if grep -Fq "${app_id}|" "${selected_inventory_path}" 2>/dev/null; then
+            continue
+        fi
+        printf '%s|%s|%s\n' "${app_id}" "${app_name}" "${app_category}" >> "${selected_inventory_path}"
+        count_selected=$((count_selected + 1))
+        if [[ ${count_selected} -ge ${max_apps} ]]; then
+            break 2
+        fi
+    done < "${joined_inventory_path}"
+done
+
+export_lines=""
+export_count=0
+
+if [[ -f "${selected_inventory_path}" ]]; then
+    while IFS='|' read -r app_id app_name app_category; do
+        [[ -z "${app_id}" ]] && continue
+        exported_path="${export_dir}/lumina-windows-daily-app-${profile_id}-${app_id}.desktop"
+        cat > "${exported_path}" <<EOF
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=${app_name} (Daily Lumina Windows)
+Comment=Launch ${app_name} through the daily Lumina Windows path for ${profile_name}
+Exec=/usr/local/bin/lumina-windows-registered-app-launch --profile-id ${profile_id} --app-id ${app_id}
+Icon=application-x-ms-dos-executable
+Terminal=false
+Categories=Utility;System;
+StartupNotify=true
+Keywords=Windows;Lumina;Daily;${app_name};${app_category};
+EOF
+        export_count=$((export_count + 1))
+        export_lines+="- ${app_name} | ${app_category} | ${exported_path}\n"
+    done < "${selected_inventory_path}"
+fi
+
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database "${export_dir}" >/dev/null 2>&1 || true
+fi
+
+[[ -n "${export_lines}" ]] || export_lines="- No published-ready daily apps were available yet for this profile.\n"
+
+touch "${daily_app_pack_marker}"
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+
+{
+    printf '# Lumina Windows Daily App Pack\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Profile: %s\n' "${profile_name}"
+    printf -- '- Profile Id: %s\n' "${profile_id}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Max Daily Apps: %s\n' "${max_apps}"
+    printf -- '- Export Directory: %s\n' "${export_dir}"
+    printf -- '- Daily App Pack Marker: %s\n' "${daily_app_pack_marker}"
+    printf -- '- Exported App Count: %s\n' "${export_count}"
+    printf '\n## Exported Daily Apps\n'
+    printf '%b' "${export_lines}"
+    printf '\n## Related Reports\n'
+    printf -- '- App Library Report: %s\n' "${app_library_report}"
+    printf -- '- Workflow State Report: %s\n' "${state_report}"
+    printf -- '- Workflow Hub Report: %s\n' "${hub_report}"
+} > "${daily_app_pack_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '    Lumina Windows Daily App Pack'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Profile: %s\n' "${profile_name}"
+printf 'Exported apps: %s\n' "${export_count}"
+printf 'Export dir: %s\n' "${export_dir}"
+printf 'Report: %s\n' "${daily_app_pack_report}"
+printf '\n'
+
+if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${daily_app_pack_report}" >/dev/null 2>&1 || true
+fi

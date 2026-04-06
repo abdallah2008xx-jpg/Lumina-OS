@@ -2,8 +2,8 @@
 Type=Application
 Version=1.0
 Name=Lumina Windows Apps
-Comment=Open the Lumina Windows daily surface
-Exec=/usr/local/bin/lumina-windows-daily-surface
+Comment=Open the best Lumina Windows daily path
+Exec=/usr/local/bin/lumina-windows-daily-home --launch
 Icon=applications-other
 Terminal=false
 Categories=Qt;KDE;System;Utility;

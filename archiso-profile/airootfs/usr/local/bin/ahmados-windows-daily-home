@@ -1,0 +1,299 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected_profile_id=""
+choose_workflow=0
+perform_launch=0
+open_report=1
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --profile-id)
+            selected_profile_id="${2:-}"
+            shift 2
+            ;;
+        --choose-workflow)
+            choose_workflow=1
+            shift
+            ;;
+        --launch)
+            perform_launch=1
+            shift
+            ;;
+        --no-open)
+            open_report=0
+            shift
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
+documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
+compat_report="${state_root}/windows-compat-report.md"
+daily_home_report="${state_root}/windows-daily-home.md"
+
+mkdir -p "${state_root}"
+
+/usr/local/bin/ahmados-windows-apps --no-open >/dev/null 2>&1 || true
+
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+resource_summary="$(awk -F': ' '/^- Resource Summary:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+[[ -n "${resource_class}" ]] || resource_class="balanced"
+[[ -n "${resource_summary}" ]] || resource_summary="No host resource summary captured."
+[[ -n "${compatibility_tier}" ]] || compatibility_tier="unknown"
+
+default_profile_id="adobe-creator"
+if [[ "${resource_class}" == "light" ]]; then
+    default_profile_id="office-productivity"
+fi
+
+profile_state_summary() {
+    local profile_id="$1"
+    local workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
+    local workflow_state_root="${workspace_root}/state"
+    local bootstrap_marker="${workflow_state_root}/bootstrap-ready.marker"
+    local app_library_marker="${workflow_state_root}/app-library-ready.marker"
+    local workflow_proof_marker="${workflow_state_root}/workflow-proof-ready.marker"
+    local checklist_complete_marker="${workflow_state_root}/checklist-complete.marker"
+    local daily_recent_marker="${workflow_state_root}/daily-recent-ready.marker"
+    local daily_quick_launch_marker="${workflow_state_root}/daily-quick-launch-ready.marker"
+    local mode="workflow-hub"
+    local score=0
+    local note="Needs guided setup first."
+
+    if [[ -f "${bootstrap_marker}" ]]; then
+        score=$((score + 1))
+        mode="guided-surface"
+        note="Workspace exists and the guided daily surface can lead the next step."
+    fi
+
+    if [[ -f "${app_library_marker}" ]]; then
+        score=$((score + 2))
+        mode="guided-surface"
+        note="App library exists, so Lumina can reopen the workflow from a stronger product-facing surface."
+    fi
+
+    if [[ -f "${workflow_proof_marker}" ]]; then
+        score=$((score + 2))
+    fi
+
+    if [[ -f "${checklist_complete_marker}" ]]; then
+        score=$((score + 2))
+    fi
+
+    if [[ -f "${app_library_marker}" && -f "${workflow_proof_marker}" && -f "${checklist_complete_marker}" ]]; then
+        mode="daily-surface"
+        note="This workflow is mature enough for daily use through the Windows Apps daily surface."
+        score=$((score + 2))
+    fi
+
+    if [[ -f "${daily_quick_launch_marker}" ]]; then
+        mode="quick-launch"
+        note="This workflow already has a smooth daily quick-launch path."
+        score=$((score + 4))
+    elif [[ -f "${daily_recent_marker}" && "${resource_class}" == "light" ]]; then
+        mode="daily-surface"
+        note="This workflow has a recent daily path and is a good lightweight daily candidate."
+        score=$((score + 1))
+    fi
+
+    case "${resource_class}" in
+        light)
+            case "${profile_id}" in
+                office-productivity)
+                    score=$((score + 3))
+                    ;;
+                studio-audio)
+                    score=$((score + 1))
+                    ;;
+                adobe-creator|gaming-launchers|restricted-gaming)
+                    score=$((score - 1))
+                    ;;
+            esac
+            ;;
+        performance)
+            case "${profile_id}" in
+                adobe-creator|studio-audio|gaming-launchers)
+                    score=$((score + 1))
+                    ;;
+            esac
+            ;;
+    esac
+
+    if [[ "${profile_id}" == "${default_profile_id}" ]]; then
+        score=$((score + 1))
+    fi
+
+    printf '%s|%s|%s\n' "${mode}" "${score}" "${note}"
+}
+
+choose_profile_with_kdialog() {
+    local recommended_id="$1"
+    local entries=()
+    local profile_id profile_name focus summary mode score note label
+
+    while IFS='|' read -r profile_id profile_name focus _; do
+        [[ -z "${profile_id}" || "${profile_id}" == \#* ]] && continue
+        summary="$(profile_state_summary "${profile_id}")"
+        IFS='|' read -r mode score note <<< "${summary}"
+        label="${profile_name} - ${focus} | ${mode} | score ${score}"
+        if [[ "${profile_id}" == "${recommended_id}" ]]; then
+            label="${label} (Recommended)"
+        fi
+        entries+=("${profile_id}" "${label}")
+    done < "${profiles_path}"
+
+    if [[ ${#entries[@]} -eq 0 ]]; then
+        return 1
+    fi
+
+    kdialog --title "Lumina Windows Apps" \
+        --menu "Choose the Windows workflow Lumina should open today." \
+        "${entries[@]}" 2>/dev/null || return 1
+}
+
+chosen_profile_id="${selected_profile_id}"
+best_profile_id=""
+best_mode="workflow-hub"
+best_score=-999
+inventory_rows=""
+
+while IFS='|' read -r profile_id profile_name focus _; do
+    [[ -z "${profile_id}" || "${profile_id}" == \#* ]] && continue
+    summary="$(profile_state_summary "${profile_id}")"
+    IFS='|' read -r mode score note <<< "${summary}"
+
+    if [[ -z "${best_profile_id}" || "${score}" -gt "${best_score}" || ( "${score}" -eq "${best_score}" && "${profile_id}" == "${default_profile_id}" ) ]]; then
+        best_profile_id="${profile_id}"
+        best_mode="${mode}"
+        best_score="${score}"
+    fi
+
+    inventory_rows+="- ${profile_name} (${profile_id}): ${mode} | score ${score} | ${note}\n"
+done < "${profiles_path}"
+
+if [[ -z "${chosen_profile_id}" ]]; then
+    chosen_profile_id="${best_profile_id}"
+fi
+
+if [[ ${choose_workflow} -eq 1 ]] && command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    chosen_profile_id="$(choose_profile_with_kdialog "${best_profile_id}" || printf '%s' "${chosen_profile_id}")"
+fi
+
+if [[ -z "${chosen_profile_id}" ]]; then
+    chosen_profile_id="${default_profile_id}"
+fi
+
+selected_row="$(awk -F'|' -v target="${chosen_profile_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
+if [[ -z "${selected_row}" ]]; then
+    printf 'Unknown Windows profile id: %s\n' "${chosen_profile_id}" >&2
+    exit 1
+fi
+
+IFS='|' read -r chosen_id chosen_name chosen_focus _ <<< "${selected_row}"
+chosen_summary="$(profile_state_summary "${chosen_id}")"
+IFS='|' read -r chosen_mode chosen_score chosen_note <<< "${chosen_summary}"
+
+/usr/local/bin/ahmados-windows-workflow-state --profile-id "${chosen_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-workflow-hub --profile-id "${chosen_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-daily-recent-sync --profile-id "${chosen_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-daily-quick-launch --profile-id "${chosen_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-daily-surface --profile-id "${chosen_id}" --no-open >/dev/null 2>&1 || true
+
+recommended_command="/usr/local/bin/lumina-windows-workflow-hub --profile-id ${chosen_id}"
+recommended_action="Open workflow hub"
+case "${chosen_mode}" in
+    quick-launch)
+        recommended_action="Run daily quick launch"
+        recommended_command="/usr/local/bin/lumina-windows-daily-quick-launch --profile-id ${chosen_id} --launch"
+        ;;
+    daily-surface|guided-surface)
+        recommended_action="Open daily surface"
+        recommended_command="/usr/local/bin/lumina-windows-daily-surface --profile-id ${chosen_id}"
+        ;;
+esac
+
+launch_mode="report-only"
+launch_outcome="not-run"
+launch_note="Lumina generated the unified daily home recommendation report."
+
+run_daily_home_action() {
+    local action_mode="$1"
+    case "${action_mode}" in
+        quick-launch)
+            /usr/local/bin/ahmados-windows-daily-quick-launch --profile-id "${chosen_id}" --launch --no-open >/dev/null 2>&1 || true
+            ;;
+        daily-surface|guided-surface)
+            /usr/local/bin/ahmados-windows-daily-surface --profile-id "${chosen_id}" >/dev/null 2>&1 || true
+            ;;
+        workflow-hub)
+            /usr/local/bin/ahmados-windows-workflow-hub --profile-id "${chosen_id}" >/dev/null 2>&1 || true
+            ;;
+    esac
+}
+
+if [[ ${perform_launch} -eq 1 ]]; then
+    launch_mode="${chosen_mode}"
+    launch_note="Lumina executed the best current unified daily path for the chosen workflow."
+    run_daily_home_action "${chosen_mode}"
+    case "${chosen_mode}" in
+        quick-launch)
+            launch_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${state_root}/windows-daily-quick-launch.md" 2>/dev/null || true)"
+            ;;
+        daily-surface|guided-surface)
+            launch_outcome="$(awk -F': ' '/^- Selected Action Outcome:/ {print $2; exit}' "${state_root}/windows-daily-surface.md" 2>/dev/null || true)"
+            ;;
+        workflow-hub)
+            launch_outcome="hub-opened"
+            ;;
+    esac
+    [[ -n "${launch_outcome}" ]] || launch_outcome="launched"
+fi
+
+{
+    printf '# Lumina Windows Daily Home\n\n'
+    printf -- '- Generated At: %s\n' "$(date -Is)"
+    printf -- '- Compatibility Tier: %s\n' "${compatibility_tier}"
+    printf -- '- Resource Class: %s\n' "${resource_class}"
+    printf -- '- Resource Summary: %s\n' "${resource_summary}"
+    printf -- '- Best Workflow Id: %s\n' "${best_profile_id}"
+    printf -- '- Best Workflow Mode: %s\n' "${best_mode}"
+    printf -- '- Chosen Workflow Id: %s\n' "${chosen_id}"
+    printf -- '- Chosen Workflow Name: %s\n' "${chosen_name}"
+    printf -- '- Chosen Workflow Focus: %s\n' "${chosen_focus}"
+    printf -- '- Chosen Daily Mode: %s\n' "${chosen_mode}"
+    printf -- '- Recommended Action: %s\n' "${recommended_action}"
+    printf -- '- Recommended Command: `%s`\n' "${recommended_command}"
+    printf -- '- Launch Mode: %s\n' "${launch_mode}"
+    printf -- '- Launch Outcome: %s\n' "${launch_outcome}"
+    printf -- '- Selection Note: %s\n' "${chosen_note}"
+    printf -- '- Launch Note: %s\n' "${launch_note}"
+    printf '\n## Workflow Inventory\n'
+    printf '%b' "${inventory_rows}"
+    printf '\n## Related Reports\n'
+    printf -- '- Windows Apps Bridge Report: %s\n' "${state_root}/windows-apps-bridge.md"
+    printf -- '- Workflow Hub Report: %s\n' "${state_root}/windows-workflow-hub.md"
+    printf -- '- Workflow State Report: %s\n' "${state_root}/windows-workflow-state.md"
+    printf -- '- Daily Surface Report: %s\n' "${state_root}/windows-daily-surface.md"
+    printf -- '- Daily Quick Launch Report: %s\n' "${state_root}/windows-daily-quick-launch.md"
+} > "${daily_home_report}"
+
+printf '%s\n' '========================================'
+printf '%s\n' '      Lumina Windows Daily Home'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Chosen workflow: %s\n' "${chosen_name}"
+printf 'Mode: %s\n' "${chosen_mode}"
+printf 'Recommended: %s\n' "${recommended_action}"
+printf 'Report: %s\n' "${daily_home_report}"
+printf '\n'
+
+if [[ ${perform_launch} -eq 0 && ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "${daily_home_report}" >/dev/null 2>&1 || true
+fi

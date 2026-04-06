@@ -72,6 +72,7 @@ $installTestScript = Join-Path $PSScriptRoot "new-install-test-report.ps1"
 $hardwareTestScript = Join-Path $PSScriptRoot "new-hardware-test-report.ps1"
 $releaseEvidencePackScript = Join-Path $PSScriptRoot "new-release-evidence-pack.ps1"
 $releaseEvidenceRunbookScript = Join-Path $PSScriptRoot "new-release-evidence-runbook.ps1"
+$syncReleaseEvidencePackScript = Join-Path $PSScriptRoot "sync-release-evidence-pack.ps1"
 $buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
 $buildHandoffImportScript = Join-Path $PSScriptRoot "import-build-handoff.ps1"
 $githubArtifactImportScript = Join-Path $PSScriptRoot "import-github-actions-artifact.ps1"
@@ -117,6 +118,10 @@ if (-not (Test-Path $releaseEvidencePackScript)) {
 
 if (-not (Test-Path $releaseEvidenceRunbookScript)) {
     throw "Missing smoke-test target: $releaseEvidenceRunbookScript"
+}
+
+if (-not (Test-Path $syncReleaseEvidencePackScript)) {
+    throw "Missing smoke-test target: $syncReleaseEvidencePackScript"
 }
 
 if (-not (Test-Path $buildManifestImportScript)) {
@@ -333,6 +338,19 @@ try {
 
     $releaseHardwareReportContent = (Get-Content -Raw $releaseHardwareReportPath) -replace '(?m)^- Overall Status: .+$', '- Overall Status: completed'
     Set-Content -Path $releaseHardwareReportPath -Value $releaseHardwareReportContent -Encoding UTF8
+
+    $syncedReleaseEvidencePackPath = & $syncReleaseEvidencePackScript `
+        -EvidencePackPath $releaseEvidencePackPath `
+        -ReleaseVersion "0.1.0-ci" `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition ($syncedReleaseEvidencePackPath -eq $releaseEvidencePackPath) -Message "Release evidence sync did not return the original pack path."
+    $syncedReleaseEvidencePackContent = Get-Content -Raw $releaseEvidencePackPath
+    Assert-Condition -Condition ($syncedReleaseEvidencePackContent -match [regex]::Escape("- Evidence Pack State: ready-for-rc-gating")) -Message "Release evidence pack did not sync to ready-for-rc-gating."
+    Assert-Condition -Condition ($syncedReleaseEvidencePackContent -match [regex]::Escape("- Login-Test Status: completed")) -Message "Release evidence pack did not record completed login-test status."
+    Assert-Condition -Condition ($syncedReleaseEvidencePackContent -match [regex]::Escape("- Install Status: completed")) -Message "Release evidence pack did not record completed install status."
+    Assert-Condition -Condition ($syncedReleaseEvidencePackContent -match [regex]::Escape("- Hardware Status: completed")) -Message "Release evidence pack did not record completed hardware status."
 
     $releaseEvidenceAuditPath = & $releaseEvidenceAuditScript `
         -Version "0.1.0-ci" `

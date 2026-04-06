@@ -5,7 +5,8 @@ Keep one manifest here when you want to prepare `login-test`, `install`, and `ha
 ## Recommended Flow
 1. Create an evidence pack with `scripts/new-release-evidence-pack.ps1`
 2. Use the generated `release-evidence-runbook-*.md` and report paths during the real validation run
-3. Pass the same pack into:
+3. Refresh the pack after report updates with `scripts/sync-release-evidence-pack.ps1 -EvidencePackPath "<path-to-pack>"`
+4. Pass the same pack into:
    - `scripts/audit-release-evidence.ps1 -EvidencePackPath "<path-to-pack>"`
    - `scripts/audit-release-readiness.ps1 -EvidencePackPath "<path-to-pack>"`
    - `scripts/prepare-release-candidate.ps1 -EvidencePackPath "<path-to-pack>"`
@@ -13,5 +14,6 @@ Keep one manifest here when you want to prepare `login-test`, `install`, and `ha
 ## Intended Contents
 - one manifest per shared evidence set
 - one generated runbook per shared evidence set
+- one synced state snapshot per shared evidence set
 - links to login-test, install, and hardware reports
 - one exact `Run Label` to carry into release gating

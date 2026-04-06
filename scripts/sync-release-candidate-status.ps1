@@ -102,6 +102,8 @@ $runLabel = Get-MetadataValue -Content $manifestContent -Label "Run Label"
 $isoPathLabel = Get-MetadataValue -Content $manifestContent -Label "ISO Path"
 $buildManifestLabel = Get-MetadataValue -Content $manifestContent -Label "Build Manifest"
 $vmReportLabel = Get-MetadataValue -Content $manifestContent -Label "VM Report"
+$installReportLabel = Get-MetadataValue -Content $manifestContent -Label "Install Report"
+$hardwareReportLabel = Get-MetadataValue -Content $manifestContent -Label "Hardware Report"
 $sessionSummaryLabel = Get-MetadataValue -Content $manifestContent -Label "Session Summary"
 $sessionAuditLabel = Get-MetadataValue -Content $manifestContent -Label "Session Audit"
 $cycleChainAuditLabel = Get-MetadataValue -Content $manifestContent -Label "Cycle Chain Audit"
@@ -109,6 +111,8 @@ $readinessLabel = Get-MetadataValue -Content $manifestContent -Label "Readiness"
 $validationMatrixLabel = Get-MetadataValue -Content $manifestContent -Label "Validation Matrix"
 
 $validationResult = Get-MetadataValue -Content $validationContent -Label "Result"
+$installReportState = Get-MetadataValue -Content $validationContent -Label "Install Report Status"
+$hardwareReportState = Get-MetadataValue -Content $validationContent -Label "Hardware Report Status"
 $readinessState = Get-MetadataValue -Content $validationContent -Label "Readiness State"
 $validationMatrixState = Get-MetadataValue -Content $validationContent -Label "Validation Matrix State"
 $blockerState = Get-MetadataValue -Content $validationContent -Label "Blocker State"
@@ -157,6 +161,14 @@ if (-not [string]::IsNullOrWhiteSpace($blockerState)) {
     $summaryItems.Add("Blocker State: $blockerState") | Out-Null
 }
 
+if (-not [string]::IsNullOrWhiteSpace($installReportState)) {
+    $summaryItems.Add("Install Report Status: $installReportState") | Out-Null
+}
+
+if (-not [string]::IsNullOrWhiteSpace($hardwareReportState)) {
+    $summaryItems.Add("Hardware Report Status: $hardwareReportState") | Out-Null
+}
+
 if ((Test-Path $resolvedPublishRecordPath) -and -not [string]::IsNullOrWhiteSpace($publishUrl)) {
     $summaryItems.Add("Published Release URL: $publishUrl") | Out-Null
 }
@@ -192,6 +204,8 @@ $summaryContent = @"
 - ISO Path: $(Get-ResolvedPathOrDefault -Value $isoPathLabel -DefaultValue "not-recorded-yet")
 - Build Manifest: $(Get-ResolvedPathOrDefault -Value $buildManifestLabel -DefaultValue "not-recorded-yet")
 - VM Report: $(Get-ResolvedPathOrDefault -Value $vmReportLabel -DefaultValue "not-recorded-yet")
+- Install Report: $(Get-ResolvedPathOrDefault -Value $installReportLabel -DefaultValue "not-recorded-yet")
+- Hardware Report: $(Get-ResolvedPathOrDefault -Value $hardwareReportLabel -DefaultValue "not-recorded-yet")
 - Session Summary: $(Get-ResolvedPathOrDefault -Value $sessionSummaryLabel -DefaultValue "not-recorded-yet")
 - Session Audit: $(Get-ResolvedPathOrDefault -Value $sessionAuditLabel -DefaultValue "not-recorded-yet")
 - Cycle Chain Audit: $(Get-ResolvedPathOrDefault -Value $cycleChainAuditLabel -DefaultValue "not-recorded-yet")

@@ -101,6 +101,8 @@ $currentCandidatePath = Resolve-RequiredPath -Label "Current release candidate" 
 $version = Get-MetadataValue -Content $manifestContent -Label "Version"
 $runLabel = Get-MetadataValue -Content $manifestContent -Label "Run Label"
 $mode = Get-MetadataValue -Content $manifestContent -Label "Mode"
+$installReportPath = Resolve-RequiredPath -Label "Install Report" -Value (Get-MetadataValue -Content $manifestContent -Label "Install Report") -Errors $errors
+$hardwareReportPath = Resolve-RequiredPath -Label "Hardware Report" -Value (Get-MetadataValue -Content $manifestContent -Label "Hardware Report") -Errors $errors
 
 $releaseConfigPath = Join-Path $RepoRoot "archiso-profile\airootfs\etc\ahmados-release.conf"
 $resolvedOwner = if ([string]::IsNullOrWhiteSpace($Owner)) {
@@ -150,9 +152,25 @@ if (-not [string]::IsNullOrWhiteSpace($resolvedToken)) {
 $validationContent = if (-not [string]::IsNullOrWhiteSpace($validationReportPath)) { Get-Content -Raw $validationReportPath } else { "" }
 $validationResult = Get-MetadataValue -Content $validationContent -Label "Result"
 $validationRunLabel = Get-MetadataValue -Content $validationContent -Label "Run Label"
+$installReportState = Get-MetadataValue -Content $validationContent -Label "Install Report Status"
+$hardwareReportState = Get-MetadataValue -Content $validationContent -Label "Hardware Report Status"
 
 if ($validationResult -ne "passed") {
     Add-ValidationItem -Bucket $errors -Message "Release validation result is not passed: $(if ([string]::IsNullOrWhiteSpace($validationResult)) { "not-recorded-yet" } else { $validationResult })"
+}
+
+if ([string]::IsNullOrWhiteSpace($installReportState) -or $installReportState -eq "not-recorded-yet") {
+    Add-ValidationItem -Bucket $errors -Message "Install report status is missing from the release validation report."
+}
+else {
+    Add-ValidationItem -Bucket $notes -Message "Install report status resolved as $installReportState."
+}
+
+if ([string]::IsNullOrWhiteSpace($hardwareReportState) -or $hardwareReportState -eq "not-recorded-yet") {
+    Add-ValidationItem -Bucket $errors -Message "Hardware report status is missing from the release validation report."
+}
+else {
+    Add-ValidationItem -Bucket $notes -Message "Hardware report status resolved as $hardwareReportState."
 }
 
 if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
@@ -223,6 +241,10 @@ $report = @"
 - Run Label: $(if ([string]::IsNullOrWhiteSpace($runLabel)) { "not-recorded-yet" } else { $runLabel })
 - GitHub Repository: $(if ([string]::IsNullOrWhiteSpace($resolvedOwner) -or [string]::IsNullOrWhiteSpace($resolvedRepo)) { "not-recorded-yet" } else { "$resolvedOwner/$resolvedRepo" })
 - Token Source: $(if ([string]::IsNullOrWhiteSpace($tokenSource)) { "not-recorded-yet" } else { $tokenSource })
+- Install Report: $(if ([string]::IsNullOrWhiteSpace($installReportPath)) { "not-recorded-yet" } else { $installReportPath })
+- Install Report Status: $(if ([string]::IsNullOrWhiteSpace($installReportState)) { "not-recorded-yet" } else { $installReportState })
+- Hardware Report: $(if ([string]::IsNullOrWhiteSpace($hardwareReportPath)) { "not-recorded-yet" } else { $hardwareReportPath })
+- Hardware Report Status: $(if ([string]::IsNullOrWhiteSpace($hardwareReportState)) { "not-recorded-yet" } else { $hardwareReportState })
 - Release Manifest: $resolvedManifestPath
 - Release Validation Report: $(if ([string]::IsNullOrWhiteSpace($validationReportPath)) { "not-recorded-yet" } else { $validationReportPath })
 - Current Release Candidate: $(if ([string]::IsNullOrWhiteSpace($currentCandidatePath)) { "not-recorded-yet" } else { $currentCandidatePath })

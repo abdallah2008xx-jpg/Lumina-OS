@@ -76,6 +76,53 @@ function Get-StateValue {
     return ""
 }
 
+function Test-EvidenceReport {
+    param(
+        [string]$Label,
+        [string]$PathValue,
+        [string[]]$StatusLabels,
+        [string[]]$PassStates,
+        [string[]]$WarningStates,
+        [string[]]$ErrorStates,
+        [System.Collections.Generic.List[string]]$Errors,
+        [System.Collections.Generic.List[string]]$Warnings,
+        [System.Collections.Generic.List[string]]$Notes
+    )
+
+    $resolvedPath = Resolve-ExistingPath -Label $Label -Value $PathValue -Errors $Errors
+    if ([string]::IsNullOrWhiteSpace($resolvedPath)) {
+        return @{
+            Path = ""
+            Status = ""
+        }
+    }
+
+    $content = Get-Content -Raw $resolvedPath
+    $status = Get-StateValue -Content $content -Labels $StatusLabels
+    $normalizedStatus = if ([string]::IsNullOrWhiteSpace($status)) { "" } else { $status.Trim().ToLowerInvariant() }
+
+    if ([string]::IsNullOrWhiteSpace($normalizedStatus)) {
+        Add-ValidationItem -Bucket $Warnings -Message "$Label does not record an explicit status field."
+    }
+    elseif ($ErrorStates -contains $normalizedStatus) {
+        Add-ValidationItem -Bucket $Errors -Message "$Label is not publishable yet: $status"
+    }
+    elseif ($WarningStates -contains $normalizedStatus) {
+        Add-ValidationItem -Bucket $Warnings -Message "$Label requires review before publishing: $status"
+    }
+    elseif ($PassStates -contains $normalizedStatus) {
+        Add-ValidationItem -Bucket $Notes -Message "$Label is acceptable for release gating: $status"
+    }
+    else {
+        Add-ValidationItem -Bucket $Warnings -Message "$Label uses an unrecognized status value: $status"
+    }
+
+    return @{
+        Path = $resolvedPath
+        Status = $status
+    }
+}
+
 $errors = [System.Collections.Generic.List[string]]::new()
 $warnings = [System.Collections.Generic.List[string]]::new()
 $notes = [System.Collections.Generic.List[string]]::new()
@@ -94,6 +141,32 @@ $checksumPath = Resolve-ExistingPath -Label "Checksum File" -Value (Get-Metadata
 $releaseNotesPath = Resolve-ExistingPath -Label "Release Notes" -Value (Get-MetadataValue -Content $manifestContent -Label "Release Notes") -Errors $errors
 $buildManifestPath = Resolve-ExistingPath -Label "Build Manifest" -Value (Get-MetadataValue -Content $manifestContent -Label "Build Manifest") -Errors $errors
 $vmReportPath = Resolve-ExistingPath -Label "VM Report" -Value (Get-MetadataValue -Content $manifestContent -Label "VM Report") -Errors $errors
+$installEvidence = Test-EvidenceReport `
+    -Label "Install Report" `
+    -PathValue (Get-MetadataValue -Content $manifestContent -Label "Install Report") `
+    -StatusLabels @("Overall Status", "Overall State", "Result") `
+    -PassStates @("pass", "passed", "complete", "completed", "success", "successful", "ready-for-release") `
+    -WarningStates @("attention", "attention-needed", "warning", "warnings", "review-required") `
+    -ErrorStates @("in-progress", "blocked", "block", "fail", "failed", "error", "errors", "pending", "not-started", "not-recorded-yet") `
+    -Errors $errors `
+    -Warnings $warnings `
+    -Notes $notes
+$installReportPath = $installEvidence.Path
+$installReportState = $installEvidence.Status
+
+$hardwareEvidence = Test-EvidenceReport `
+    -Label "Hardware Report" `
+    -PathValue (Get-MetadataValue -Content $manifestContent -Label "Hardware Report") `
+    -StatusLabels @("Overall Status", "Hardware Readiness", "Overall State", "Result") `
+    -PassStates @("pass", "passed", "complete", "completed", "success", "successful", "ready-for-real-device-smoke", "ready-for-release") `
+    -WarningStates @("attention", "attention-needed", "warning", "warnings", "review-required") `
+    -ErrorStates @("in-progress", "blocked", "block", "fail", "failed", "error", "errors", "pending", "not-started", "not-recorded-yet", "vm-session-only") `
+    -Errors $errors `
+    -Warnings $warnings `
+    -Notes $notes
+$hardwareReportPath = $hardwareEvidence.Path
+$hardwareReportState = $hardwareEvidence.Status
+
 $sessionPath = Resolve-ExistingPath -Label "Session Summary" -Value (Get-MetadataValue -Content $manifestContent -Label "Session Summary") -Errors $errors
 $auditPath = Resolve-ExistingPath -Label "Session Audit" -Value (Get-MetadataValue -Content $manifestContent -Label "Session Audit") -Errors $errors
 $cycleChainAuditPath = Resolve-ExistingPath -Label "Cycle Chain Audit" -Value (Get-MetadataValue -Content $manifestContent -Label "Cycle Chain Audit") -Errors $errors
@@ -217,6 +290,10 @@ $report = @"
 - Run Label: $(if ([string]::IsNullOrWhiteSpace($runLabel)) { "not-recorded-yet" } else { $runLabel })
 - Release Manifest: $resolvedManifestPath
 - ISO Path: $(if ([string]::IsNullOrWhiteSpace($isoPath)) { "not-recorded-yet" } else { $isoPath })
+- Install Report: $(if ([string]::IsNullOrWhiteSpace($installReportPath)) { "not-recorded-yet" } else { $installReportPath })
+- Install Report Status: $(if ([string]::IsNullOrWhiteSpace($installReportState)) { "not-recorded-yet" } else { $installReportState })
+- Hardware Report: $(if ([string]::IsNullOrWhiteSpace($hardwareReportPath)) { "not-recorded-yet" } else { $hardwareReportPath })
+- Hardware Report Status: $(if ([string]::IsNullOrWhiteSpace($hardwareReportState)) { "not-recorded-yet" } else { $hardwareReportState })
 - Readiness State: $(if ([string]::IsNullOrWhiteSpace($readinessState)) { "not-recorded-yet" } else { $readinessState })
 - Validation Matrix State: $(if ([string]::IsNullOrWhiteSpace($validationState)) { "not-recorded-yet" } else { $validationState })
 - Blocker State: $(if ([string]::IsNullOrWhiteSpace($blockerState)) { "not-recorded-yet" } else { $blockerState })

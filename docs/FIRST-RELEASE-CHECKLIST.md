@@ -65,11 +65,13 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] `status/validation-matrix/CURRENT-VALIDATION-MATRIX.md` shows acceptable mode coverage
 - [ ] No blocking issue remains for the chosen release candidate
 - [ ] The selected run has a passing or acceptable cycle-chain audit
+- [ ] A completed install test report exists for the selected candidate
+- [ ] A completed real-device hardware test report exists for the selected candidate
 - [ ] If the ISO was built in a separate Arch clone or VM, a local Windows-accessible copy has been imported with `.\scripts\import-iso-artifact.ps1`
 - [ ] If the build manifest and ISO were transferred together, the handoff folder has been imported with `.\scripts\import-build-handoff.ps1`
 - [ ] ISO checksum is generated
 - [ ] Release notes are written
-- [ ] `.\scripts\prepare-release-candidate.ps1 -Version "<version>" -IsoPath "<path-to-iso>" -Mode stable -RunLabel "<run-label>"` has been run
+- [ ] `.\scripts\prepare-release-candidate.ps1 -Version "<version>" -IsoPath "<path-to-iso>" -Mode stable -RunLabel "<run-label>"` has been run with matching install and hardware evidence available or passed explicitly via `-InstallReportPath` and `-HardwareReportPath`
 - [ ] `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md` shows a publishable candidate state
 - [ ] `.\scripts\validate-github-release-context.ps1 -ReleaseManifestPath "<path-to-release-manifest>"` passes
 - [ ] A GitHub token is available through `LUMINA_GITHUB_TOKEN` or `GITHUB_TOKEN`

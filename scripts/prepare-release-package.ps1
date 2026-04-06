@@ -7,6 +7,8 @@ param(
     [string]$RunLabel = "",
     [string]$BuildManifestPath = "",
     [string]$VmReportPath = "",
+    [string]$InstallReportPath = "",
+    [string]$HardwareReportPath = "",
     [string]$SessionPath = "",
     [string]$AuditPath = "",
     [string]$CycleChainAuditPath = "",
@@ -230,6 +232,34 @@ if ([string]::IsNullOrWhiteSpace($resolvedVmReportPath)) {
     }
 }
 
+$resolvedInstallReportPath = $InstallReportPath
+if ([string]::IsNullOrWhiteSpace($resolvedInstallReportPath)) {
+    $candidate = if ([string]::IsNullOrWhiteSpace($RunLabel)) {
+        Get-LatestModeFile -Path (Join-Path $RepoRoot "status\install-tests") -Filter "*.md" -Mode $Mode
+    }
+    else {
+        Get-FileByRunLabel -Path (Join-Path $RepoRoot "status\install-tests") -Filter "*.md" -RunLabel $RunLabel
+    }
+
+    if ($candidate) {
+        $resolvedInstallReportPath = $candidate.FullName
+    }
+}
+
+$resolvedHardwareReportPath = $HardwareReportPath
+if ([string]::IsNullOrWhiteSpace($resolvedHardwareReportPath)) {
+    $candidate = if ([string]::IsNullOrWhiteSpace($RunLabel)) {
+        Get-LatestFile -Path (Join-Path $RepoRoot "status\hardware-tests") -Filter "*.md"
+    }
+    else {
+        Get-FileByRunLabel -Path (Join-Path $RepoRoot "status\hardware-tests") -Filter "*.md" -RunLabel $RunLabel
+    }
+
+    if ($candidate) {
+        $resolvedHardwareReportPath = $candidate.FullName
+    }
+}
+
 $resolvedSessionPath = $SessionPath
 if ([string]::IsNullOrWhiteSpace($resolvedSessionPath)) {
     $candidate = if ([string]::IsNullOrWhiteSpace($RunLabel)) {
@@ -345,6 +375,8 @@ Set-Content -Path $checksumPath -Value $checksumContent -Encoding ASCII
 $releaseEvidenceLines = @(
     "- Build Manifest: $(Get-ResolvedPathOrDefault -Value $resolvedBuildManifestPath -DefaultValue "not-recorded-yet")",
     "- VM Report: $(Get-ResolvedPathOrDefault -Value $resolvedVmReportPath -DefaultValue "not-recorded-yet")",
+    "- Install Report: $(Get-ResolvedPathOrDefault -Value $resolvedInstallReportPath -DefaultValue "not-recorded-yet")",
+    "- Hardware Report: $(Get-ResolvedPathOrDefault -Value $resolvedHardwareReportPath -DefaultValue "not-recorded-yet")",
     "- Session Summary: $(Get-ResolvedPathOrDefault -Value $resolvedSessionPath -DefaultValue "not-recorded-yet")",
     "- Session Audit: $(Get-ResolvedPathOrDefault -Value $resolvedAuditPath -DefaultValue "not-recorded-yet")",
     "- Cycle Chain Audit: $(Get-ResolvedPathOrDefault -Value $resolvedCycleChainAuditPath -DefaultValue "not-recorded-yet")",

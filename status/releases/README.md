@@ -17,11 +17,12 @@ Store prepared release packages here.
 3. Run `scripts/audit-release-evidence.ps1 -EvidencePackPath "<path-to-pack>"` to inspect soft and strict evidence readiness
 4. Run `scripts/prepare-release-candidate.ps1 -EvidencePackPath "<path-to-pack>"`
 5. Run `scripts/audit-release-readiness.ps1 -EvidencePackPath "<path-to-pack>"` to confirm the final go/no-go state
-6. Review `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md`
-7. Review the generated `release-manifest.md`
-8. Review the generated `release-notes.md`
-9. Confirm the linked cycle-chain audit reflects the intended run
-10. Run `scripts/validate-github-release-context.ps1`
-11. Run `scripts/publish-github-release.ps1` with the prepared manifest
-12. Confirm `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md` now shows the published state
-13. Verify the ISO and `SHA256SUMS.txt` assets in GitHub Releases
+6. Review `status/evidence-packs/CURRENT-EVIDENCE-PACK.md`
+7. Review `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md`
+8. Review the generated `release-manifest.md`
+9. Review the generated `release-notes.md`
+10. Confirm the linked cycle-chain audit reflects the intended run
+11. Run `scripts/validate-github-release-context.ps1`
+12. Run `scripts/publish-github-release.ps1` with the prepared manifest
+13. Confirm `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md` now shows the published state
+14. Verify the ISO and `SHA256SUMS.txt` assets in GitHub Releases

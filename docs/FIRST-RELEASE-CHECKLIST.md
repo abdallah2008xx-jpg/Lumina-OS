@@ -65,6 +65,7 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 ## Release Gate
 - [ ] Optional but recommended: create one shared evidence pack with `.\scripts\new-release-evidence-pack.ps1 -Mode stable -RunLabel "<run-label>"`
 - [ ] Optional but recommended: review the generated `release-evidence-runbook-*.md` from the shared evidence pack before RC prep
+- [ ] Optional but recommended: review `status/evidence-packs/CURRENT-EVIDENCE-PACK.md` after evidence updates
 - [ ] `status/readiness/CURRENT-READINESS.md` is no longer `needs-build`
 - [ ] `status/validation-matrix/CURRENT-VALIDATION-MATRIX.md` shows acceptable mode coverage
 - [ ] No blocking issue remains for the chosen release candidate

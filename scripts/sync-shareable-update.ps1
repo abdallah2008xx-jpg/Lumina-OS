@@ -3,6 +3,7 @@ param(
     [string]$ReadinessPath = "",
     [string]$ValidationMatrixPath = "",
     [string]$ReleaseCandidatePath = "",
+    [string]$ReleaseEvidencePackPath = "",
     [string]$ReleaseEvidenceAuditPath = "",
     [string]$ReleaseReadinessAuditPath = "",
     [switch]$OutputPathOnly,
@@ -167,6 +168,14 @@ else {
     $ReleaseCandidatePath
 }
 
+$resolvedReleaseEvidencePackPath = if ([string]::IsNullOrWhiteSpace($ReleaseEvidencePackPath)) {
+    $currentPackPath = Join-Path $RepoRoot "status\evidence-packs\CURRENT-EVIDENCE-PACK.md"
+    if (Test-Path $currentPackPath) { $currentPackPath } else { "" }
+}
+else {
+    $ReleaseEvidencePackPath
+}
+
 $resolvedReleaseEvidenceAuditPath = if ([string]::IsNullOrWhiteSpace($ReleaseEvidenceAuditPath)) {
     $latestAudit = Get-LatestFile -Path (Join-Path $RepoRoot "status\releases") -Filter "release-evidence-audit.md"
     if ($latestAudit) { $latestAudit.FullName } else { "" }
@@ -193,6 +202,12 @@ $statusContent = Get-Content -Raw $resolvedStatusPath
 $readinessContent = Get-Content -Raw $resolvedReadinessPath
 $validationContent = Get-Content -Raw $resolvedValidationMatrixPath
 $releaseCandidateContent = Get-Content -Raw $resolvedReleaseCandidatePath
+$releaseEvidencePackContent = if (-not [string]::IsNullOrWhiteSpace($resolvedReleaseEvidencePackPath) -and (Test-Path $resolvedReleaseEvidencePackPath)) {
+    Get-Content -Raw $resolvedReleaseEvidencePackPath
+}
+else {
+    ""
+}
 $releaseEvidenceAuditContent = if (-not [string]::IsNullOrWhiteSpace($resolvedReleaseEvidenceAuditPath) -and (Test-Path $resolvedReleaseEvidenceAuditPath)) {
     Get-Content -Raw $resolvedReleaseEvidenceAuditPath
 }
@@ -214,17 +229,20 @@ $immediateNext = Get-TopItems -Items $nextItems -Count 5
 $readinessState = Get-MetadataValue -Content $readinessContent -Label "Readiness State"
 $validationState = Get-MetadataValue -Content $validationContent -Label "Overall State"
 $candidateState = Get-MetadataValue -Content $releaseCandidateContent -Label "Candidate State"
+$evidencePackState = Get-MetadataValue -Content $releaseEvidencePackContent -Label "Evidence Pack State"
 $evidenceSoftGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Soft Gate State"
 $evidenceStrictGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Strict Gate State"
 $evidenceAuditRunLabel = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Run Label"
 $releaseReadinessState = Get-MetadataValue -Content $releaseReadinessAuditContent -Label "Overall Readiness"
 $runLabel = Get-FirstNonEmptyValue @(
     $evidenceAuditRunLabel,
+    (Get-MetadataValue -Content $releaseEvidencePackContent -Label "Run Label"),
     (Get-MetadataValue -Content $releaseReadinessAuditContent -Label "Run Label"),
     (Get-MetadataValue -Content $releaseCandidateContent -Label "Run Label"),
     (Get-MetadataValue -Content $readinessContent -Label "Run Label")
 )
 $version = Get-FirstNonEmptyValue @(
+    (Get-MetadataValue -Content $releaseEvidencePackContent -Label "Release Version"),
     (Get-MetadataValue -Content $releaseCandidateContent -Label "Version")
 )
 
@@ -242,6 +260,10 @@ $shareableSummary.Add($headline) | Out-Null
 $shareableSummary.Add("Readiness state: $(Get-ResolvedPathOrDefault -Value $readinessState -DefaultValue "not-recorded-yet")") | Out-Null
 $shareableSummary.Add("Validation matrix state: $(Get-ResolvedPathOrDefault -Value $validationState -DefaultValue "not-recorded-yet")") | Out-Null
 $shareableSummary.Add("Release candidate state: $(Get-ResolvedPathOrDefault -Value $candidateState -DefaultValue "not-recorded-yet")") | Out-Null
+
+if (-not [string]::IsNullOrWhiteSpace($evidencePackState)) {
+    $shareableSummary.Add("Current evidence pack: $evidencePackState") | Out-Null
+}
 
 if (-not [string]::IsNullOrWhiteSpace($releaseReadinessState)) {
     $shareableSummary.Add("Release readiness audit: $releaseReadinessState") | Out-Null
@@ -278,6 +300,8 @@ $content = @"
 - Readiness State: $(Get-ResolvedPathOrDefault -Value $readinessState -DefaultValue "not-recorded-yet")
 - Validation Matrix State: $(Get-ResolvedPathOrDefault -Value $validationState -DefaultValue "not-recorded-yet")
 - Release Candidate State: $(Get-ResolvedPathOrDefault -Value $candidateState -DefaultValue "not-recorded-yet")
+- Release Evidence Pack: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidencePackPath -DefaultValue "not-recorded-yet")
+- Release Evidence Pack State: $(Get-ResolvedPathOrDefault -Value $evidencePackState -DefaultValue "not-recorded-yet")
 - Release Evidence Audit: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidenceAuditPath -DefaultValue "not-recorded-yet")
 - Release Readiness Audit: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseReadinessAuditPath -DefaultValue "not-recorded-yet")
 - Release Readiness State: $(Get-ResolvedPathOrDefault -Value $releaseReadinessState -DefaultValue "not-recorded-yet")

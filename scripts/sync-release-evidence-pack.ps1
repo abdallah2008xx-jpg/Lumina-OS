@@ -105,6 +105,11 @@ if (-not (Test-Path $runbookScript)) {
     throw "Missing helper script: $runbookScript"
 }
 
+$statusScript = Join-Path $PSScriptRoot "sync-release-evidence-pack-status.ps1"
+if (-not (Test-Path $statusScript)) {
+    throw "Missing helper script: $statusScript"
+}
+
 $resolvedEvidencePackPath = (Resolve-Path $EvidencePackPath).Path
 $packContent = Get-Content -Raw $resolvedEvidencePackPath
 
@@ -187,6 +192,11 @@ Set-Content -Path $resolvedEvidencePackPath -Value $content -Encoding UTF8
 $runbookPath = & $runbookScript `
     -EvidencePackPath $resolvedEvidencePackPath `
     -ReleaseVersion $releaseVersionValue `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
+
+$null = & $statusScript `
+    -EvidencePackPath $resolvedEvidencePackPath `
     -RepoRoot $RepoRoot `
     -OutputPathOnly
 

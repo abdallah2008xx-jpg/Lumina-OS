@@ -99,6 +99,8 @@ Refresh the shared evidence snapshot after any report update:
 .\scripts\sync-release-evidence-pack.ps1 -EvidencePackPath "__EVIDENCE_PACK__" -ReleaseVersion "__RELEASE_VERSION__"
 ```
 
+This also refreshes `status/evidence-packs/CURRENT-EVIDENCE-PACK.md`.
+
 ## Step 2: Audit Release Evidence
 Soft + strict evidence view from the same pack:
 
@@ -137,6 +139,7 @@ Use this after the candidate is ready:
 - if `Release Version` changes, regenerate this runbook or update the version in the commands above
 - keep this pack and its runbook on the same `Run Label`
 - if any evidence file is replaced, rerun `new-release-evidence-runbook.ps1`
+- review `status/evidence-packs/CURRENT-EVIDENCE-PACK.md` after sync when you want the latest pack summary in one place
 '@
 
 $content = $template.Replace("__GENERATED_AT__", (Get-Date -Format s)).

@@ -7,6 +7,7 @@ launch_best=0
 choose_collection=0
 launch_category=""
 launch_recent=0
+launch_quick=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -28,6 +29,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --launch-recent)
             launch_recent=1
+            shift
+            ;;
+        --launch-quick)
+            launch_quick=1
             shift
             ;;
         --no-open)
@@ -54,6 +59,7 @@ collection_menu_export_report="${state_root}/windows-collection-menu-export.md"
 daily_menu_export_report="${state_root}/windows-daily-menu-export.md"
 daily_app_pack_report="${state_root}/windows-daily-app-pack.md"
 daily_recent_report="${state_root}/windows-daily-recent-sync.md"
+daily_quick_launch_report="${state_root}/windows-daily-quick-launch.md"
 collections_report="${state_root}/windows-app-collections.md"
 state_report="${state_root}/windows-workflow-state.md"
 hub_report="${state_root}/windows-workflow-hub.md"
@@ -78,6 +84,7 @@ IFS='|' read -r profile_id profile_name focus app_ids basic_route vm_route studi
 /usr/local/bin/ahmados-windows-app-surfaces --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-daily-menu-export --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 /usr/local/bin/ahmados-windows-daily-app-pack --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
+/usr/local/bin/ahmados-windows-daily-quick-launch --profile-id "${profile_id}" --no-open >/dev/null 2>&1 || true
 
 workspace_root="${documents_root}/Lumina Windows Workflows/${profile_id}"
 registry_root="${workspace_root}/app-registry"
@@ -105,12 +112,18 @@ recent_app_name="$(awk -F': ' '/^- Recent App Name:/ {print $2; exit}' "${daily_
 recent_app_category="$(awk -F': ' '/^- Recent App Category:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
 recent_launch_outcome="$(awk -F': ' '/^- Recent Launch Outcome:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
 recent_launch_status="$(awk -F': ' '/^- Recent Launch Status:/ {print $2; exit}' "${daily_recent_report}" 2>/dev/null || true)"
+quick_launch_mode="$(awk -F': ' '/^- Quick Launch Mode:/ {print $2; exit}' "${daily_quick_launch_report}" 2>/dev/null || true)"
+quick_launch_command="$(awk -F': ' '/^- Quick Launch Command:/ {print $2; exit}' "${daily_quick_launch_report}" 2>/dev/null || true)"
+quick_launch_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${daily_quick_launch_report}" 2>/dev/null || true)"
 [[ -n "${resource_class}" ]] || resource_class="balanced"
 [[ -n "${recent_app_ready}" ]] || recent_app_ready="no"
 [[ -n "${recent_app_name}" ]] || recent_app_name="none"
 [[ -n "${recent_app_category}" ]] || recent_app_category="none"
 [[ -n "${recent_launch_outcome}" ]] || recent_launch_outcome="not-run"
 [[ -n "${recent_launch_status}" ]] || recent_launch_status="not-run"
+[[ -n "${quick_launch_mode}" ]] || quick_launch_mode="unknown"
+[[ -n "${quick_launch_command}" ]] || quick_launch_command="none"
+[[ -n "${quick_launch_outcome}" ]] || quick_launch_outcome="not-run"
 preferred_categories="Creator Apps, Productivity, Audio and Studio, Gaming and Launchers, Utilities"
 deferred_categories="none"
 policy_note="All registered app collections are available, but Lumina should still prefer honest published launch targets."
@@ -257,7 +270,11 @@ if [[ -n "${launch_category}" ]]; then
     recommended_collection_id="$(awk -F'|' -v target="${launch_category}" 'NF >= 2 && $2 == target {print $1; exit}' "${collections_index_path}" || true)"
 fi
 
-if [[ "${resource_class}" == "light" && "${recent_app_ready}" == "yes" ]]; then
+if [[ "${quick_launch_mode}" != "guided-surface" && "${quick_launch_command}" != "none" ]]; then
+    recommended_daily_mode="quick-launch"
+    recommended_collection_reason="Lumina prefers the saved quick-launch path because it already represents the smoothest current daily route for this workflow."
+    recommended_daily_launch_command="/usr/local/bin/lumina-windows-daily-quick-launch --profile-id ${profile_id} --launch"
+elif [[ "${resource_class}" == "light" && "${recent_app_ready}" == "yes" ]]; then
     recommended_daily_mode="recent-app"
     recommended_collection_reason="Lumina prefers the recent published daily app on a light machine to reduce decision overhead and keep launches smoother."
     recommended_daily_launch_command="/usr/local/bin/lumina-windows-daily-recent-sync --profile-id ${profile_id} --launch-recent"
@@ -293,8 +310,18 @@ collection_launch_note="The app library stayed in report mode."
 recent_runtime_outcome="${recent_launch_outcome}"
 recent_runtime_status="${recent_launch_status}"
 recent_runtime_note="No recent runtime launch was requested from the app library."
+quick_runtime_outcome="${quick_launch_outcome}"
+quick_runtime_note="No quick launch was requested from the app library."
 
-if [[ ${launch_recent} -eq 1 ]] || [[ ${launch_best} -eq 1 && "${recommended_daily_mode}" == "recent-app" ]]; then
+if [[ ${launch_quick} -eq 1 ]] || [[ ${launch_best} -eq 1 && "${recommended_daily_mode}" == "quick-launch" ]]; then
+    /usr/local/bin/ahmados-windows-daily-quick-launch --profile-id "${profile_id}" --launch --no-open >/dev/null 2>&1 || true
+    executed_launch="yes"
+    executed_mode="quick-launch"
+    quick_runtime_outcome="$(awk -F': ' '/^- Launch Outcome:/ {print $2; exit}' "${daily_quick_launch_report}" 2>/dev/null || true)"
+    quick_runtime_note="$(awk 'found && /^- / {sub(/^- /,""); print; exit} /^## Quick Launch Note/ {found=1}' "${daily_quick_launch_report}" 2>/dev/null || true)"
+    [[ -n "${quick_runtime_outcome}" ]] || quick_runtime_outcome="unknown"
+    [[ -n "${quick_runtime_note}" ]] || quick_runtime_note="No quick launch note was captured."
+elif [[ ${launch_recent} -eq 1 ]] || [[ ${launch_best} -eq 1 && "${recommended_daily_mode}" == "recent-app" ]]; then
     /usr/local/bin/ahmados-windows-daily-recent-sync --profile-id "${profile_id}" --launch-recent --no-open >/dev/null 2>&1 || true
     executed_launch="yes"
     executed_mode="recent-app"
@@ -364,11 +391,14 @@ touch "${library_marker}"
     printf -- '- Recommended Collection Policy: %s\n' "${recommended_collection_policy}"
     printf -- '- Recommended Daily Mode: %s\n' "${recommended_daily_mode}"
     printf -- '- Recommended Launch Command: %s\n' "${recommended_daily_launch_command:-none}"
+    printf -- '- Quick Launch Mode: %s\n' "${quick_launch_mode}"
+    printf -- '- Quick Launch Command: %s\n' "${quick_launch_command}"
     printf -- '- Daily Recent Ready: %s\n' "${recent_app_ready}"
     printf -- '- Daily Recent App: %s\n' "${recent_app_name}"
     printf -- '- Daily Recent Category: %s\n' "${recent_app_category}"
     printf -- '- Executed Launch: %s\n' "${executed_launch}"
     printf -- '- Executed Mode: %s\n' "${executed_mode}"
+    printf -- '- Quick Launch Outcome: %s\n' "${quick_runtime_outcome}"
     printf -- '- Collection Launch Outcome: %s\n' "${collection_launch_outcome}"
     printf -- '- Recent Daily Launch Outcome: %s\n' "${recent_runtime_outcome}"
     printf -- '- Recent Daily Launch Status: %s\n' "${recent_runtime_status}"
@@ -378,6 +408,7 @@ touch "${library_marker}"
     printf -- '- Note: %s\n' "${policy_note}"
     printf '\n## Recommended Daily Path\n'
     printf -- '- Recommendation: %s\n' "${recommended_collection_reason}"
+    printf -- '- Quick Launch Note: %s\n' "${quick_runtime_note}"
     printf -- '- Recent Note: %s\n' "${recent_runtime_note}"
     printf -- '- Launch Note: %s\n' "${collection_launch_note}"
     printf '\n## Category Counts\n'
@@ -393,6 +424,7 @@ touch "${library_marker}"
     printf -- '- Daily Menu Export Report: %s\n' "${daily_menu_export_report}"
     printf -- '- Daily App Pack Report: %s\n' "${daily_app_pack_report}"
     printf -- '- Daily Recent Sync Report: %s\n' "${daily_recent_report}"
+    printf -- '- Daily Quick Launch Report: %s\n' "${daily_quick_launch_report}"
     printf -- '- App Collections Report: %s\n' "${collections_report}"
     printf -- '- Collection Launch Report: %s\n' "${collection_launch_report}"
     printf -- '- Workflow State Report: %s\n' "${state_report}"

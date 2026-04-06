@@ -113,6 +113,7 @@ The current phase adds:
 - a workflow-state and workflow-hub visibility layer that surfaces quick-launch mode, outcome, and command directly in the main daily reports instead of hiding them in a separate report only
 - a daily-home layer that lets the main `Lumina Windows Apps` entry choose the best mature workflow automatically instead of assuming one fixed profile forever
 - a daily-home memory layer that can reuse the last smooth workflow on later sessions instead of forcing a full cross-profile re-evaluation every time
+- a guarded daily-home memory policy that refuses to reuse the last workflow blindly when the last outcome already showed queue pressure or smoothness deferral
 
 ## Current Limits
 

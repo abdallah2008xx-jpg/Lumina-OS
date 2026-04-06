@@ -37,9 +37,17 @@ fi
 
 recent_daily_profile="$(awk -F= '/^RECENT_WORKFLOW_ID=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
 recent_daily_mode="$(awk -F= '/^RECENT_WORKFLOW_MODE=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
+recent_daily_outcome="$(awk -F= '/^RECENT_LAUNCH_OUTCOME=/{print $2; exit}' "${daily_home_state}" 2>/dev/null || true)"
 preferred_daily_profile="${default_daily_profile}"
+recent_daily_reusable="yes"
 
-if [[ -n "${recent_daily_profile}" ]]; then
+case "${recent_daily_outcome}" in
+    deferred-for-smoothness|queue-sync|awaiting-guest-sync|awaiting-guest|not-run|failed|error)
+        recent_daily_reusable="no"
+        ;;
+esac
+
+if [[ -n "${recent_daily_profile}" && "${recent_daily_reusable}" == "yes" ]]; then
     recent_row="$(awk -F'|' -v target="${recent_daily_profile}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path:-/usr/share/lumina/windows-apps/profiles.tsv}" 2>/dev/null || true)"
     if [[ -n "${recent_row}" && ( "${recent_daily_mode}" == "quick-launch" || "${recent_daily_mode}" == "daily-surface" ) ]]; then
         preferred_daily_profile="${recent_daily_profile}"
@@ -98,6 +106,8 @@ fi
     printf -- '- Default Daily Profile: %s\n' "${default_daily_profile}"
     printf -- '- Recent Daily Profile: %s\n' "${recent_daily_profile:-none}"
     printf -- '- Recent Daily Mode: %s\n' "${recent_daily_mode:-none}"
+    printf -- '- Recent Daily Outcome: %s\n' "${recent_daily_outcome:-none}"
+    printf -- '- Recent Daily Reusable: %s\n' "${recent_daily_reusable}"
     printf -- '- Daily Profile Warmed: %s\n' "${preferred_daily_profile}"
     printf -- '- Experience Mode: %s\n' "${experience_mode:-unknown}"
     printf -- '- libvirt Probe: %s\n' "${libvirt_probe}"

@@ -60,6 +60,12 @@ recent_workflow_outcome="$(awk -F= '/^RECENT_LAUNCH_OUTCOME=/{print $2; exit}' "
 [[ -n "${recent_workflow_id}" ]] || recent_workflow_id="none"
 [[ -n "${recent_workflow_mode}" ]] || recent_workflow_mode="none"
 [[ -n "${recent_workflow_outcome}" ]] || recent_workflow_outcome="none"
+recent_workflow_reusable="yes"
+case "${recent_workflow_outcome}" in
+    deferred-for-smoothness|queue-sync|awaiting-guest-sync|awaiting-guest|not-run|failed|error)
+        recent_workflow_reusable="no"
+        ;;
+esac
 
 profile_state_summary() {
     local profile_id="$1"
@@ -188,7 +194,7 @@ while IFS='|' read -r profile_id profile_name focus _; do
 done < "${profiles_path}"
 
 if [[ -z "${chosen_profile_id}" ]]; then
-    if [[ "${recent_workflow_id}" != "none" ]]; then
+    if [[ "${recent_workflow_id}" != "none" && "${recent_workflow_reusable}" == "yes" ]]; then
         recent_row="$(awk -F'|' -v target="${recent_workflow_id}" 'NF >= 8 && $1 == target {print; exit}' "${profiles_path}" || true)"
         if [[ -n "${recent_row}" ]]; then
             recent_summary="$(profile_state_summary "${recent_workflow_id}")"
@@ -307,6 +313,7 @@ fi
     printf -- '- Recent Workflow Id: %s\n' "${recent_workflow_id}"
     printf -- '- Recent Workflow Mode: %s\n' "${recent_workflow_mode}"
     printf -- '- Recent Launch Outcome: %s\n' "${recent_workflow_outcome}"
+    printf -- '- Recent Workflow Reusable: %s\n' "${recent_workflow_reusable}"
     printf -- '- Chosen Workflow Id: %s\n' "${chosen_id}"
     printf -- '- Chosen Workflow Name: %s\n' "${chosen_name}"
     printf -- '- Chosen Workflow Focus: %s\n' "${chosen_focus}"

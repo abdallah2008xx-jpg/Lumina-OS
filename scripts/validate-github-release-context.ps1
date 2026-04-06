@@ -111,6 +111,7 @@ $installReportSelection = Get-MetadataValue -Content $manifestContent -Label "In
 $hardwareReportPath = Resolve-RequiredPath -Label "Hardware Report" -Value (Get-MetadataValue -Content $manifestContent -Label "Hardware Report") -Errors $errors
 $hardwareReportRunLabel = Get-MetadataValue -Content $manifestContent -Label "Hardware Report Run Label"
 $hardwareReportSelection = Get-MetadataValue -Content $manifestContent -Label "Hardware Report Selection"
+$evidencePackPath = Get-MetadataValue -Content $manifestContent -Label "Evidence Pack"
 
 $releaseConfigPath = Join-Path $RepoRoot "archiso-profile\airootfs\etc\ahmados-release.conf"
 $resolvedOwner = if ([string]::IsNullOrWhiteSpace($Owner)) {
@@ -214,11 +215,11 @@ if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
 }
 
 if ($RequireExactEvidenceRunLabel.IsPresent -and -not [string]::IsNullOrWhiteSpace($runLabel)) {
-    if (-not [string]::IsNullOrWhiteSpace($installReportSelection) -and $installReportSelection -notin @("exact-run-label", "explicit-path")) {
+    if (-not [string]::IsNullOrWhiteSpace($installReportSelection) -and $installReportSelection -notin @("exact-run-label", "explicit-path", "evidence-pack")) {
         Add-ValidationItem -Bucket $errors -Message "Install report selection is not exact for strict GitHub release gating: $installReportSelection"
     }
 
-    if (-not [string]::IsNullOrWhiteSpace($hardwareReportSelection) -and $hardwareReportSelection -notin @("exact-run-label", "explicit-path")) {
+    if (-not [string]::IsNullOrWhiteSpace($hardwareReportSelection) -and $hardwareReportSelection -notin @("exact-run-label", "explicit-path", "evidence-pack")) {
         Add-ValidationItem -Bucket $errors -Message "Hardware report selection is not exact for strict GitHub release gating: $hardwareReportSelection"
     }
 }
@@ -291,6 +292,7 @@ $report = @"
 - Run Label: $(if ([string]::IsNullOrWhiteSpace($runLabel)) { "not-recorded-yet" } else { $runLabel })
 - GitHub Repository: $(if ([string]::IsNullOrWhiteSpace($resolvedOwner) -or [string]::IsNullOrWhiteSpace($resolvedRepo)) { "not-recorded-yet" } else { "$resolvedOwner/$resolvedRepo" })
 - Token Source: $(if ([string]::IsNullOrWhiteSpace($tokenSource)) { "not-recorded-yet" } else { $tokenSource })
+- Evidence Pack: $(if ([string]::IsNullOrWhiteSpace($evidencePackPath)) { "not-recorded-yet" } else { $evidencePackPath })
 - Login-Test Report: $(if ([string]::IsNullOrWhiteSpace($loginTestReportPath)) { "not-recorded-yet" } else { $loginTestReportPath })
 - Login-Test Report Status: $(if ([string]::IsNullOrWhiteSpace($loginTestReportState)) { "not-recorded-yet" } else { $loginTestReportState })
 - Login-Test Report Run Label: $(if ([string]::IsNullOrWhiteSpace($loginTestReportRunLabel)) { "not-recorded-yet" } else { $loginTestReportRunLabel })

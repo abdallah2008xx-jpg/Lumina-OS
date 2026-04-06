@@ -227,11 +227,11 @@ if (-not [string]::IsNullOrWhiteSpace($runLabel) -and
 }
 
 if ($RequireExactEvidenceRunLabel.IsPresent -and -not [string]::IsNullOrWhiteSpace($runLabel)) {
-    if (-not [string]::IsNullOrWhiteSpace($installReportSelection) -and $installReportSelection -notin @("exact-run-label", "explicit-path")) {
+    if (-not [string]::IsNullOrWhiteSpace($installReportSelection) -and $installReportSelection -notin @("exact-run-label", "explicit-path", "evidence-pack")) {
         Add-ValidationItem -Bucket $errors -Message "Install Report selection is not exact for strict release gating: $installReportSelection"
     }
 
-    if (-not [string]::IsNullOrWhiteSpace($hardwareReportSelection) -and $hardwareReportSelection -notin @("exact-run-label", "explicit-path")) {
+    if (-not [string]::IsNullOrWhiteSpace($hardwareReportSelection) -and $hardwareReportSelection -notin @("exact-run-label", "explicit-path", "evidence-pack")) {
         Add-ValidationItem -Bucket $errors -Message "Hardware Report selection is not exact for strict release gating: $hardwareReportSelection"
     }
 }

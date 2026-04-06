@@ -7,6 +7,7 @@ param(
     [string]$IsoPath = "",
     [string]$BuildManifestPath = "",
     [string]$VmReportPath = "",
+    [string]$EvidencePackPath = "",
     [string]$LoginTestReportPath = "",
     [string]$InstallReportPath = "",
     [string]$HardwareReportPath = "",
@@ -138,6 +139,7 @@ $prepareArgs = @{
     IsoPath = $IsoPath
     BuildManifestPath = $BuildManifestPath
     VmReportPath = $VmReportPath
+    EvidencePackPath = $EvidencePackPath
     LoginTestReportPath = $LoginTestReportPath
     InstallReportPath = $InstallReportPath
     HardwareReportPath = $HardwareReportPath
@@ -190,6 +192,7 @@ $summaryItems = [System.Collections.Generic.List[string]]::new()
 
 $runLabelValue = Get-MetadataValue -Content $manifestContent -Label "Run Label"
 $isoPathValue = Get-MetadataValue -Content $manifestContent -Label "ISO Path"
+$evidencePackValue = Get-MetadataValue -Content $manifestContent -Label "Evidence Pack"
 $loginTestReportValue = Get-MetadataValue -Content $manifestContent -Label "Login-Test Report"
 $loginTestRunLabelValue = Get-MetadataValue -Content $manifestContent -Label "Login-Test Report Run Label"
 $loginTestSelectionValue = Get-MetadataValue -Content $manifestContent -Label "Login-Test Report Selection"
@@ -246,6 +249,7 @@ $reportContent = @"
 
 ## Evidence Links
 - ISO Path: $(Get-ResolvedPathOrDefault -Value $isoPathValue -DefaultValue "not-recorded-yet")
+- Evidence Pack: $(Get-ResolvedPathOrDefault -Value $evidencePackValue -DefaultValue "not-recorded-yet")
 - Login-Test Report: $(Get-ResolvedPathOrDefault -Value $loginTestReportValue -DefaultValue "not-recorded-yet")
 - Login-Test Report Run Label: $(Get-ResolvedPathOrDefault -Value $loginTestRunLabelValue -DefaultValue "not-recorded-yet")
 - Login-Test Report Selection: $(Get-ResolvedPathOrDefault -Value $loginTestSelectionValue -DefaultValue "not-recorded-yet")

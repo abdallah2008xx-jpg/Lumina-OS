@@ -72,13 +72,13 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] A completed real-device hardware test report exists for the selected candidate
 - [ ] If auto-selected evidence falls back to an older or different `Run Label`, review the release candidate summary before publish
 - [ ] For strict release gating, run `prepare-release-candidate.ps1` and `validate-github-release-context.ps1` with `-RequireExactEvidenceRunLabel`
-- [ ] Run `.\scripts\audit-release-evidence.ps1 -Version "<version>" -Mode stable -RunLabel "<run-label>"` before the final RC pass to inspect soft vs strict evidence readiness
-- [ ] Run `.\scripts\audit-release-readiness.ps1 -Version "<version>" -Mode stable -RunLabel "<run-label>"` after RC prep to confirm the final go/no-go state
+- [ ] Run `.\scripts\audit-release-evidence.ps1 -Version "<version>" -Mode stable -RunLabel "<run-label>"` before the final RC pass to inspect soft vs strict evidence readiness, or pass the shared pack with `-EvidencePackPath`
+- [ ] Run `.\scripts\audit-release-readiness.ps1 -Version "<version>" -Mode stable -RunLabel "<run-label>"` after RC prep to confirm the final go/no-go state, or pass the shared pack with `-EvidencePackPath`
 - [ ] If the ISO was built in a separate Arch clone or VM, a local Windows-accessible copy has been imported with `.\scripts\import-iso-artifact.ps1`
 - [ ] If the build manifest and ISO were transferred together, the handoff folder has been imported with `.\scripts\import-build-handoff.ps1`
 - [ ] ISO checksum is generated
 - [ ] Release notes are written
-- [ ] `.\scripts\prepare-release-candidate.ps1 -Version "<version>" -IsoPath "<path-to-iso>" -Mode stable -RunLabel "<run-label>"` has been run with matching install and hardware evidence available or passed explicitly via `-InstallReportPath` and `-HardwareReportPath`
+- [ ] `.\scripts\prepare-release-candidate.ps1 -Version "<version>" -IsoPath "<path-to-iso>" -Mode stable -RunLabel "<run-label>"` has been run with matching evidence available, passed explicitly, or linked through `-EvidencePackPath`
 - [ ] `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md` shows a publishable candidate state
 - [ ] `.\scripts\validate-github-release-context.ps1 -ReleaseManifestPath "<path-to-release-manifest>"` passes
 - [ ] A GitHub token is available through `LUMINA_GITHUB_TOKEN` or `GITHUB_TOKEN`

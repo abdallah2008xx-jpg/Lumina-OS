@@ -7,6 +7,7 @@ param(
     [string]$RunLabel = "",
     [string]$BuildManifestPath = "",
     [string]$VmReportPath = "",
+    [string]$EvidencePackPath = "",
     [string]$LoginTestReportPath = "",
     [string]$InstallReportPath = "",
     [string]$HardwareReportPath = "",
@@ -127,6 +128,20 @@ function Get-MetadataValue {
     }
 
     return ""
+}
+
+function Get-RecordedMetadataValue {
+    param(
+        [string]$Content,
+        [string]$Label
+    )
+
+    $value = Get-MetadataValue -Content $Content -Label $Label
+    if ([string]::IsNullOrWhiteSpace($value) -or $value -eq "not-recorded-yet") {
+        return ""
+    }
+
+    return $value
 }
 
 function Get-StateValue {
@@ -317,6 +332,36 @@ function Get-ChangelogUnreleasedSection {
     return $body
 }
 
+$resolvedEvidencePackPath = ""
+$evidencePackContent = ""
+$evidencePackRunLabel = ""
+$evidencePackIsoPath = ""
+$evidencePackLoginTestReportPath = ""
+$evidencePackInstallReportPath = ""
+$evidencePackHardwareReportPath = ""
+
+if (-not [string]::IsNullOrWhiteSpace($EvidencePackPath)) {
+    if (-not (Test-Path $EvidencePackPath)) {
+        throw "Evidence pack path not found: $EvidencePackPath"
+    }
+
+    $resolvedEvidencePackPath = (Resolve-Path $EvidencePackPath).Path
+    $evidencePackContent = Get-Content -Raw $resolvedEvidencePackPath
+    $evidencePackRunLabel = Get-RecordedMetadataValue -Content $evidencePackContent -Label "Run Label"
+    $evidencePackIsoPath = Get-RecordedMetadataValue -Content $evidencePackContent -Label "ISO Path"
+    $evidencePackLoginTestReportPath = Get-RecordedMetadataValue -Content $evidencePackContent -Label "Login-Test Report"
+    $evidencePackInstallReportPath = Get-RecordedMetadataValue -Content $evidencePackContent -Label "Install Report"
+    $evidencePackHardwareReportPath = Get-RecordedMetadataValue -Content $evidencePackContent -Label "Hardware Report"
+
+    if ([string]::IsNullOrWhiteSpace($RunLabel) -and -not [string]::IsNullOrWhiteSpace($evidencePackRunLabel)) {
+        $RunLabel = $evidencePackRunLabel
+    }
+
+    if ([string]::IsNullOrWhiteSpace($IsoPath) -and -not [string]::IsNullOrWhiteSpace($evidencePackIsoPath)) {
+        $IsoPath = $evidencePackIsoPath
+    }
+}
+
 $resolvedBuildManifestPath = $BuildManifestPath
 if ([string]::IsNullOrWhiteSpace($resolvedBuildManifestPath)) {
     $candidate = if ([string]::IsNullOrWhiteSpace($RunLabel)) {
@@ -346,7 +391,18 @@ if ([string]::IsNullOrWhiteSpace($resolvedVmReportPath)) {
 }
 
 $resolvedInstallReportPath = $InstallReportPath
-$installReportSelection = if ([string]::IsNullOrWhiteSpace($resolvedInstallReportPath)) { "auto" } else { "explicit-path" }
+if ([string]::IsNullOrWhiteSpace($resolvedInstallReportPath) -and -not [string]::IsNullOrWhiteSpace($evidencePackInstallReportPath)) {
+    $resolvedInstallReportPath = $evidencePackInstallReportPath
+}
+$installReportSelection = if ([string]::IsNullOrWhiteSpace($resolvedInstallReportPath)) {
+    "auto"
+}
+elseif (-not [string]::IsNullOrWhiteSpace($evidencePackInstallReportPath) -and $resolvedInstallReportPath -eq $evidencePackInstallReportPath) {
+    "evidence-pack"
+}
+else {
+    "explicit-path"
+}
 if ([string]::IsNullOrWhiteSpace($resolvedInstallReportPath)) {
     $candidateSelection = Get-BestEvidenceFile `
         -Path (Join-Path $RepoRoot "status\install-tests") `
@@ -364,7 +420,18 @@ if ([string]::IsNullOrWhiteSpace($resolvedInstallReportPath)) {
 }
 
 $resolvedLoginTestReportPath = $LoginTestReportPath
-$loginTestReportSelection = if ([string]::IsNullOrWhiteSpace($resolvedLoginTestReportPath)) { "auto" } else { "explicit-path" }
+if ([string]::IsNullOrWhiteSpace($resolvedLoginTestReportPath) -and -not [string]::IsNullOrWhiteSpace($evidencePackLoginTestReportPath)) {
+    $resolvedLoginTestReportPath = $evidencePackLoginTestReportPath
+}
+$loginTestReportSelection = if ([string]::IsNullOrWhiteSpace($resolvedLoginTestReportPath)) {
+    "auto"
+}
+elseif (-not [string]::IsNullOrWhiteSpace($evidencePackLoginTestReportPath) -and $resolvedLoginTestReportPath -eq $evidencePackLoginTestReportPath) {
+    "evidence-pack"
+}
+else {
+    "explicit-path"
+}
 if ([string]::IsNullOrWhiteSpace($resolvedLoginTestReportPath)) {
     $candidateSelection = Get-BestEvidenceFile `
         -Path (Join-Path $RepoRoot "status\login-tests") `
@@ -381,7 +448,18 @@ if ([string]::IsNullOrWhiteSpace($resolvedLoginTestReportPath)) {
 }
 
 $resolvedHardwareReportPath = $HardwareReportPath
-$hardwareReportSelection = if ([string]::IsNullOrWhiteSpace($resolvedHardwareReportPath)) { "auto" } else { "explicit-path" }
+if ([string]::IsNullOrWhiteSpace($resolvedHardwareReportPath) -and -not [string]::IsNullOrWhiteSpace($evidencePackHardwareReportPath)) {
+    $resolvedHardwareReportPath = $evidencePackHardwareReportPath
+}
+$hardwareReportSelection = if ([string]::IsNullOrWhiteSpace($resolvedHardwareReportPath)) {
+    "auto"
+}
+elseif (-not [string]::IsNullOrWhiteSpace($evidencePackHardwareReportPath) -and $resolvedHardwareReportPath -eq $evidencePackHardwareReportPath) {
+    "evidence-pack"
+}
+else {
+    "explicit-path"
+}
 if ([string]::IsNullOrWhiteSpace($resolvedHardwareReportPath)) {
     $candidateSelection = Get-BestEvidenceFile `
         -Path (Join-Path $RepoRoot "status\hardware-tests") `
@@ -516,6 +594,7 @@ $hardwareReportMetadata = Get-ReportMetadata -Path $resolvedHardwareReportPath
 $releaseEvidenceLines = @(
     "- Build Manifest: $(Get-ResolvedPathOrDefault -Value $resolvedBuildManifestPath -DefaultValue "not-recorded-yet")",
     "- VM Report: $(Get-ResolvedPathOrDefault -Value $resolvedVmReportPath -DefaultValue "not-recorded-yet")",
+    "- Evidence Pack: $(Get-ResolvedPathOrDefault -Value $resolvedEvidencePackPath -DefaultValue "not-recorded-yet")",
     "- Login-Test Report: $(Get-ResolvedPathOrDefault -Value $resolvedLoginTestReportPath -DefaultValue "not-recorded-yet")",
     "- Login-Test Report Run Label: $(Get-ResolvedPathOrDefault -Value $loginTestReportMetadata.RunLabel -DefaultValue "not-recorded-yet")",
     "- Login-Test Report Selection: $(Get-ResolvedPathOrDefault -Value $loginTestReportSelection -DefaultValue "not-recorded-yet")",

@@ -329,9 +329,7 @@ try {
         -IsoPath $isoPath `
         -BuildManifestPath $buildPath `
         -VmReportPath $vmPath `
-        -LoginTestReportPath $releaseLoginTestReportPath `
-        -InstallReportPath $releaseInstallReportPath `
-        -HardwareReportPath $releaseHardwareReportPath `
+        -EvidencePackPath $releaseEvidencePackPath `
         -SessionPath $sessionPath `
         -AuditPath $auditPath `
         -CycleChainAuditPath $cycleChainAuditPath `
@@ -515,9 +513,7 @@ try {
         -IsoPath $isoPath `
         -BuildManifestPath $buildPath `
         -VmReportPath $vmPath `
-        -LoginTestReportPath $releaseLoginTestReportPath `
-        -InstallReportPath $releaseInstallReportPath `
-        -HardwareReportPath $releaseHardwareReportPath `
+        -EvidencePackPath $releaseEvidencePackPath `
         -SessionPath $sessionPath `
         -AuditPath $auditPath `
         -CycleChainAuditPath $cycleChainAuditPath `
@@ -540,8 +536,7 @@ try {
         -IsoPath $isoPath `
         -BuildManifestPath $buildPath `
         -VmReportPath $vmPath `
-        -InstallReportPath $releaseInstallReportPath `
-        -HardwareReportPath $releaseHardwareReportPath `
+        -EvidencePackPath $releaseEvidencePackPath `
         -SessionPath $sessionPath `
         -AuditPath $auditPath `
         -CycleChainAuditPath $cycleChainAuditPath `
@@ -555,6 +550,7 @@ try {
     Assert-Condition -Condition (Test-Path $releaseReadinessAuditPath) -Message "Release readiness audit was not created."
     $releaseReadinessAuditContent = Get-Content -Raw $releaseReadinessAuditPath
     Assert-Condition -Condition ($releaseReadinessAuditContent -match [regex]::Escape("- Overall Readiness: ready-to-publish")) -Message "Release readiness audit was not ready-to-publish."
+    Assert-Condition -Condition ($releaseReadinessAuditContent -match [regex]::Escape("- Evidence Pack: $releaseEvidencePackPath")) -Message "Release readiness audit did not record the evidence pack path."
     Assert-Condition -Condition ($releaseReadinessAuditContent -match [regex]::Escape("- Soft Gate State: passed")) -Message "Release readiness audit did not record the soft gate state."
     Assert-Condition -Condition ($releaseReadinessAuditContent -match [regex]::Escape("- Strict Gate State: passed")) -Message "Release readiness audit did not record the strict gate state."
 
@@ -571,6 +567,12 @@ try {
 
     Assert-Condition -Condition (-not [string]::IsNullOrWhiteSpace($releaseManifestPath) -and (Test-Path $releaseManifestPath)) -Message "Release manifest was not created by release candidate prep."
     Assert-Condition -Condition (-not [string]::IsNullOrWhiteSpace($validationReportPath) -and (Test-Path $validationReportPath)) -Message "Release validation report was not created by release candidate prep."
+
+    $releaseManifestContent = Get-Content -Raw $releaseManifestPath
+    Assert-Condition -Condition ($releaseManifestContent -match [regex]::Escape("- Evidence Pack: $releaseEvidencePackPath")) -Message "Release manifest did not record the evidence pack path."
+    Assert-Condition -Condition ($releaseManifestContent -match [regex]::Escape("- Login-Test Report Selection: evidence-pack")) -Message "Release manifest did not record evidence-pack login-test selection."
+    Assert-Condition -Condition ($releaseManifestContent -match [regex]::Escape("- Install Report Selection: evidence-pack")) -Message "Release manifest did not record evidence-pack install selection."
+    Assert-Condition -Condition ($releaseManifestContent -match [regex]::Escape("- Hardware Report Selection: evidence-pack")) -Message "Release manifest did not record evidence-pack hardware selection."
 
     $validationContent = Get-Content -Raw $validationReportPath
     Assert-Condition -Condition ($validationContent -match [regex]::Escape("- Result: passed")) -Message "Release validation report did not pass."

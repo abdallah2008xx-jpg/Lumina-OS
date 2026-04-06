@@ -7,6 +7,7 @@ param(
     [string]$IsoPath = "",
     [string]$BuildManifestPath = "",
     [string]$VmReportPath = "",
+    [string]$EvidencePackPath = "",
     [string]$LoginTestReportPath = "",
     [string]$InstallReportPath = "",
     [string]$HardwareReportPath = "",
@@ -117,6 +118,7 @@ if ([string]::IsNullOrWhiteSpace($resolvedReleaseEvidenceAuditPath) -or -not (Te
         IsoPath = $IsoPath
         BuildManifestPath = $BuildManifestPath
         VmReportPath = $VmReportPath
+        EvidencePackPath = $EvidencePackPath
         LoginTestReportPath = $LoginTestReportPath
         InstallReportPath = $InstallReportPath
         HardwareReportPath = $HardwareReportPath
@@ -161,6 +163,7 @@ $validationState = Get-MetadataValue -Content $validationContent -Label "Overall
 $candidateState = Get-MetadataValue -Content $candidateContent -Label "Candidate State"
 $candidateVersion = Get-MetadataValue -Content $candidateContent -Label "Version"
 $candidateManifestPath = Get-MetadataValue -Content $candidateContent -Label "Release Manifest"
+$evidencePackPathValue = Get-MetadataValue -Content $evidenceAuditContent -Label "Evidence Pack"
 $softGateState = Get-MetadataValue -Content $evidenceAuditContent -Label "Soft Gate State"
 $softGateResult = Get-MetadataValue -Content $evidenceAuditContent -Label "Soft Gate Result"
 $strictGateState = Get-MetadataValue -Content $evidenceAuditContent -Label "Strict Gate State"
@@ -246,6 +249,7 @@ $reportContent = @"
 - Candidate State: $(Get-ResolvedPathOrDefault -Value $candidateState -DefaultValue "not-recorded-yet")
 - Candidate Version: $(Get-ResolvedPathOrDefault -Value $candidateVersion -DefaultValue "not-recorded-yet")
 - Release Evidence Audit: $resolvedReleaseEvidenceAuditPath
+- Evidence Pack: $(Get-ResolvedPathOrDefault -Value $evidencePackPathValue -DefaultValue "not-recorded-yet")
 - Soft Gate State: $(Get-ResolvedPathOrDefault -Value $softGateState -DefaultValue "not-recorded-yet")
 - Soft Gate Result: $(Get-ResolvedPathOrDefault -Value $softGateResult -DefaultValue "not-recorded-yet")
 - Strict Gate State: $(Get-ResolvedPathOrDefault -Value $strictGateState -DefaultValue "not-recorded-yet")

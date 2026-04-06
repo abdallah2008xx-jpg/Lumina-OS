@@ -1,0 +1,305 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+session_context_lib="/usr/local/lib/ahmados-session-context.sh"
+if [[ -f "${session_context_lib}" ]]; then
+    # shellcheck source=/usr/local/lib/ahmados-session-context.sh
+    source "${session_context_lib}"
+fi
+
+open_after=0
+for arg in "$@"; do
+    case "$arg" in
+        --open)
+            open_after=1
+            ;;
+        *)
+            printf 'Unknown argument: %s\n' "$arg" >&2
+            exit 1
+            ;;
+    esac
+done
+
+state_root="${XDG_STATE_HOME:-${HOME}/.local/state}/ahmados"
+report_file="${state_root}/hardware-readiness-report.md"
+desktop_report="${HOME}/Desktop/Lumina-OS Hardware Readiness Report.md"
+
+mkdir -p "${state_root}"
+
+boot_mode="BIOS"
+if [[ -d /sys/firmware/efi ]]; then
+    boot_mode="UEFI"
+fi
+
+hostname_value="$(resolve_hostname_value 2>/dev/null || printf '%s' 'unknown')"
+hypervisor_value="$(resolve_hypervisor 2>/dev/null || printf '%s' 'bare-metal')"
+session_type="$(resolve_session_type 2>/dev/null || printf '%s' 'unknown')"
+desktop_session="$(resolve_desktop_session 2>/dev/null || printf '%s' 'unknown')"
+
+gpu_lines="$(lspci 2>/dev/null | grep -Ei 'VGA compatible controller|3D controller|Display controller' || true)"
+gpu_count=0
+if [[ -n "${gpu_lines}" ]]; then
+    gpu_count="$(printf '%s\n' "${gpu_lines}" | sed '/^[[:space:]]*$/d' | wc -l | tr -d ' ')"
+fi
+
+current_resolution="unknown"
+if [[ "${session_type}" == "x11" ]] && command -v xrandr >/dev/null 2>&1; then
+    xrandr_snapshot="$(xrandr --current 2>/dev/null || true)"
+    output_name="$(resolve_primary_x11_output "${xrandr_snapshot}" 2>/dev/null || true)"
+    mode_name="$(resolve_current_x11_mode "${output_name}" "${xrandr_snapshot}" 2>/dev/null || true)"
+    if [[ -n "${mode_name}" ]]; then
+        current_resolution="${mode_name}"
+    fi
+fi
+
+network_manager_state="unknown"
+if command -v systemctl >/dev/null 2>&1; then
+    if systemctl is-active NetworkManager.service >/dev/null 2>&1; then
+        network_manager_state="active"
+    elif systemctl is-enabled NetworkManager.service >/dev/null 2>&1; then
+        network_manager_state="enabled-not-running"
+    else
+        network_manager_state="inactive"
+    fi
+fi
+
+network_state="unknown"
+wifi_state="not-detected"
+wifi_devices="0"
+ethernet_devices="0"
+connected_devices="0"
+network_lines=""
+
+if command -v nmcli >/dev/null 2>&1; then
+    network_lines="$(nmcli -t -f DEVICE,TYPE,STATE device status 2>/dev/null || true)"
+    wifi_devices="$(printf '%s\n' "${network_lines}" | awk -F: '$2 == "wifi" {count++} END {print count + 0}')"
+    ethernet_devices="$(printf '%s\n' "${network_lines}" | awk -F: '$2 == "ethernet" {count++} END {print count + 0}')"
+    connected_devices="$(printf '%s\n' "${network_lines}" | awk -F: '$3 ~ /^connected/ {count++} END {print count + 0}')"
+
+    if [[ "${wifi_devices}" -gt 0 ]]; then
+        wifi_radio_state="$(nmcli radio wifi 2>/dev/null | tr -d '\r\n[:space:]' || true)"
+        if [[ -n "${wifi_radio_state}" ]]; then
+            wifi_state="${wifi_radio_state,,}"
+        else
+            wifi_state="present"
+        fi
+    fi
+
+    if [[ "${connected_devices}" -gt 0 ]]; then
+        network_state="connected"
+    elif [[ "${wifi_devices}" -gt 0 || "${ethernet_devices}" -gt 0 ]]; then
+        network_state="hardware-present-not-connected"
+    else
+        network_state="no-network-device-detected"
+    fi
+fi
+
+audio_state="unknown"
+audio_services="not-checked"
+audio_sinks="0"
+if command -v pactl >/dev/null 2>&1; then
+    audio_sinks="$(pactl list short sinks 2>/dev/null | sed '/^[[:space:]]*$/d' | wc -l | tr -d ' ')"
+fi
+
+pipewire_active="no"
+wireplumber_active="no"
+if command -v systemctl >/dev/null 2>&1; then
+    if systemctl --user is-active pipewire.service >/dev/null 2>&1; then
+        pipewire_active="yes"
+    fi
+    if systemctl --user is-active wireplumber.service >/dev/null 2>&1; then
+        wireplumber_active="yes"
+    fi
+fi
+audio_services="pipewire=${pipewire_active}, wireplumber=${wireplumber_active}"
+if [[ "${audio_sinks}" -gt 0 ]]; then
+    audio_state="ready"
+elif [[ "${pipewire_active}" == "yes" || "${wireplumber_active}" == "yes" ]]; then
+    audio_state="service-active-no-sinks"
+else
+    audio_state="not-ready"
+fi
+
+storage_state="unknown"
+root_source="$(findmnt -n -o SOURCE / 2>/dev/null || true)"
+disk_summary="$(lsblk -dn -o NAME,SIZE,MODEL 2>/dev/null | sed '/^[[:space:]]*$/d' || true)"
+disk_count="$(printf '%s\n' "${disk_summary}" | sed '/^[[:space:]]*$/d' | wc -l | tr -d ' ')"
+if [[ -n "${root_source}" && "${disk_count}" -gt 0 ]]; then
+    storage_state="ready"
+else
+    storage_state="attention-needed"
+fi
+
+battery_state="not-detected"
+battery_summary="No battery was detected."
+battery_paths=(/sys/class/power_supply/BAT*)
+if compgen -G "/sys/class/power_supply/BAT*" >/dev/null 2>&1; then
+    first_battery="${battery_paths[0]}"
+    battery_capacity="$(cat "${first_battery}/capacity" 2>/dev/null || printf '%s' 'unknown')"
+    battery_status="$(cat "${first_battery}/status" 2>/dev/null || printf '%s' 'unknown')"
+    battery_state="present"
+    battery_summary="Battery ${battery_status}, ${battery_capacity}%."
+fi
+
+bluetooth_state="not-detected"
+bluetooth_summary="No Bluetooth controller was detected."
+if command -v bluetoothctl >/dev/null 2>&1; then
+    bluetooth_show="$(bluetoothctl show 2>/dev/null || true)"
+    if grep -q '^Controller ' <<< "${bluetooth_show}"; then
+        bluetooth_state="controller-present"
+        bluetooth_summary="$(printf '%s\n' "${bluetooth_show}" | awk -F': ' '/^[[:space:]]*Powered:/ {print "Powered: " $2; exit}')"
+        [[ -n "${bluetooth_summary}" ]] || bluetooth_summary="Bluetooth controller is present."
+    fi
+fi
+
+pass_count=0
+warn_count=0
+checks_file="$(mktemp)"
+trap 'rm -f "${checks_file}"' EXIT
+
+add_check() {
+    local status="$1"
+    local title="$2"
+    local detail="$3"
+
+    if [[ "${status}" == "PASS" ]]; then
+        pass_count=$((pass_count + 1))
+    else
+        warn_count=$((warn_count + 1))
+    fi
+
+    printf -- "- [%s] %s: %s\n" "${status}" "${title}" "${detail}" >> "${checks_file}"
+}
+
+if [[ "${hypervisor_value}" == "bare-metal" ]]; then
+    add_check "PASS" "Session Scope" "running on bare metal, suitable for real-device validation"
+else
+    add_check "WARN" "Session Scope" "running under ${hypervisor_value}, so this is not a real-device hardware pass yet"
+fi
+
+add_check "PASS" "Boot Mode" "current boot mode is ${boot_mode}"
+
+if [[ "${gpu_count}" -gt 0 && "${session_type}" != "unknown" ]]; then
+    add_check "PASS" "Graphics Path" "detected ${gpu_count} GPU entry or entries; session=${session_type}; resolution=${current_resolution}"
+else
+    add_check "WARN" "Graphics Path" "GPU/session detection is incomplete; session=${session_type}; resolution=${current_resolution}"
+fi
+
+if [[ "${storage_state}" == "ready" ]]; then
+    add_check "PASS" "Storage Basics" "root=${root_source}; disk count=${disk_count}"
+else
+    add_check "WARN" "Storage Basics" "root or disk detection is incomplete"
+fi
+
+if [[ "${network_state}" == "connected" ]]; then
+    add_check "PASS" "Network Connectivity" "connected devices=${connected_devices}; wifi devices=${wifi_devices}; ethernet devices=${ethernet_devices}"
+elif [[ "${network_state}" == "hardware-present-not-connected" ]]; then
+    add_check "WARN" "Network Connectivity" "network hardware is present but not connected yet"
+else
+    add_check "WARN" "Network Connectivity" "no ready network device was detected"
+fi
+
+if [[ "${audio_state}" == "ready" ]]; then
+    add_check "PASS" "Audio Path" "audio sinks=${audio_sinks}; ${audio_services}"
+else
+    add_check "WARN" "Audio Path" "audio state=${audio_state}; sinks=${audio_sinks}; ${audio_services}"
+fi
+
+if [[ "${battery_state}" == "present" ]]; then
+    add_check "PASS" "Battery" "${battery_summary}"
+else
+    add_check "PASS" "Battery" "${battery_summary}"
+fi
+
+if [[ "${bluetooth_state}" == "controller-present" ]]; then
+    add_check "PASS" "Bluetooth" "${bluetooth_summary}"
+else
+    add_check "PASS" "Bluetooth" "${bluetooth_summary}"
+fi
+
+hardware_readiness="attention-needed"
+hardware_summary="Some hardware basics still need manual confirmation before calling this a clean real-device pass."
+if [[ "${hypervisor_value}" != "bare-metal" ]]; then
+    hardware_readiness="vm-session-only"
+    hardware_summary="This report is still useful, but it was captured inside a VM rather than on a real device."
+elif [[ "${storage_state}" == "ready" && "${gpu_count}" -gt 0 && "${network_state}" != "no-network-device-detected" && "${audio_state}" == "ready" ]]; then
+    hardware_readiness="ready-for-real-device-smoke"
+    hardware_summary="The device looks ready for a first real-hardware smoke pass covering Wi-Fi, audio, graphics, and power basics."
+fi
+
+{
+    printf '# Lumina-OS Hardware Readiness Report\n\n'
+    printf -- '- Generated: %s\n' "$(date -Iseconds)"
+    printf -- '- Hostname: %s\n' "${hostname_value}"
+    printf -- '- Session Scope: %s\n' "${hypervisor_value}"
+    printf -- '- Desktop Session: %s\n' "${desktop_session}"
+    printf -- '- Session Type: %s\n' "${session_type}"
+    printf -- '- Boot Mode: %s\n' "${boot_mode}"
+    printf -- '- Hardware Readiness: %s\n' "${hardware_readiness}"
+    printf -- '- Summary: %s\n' "${hardware_summary}"
+    printf '\n## Summary\n'
+    printf -- '- Passes: %s\n' "${pass_count}"
+    printf -- '- Warnings: %s\n' "${warn_count}"
+    printf -- '- NetworkManager: %s\n' "${network_manager_state}"
+    printf -- '- Wi-Fi State: %s\n' "${wifi_state}"
+    printf -- '- Network State: %s\n' "${network_state}"
+    printf -- '- Audio State: %s\n' "${audio_state}"
+    printf -- '- Storage State: %s\n' "${storage_state}"
+    printf -- '- Battery State: %s\n' "${battery_state}"
+    printf -- '- Bluetooth State: %s\n' "${bluetooth_state}"
+    printf '\n## Checks\n'
+    cat "${checks_file}"
+    printf '\n## Hardware Details\n'
+    printf -- '- Root Source: %s\n' "${root_source:-unknown}"
+    printf -- '- Disk Count: %s\n' "${disk_count}"
+    printf -- '- Current Resolution: %s\n' "${current_resolution}"
+    printf -- '- Battery Summary: %s\n' "${battery_summary}"
+    printf -- '- Bluetooth Summary: %s\n' "${bluetooth_summary}"
+    printf '\n## GPUs\n'
+    if [[ -n "${gpu_lines}" ]]; then
+        printf '%s\n' "${gpu_lines}"
+    else
+        printf 'no GPU entries detected via lspci\n'
+    fi
+    printf '\n## Storage Devices\n'
+    if [[ -n "${disk_summary}" ]]; then
+        printf '%s\n' "${disk_summary}"
+    else
+        printf 'no disk summary available from lsblk\n'
+    fi
+    printf '\n## Network Devices\n'
+    if [[ -n "${network_lines}" ]]; then
+        printf '%s\n' "${network_lines}"
+    else
+        printf 'no network device summary available from nmcli\n'
+    fi
+    printf '\n## Next Step\n'
+    if [[ "${hardware_readiness}" == "ready-for-real-device-smoke" ]]; then
+        printf -- '- Follow the hardware checklist and record one real-device pass under status/hardware-tests/.\n'
+    elif [[ "${hardware_readiness}" == "vm-session-only" ]]; then
+        printf -- '- Boot the ISO on a real device and rerun this report there before treating hardware support as validated.\n'
+    else
+        printf -- '- Fix the warnings above first, then rerun the hardware readiness check on the same device.\n'
+    fi
+} > "${report_file}"
+
+if [[ -d "${HOME}/Desktop" ]]; then
+    cp "${report_file}" "${desktop_report}"
+fi
+
+printf '%s\n' '========================================'
+printf '%s\n' '  Lumina-OS Hardware Readiness Check'
+printf '%s\n' '========================================'
+printf '\n'
+printf 'Readiness: %s\n' "${hardware_readiness}"
+printf 'Summary: %s\n' "${hardware_summary}"
+printf 'Report: %s\n' "${report_file}"
+printf '\n'
+
+if [[ "${open_after}" -eq 1 ]]; then
+    if command -v dolphin >/dev/null 2>&1; then
+        dolphin "${report_file}" >/dev/null 2>&1 &
+    elif command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "${report_file}" >/dev/null 2>&1 &
+    fi
+fi

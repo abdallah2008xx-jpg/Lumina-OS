@@ -128,6 +128,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-daily-home",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-daily-home-refresh",
     "archiso-profile\airootfs\usr\local\bin\ahmados-open-install-finalize-report",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-hardware-readiness-check",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
     "archiso-profile\airootfs\usr\local\bin\ahmados-open-firstboot-report",
     "archiso-profile\airootfs\usr\local\bin\ahmados-refresh-release-metadata",
@@ -195,6 +196,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-daily-home",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-daily-home-refresh",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-install-finalize-report",
+    "archiso-profile\airootfs\usr\local\bin\lumina-hardware-readiness-check",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
     "archiso-profile\airootfs\usr\local\bin\lumina-refresh-release-metadata",
     "archiso-profile\airootfs\usr\local\bin\lumina-update-center",
@@ -231,6 +233,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\share\applications\ahmados-firstboot-report.desktop",
     "archiso-profile\airootfs\usr\share\applications\ahmados-run-smoke-checks.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-finalize-install.desktop",
+    "archiso-profile\airootfs\usr\share\applications\lumina-hardware-readiness-check.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-install-finalize-report.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop",
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop",
@@ -246,6 +249,7 @@ $requiredPaths = @(
     "scripts\export-build-handoff.sh",
     "scripts\new-vm-test-report.ps1",
     "scripts\new-install-test-report.ps1",
+    "scripts\new-hardware-test-report.ps1",
     "scripts\new-test-session.ps1",
     "scripts\start-vm-test-cycle.ps1",
     "scripts\finish-vm-test-cycle.ps1",
@@ -283,6 +287,7 @@ $requiredPaths = @(
     "status\cycle-chain-audits\README.md",
     "status\vm-tests\README.md",
     "status\install-tests\README.md",
+    "status\hardware-tests\README.md",
     "status\test-sessions\README.md",
     "status\test-session-audits\README.md",
     "status\diagnostics\README.md",
@@ -457,6 +462,7 @@ $expectedExecMappings = @{
     "archiso-profile\airootfs\usr\share\applications\ahmados-update-center.desktop" = "Exec=/usr/local/bin/lumina-update-center"
     "archiso-profile\airootfs\usr\share\applications\ahmados-welcome.desktop" = "Exec=/usr/local/bin/lumina-welcome"
     "archiso-profile\airootfs\usr\share\applications\lumina-finalize-install.desktop" = "Exec=/usr/local/bin/lumina-finalize-install"
+    "archiso-profile\airootfs\usr\share\applications\lumina-hardware-readiness-check.desktop" = "Exec=/usr/local/bin/lumina-hardware-readiness-check --open"
     "archiso-profile\airootfs\usr\share\applications\lumina-install-finalize-report.desktop" = "Exec=/usr/local/bin/lumina-open-install-finalize-report"
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop" = "Exec=/usr/local/bin/lumina-installer"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop" = "Exec=/usr/local/bin/lumina-windows-daily-home --launch"
@@ -578,7 +584,9 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/ahmados-windows-daily-home-refresh",
         "/usr/local/bin/lumina-windows-daily-home-refresh",
         "/usr/local/bin/ahmados-open-install-finalize-report",
-        "/usr/local/bin/lumina-open-install-finalize-report"
+        "/usr/local/bin/lumina-open-install-finalize-report",
+        "/usr/local/bin/ahmados-hardware-readiness-check",
+        "/usr/local/bin/lumina-hardware-readiness-check"
     )) {
         if ($customizeContent -notmatch [regex]::Escape("chmod 755 $requiredChmodTarget")) {
             Add-Error "customize_airootfs.sh does not enforce executable permissions for $requiredChmodTarget"

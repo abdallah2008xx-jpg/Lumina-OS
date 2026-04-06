@@ -140,6 +140,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-home"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-home-refresh"
     "${profile_path}/airootfs/usr/local/bin/ahmados-open-install-finalize-report"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-hardware-readiness-check"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
     "${profile_path}/airootfs/usr/local/bin/ahmados-open-firstboot-report"
     "${profile_path}/airootfs/usr/local/bin/ahmados-refresh-release-metadata"
@@ -207,6 +208,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-home"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-home-refresh"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-install-finalize-report"
+    "${profile_path}/airootfs/usr/local/bin/lumina-hardware-readiness-check"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
     "${profile_path}/airootfs/usr/local/bin/lumina-refresh-release-metadata"
     "${profile_path}/airootfs/usr/local/bin/lumina-update-center"
@@ -243,6 +245,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/share/applications/ahmados-firstboot-report.desktop"
     "${profile_path}/airootfs/usr/share/applications/ahmados-run-smoke-checks.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-finalize-install.desktop"
+    "${profile_path}/airootfs/usr/share/applications/lumina-hardware-readiness-check.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-install-finalize-report.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop"
     "${profile_path}/airootfs/usr/share/applications/lumina-windows-apps.desktop"
@@ -257,6 +260,7 @@ required_paths=(
     "${repo_root}/scripts/export-build-handoff.sh"
     "${repo_root}/scripts/new-vm-test-report.ps1"
     "${repo_root}/scripts/new-install-test-report.ps1"
+    "${repo_root}/scripts/new-hardware-test-report.ps1"
     "${repo_root}/scripts/new-test-session.ps1"
     "${repo_root}/scripts/start-vm-test-cycle.ps1"
     "${repo_root}/scripts/finish-vm-test-cycle.ps1"
@@ -294,6 +298,7 @@ required_paths=(
     "${repo_root}/status/cycle-chain-audits/README.md"
     "${repo_root}/status/vm-tests/README.md"
     "${repo_root}/status/install-tests/README.md"
+    "${repo_root}/status/hardware-tests/README.md"
     "${repo_root}/status/test-sessions/README.md"
     "${repo_root}/status/test-session-audits/README.md"
     "${repo_root}/status/diagnostics/README.md"
@@ -526,7 +531,9 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/ahmados-windows-daily-home-refresh \
         /usr/local/bin/lumina-windows-daily-home-refresh \
         /usr/local/bin/ahmados-open-install-finalize-report \
-        /usr/local/bin/lumina-open-install-finalize-report; do
+        /usr/local/bin/lumina-open-install-finalize-report \
+        /usr/local/bin/ahmados-hardware-readiness-check \
+        /usr/local/bin/lumina-hardware-readiness-check; do
         if ! grep -Fq "chmod 755 ${required_chmod_target}" "${customize_airootfs}"; then
             add_error "customize_airootfs.sh does not enforce executable permissions for ${required_chmod_target}"
         fi
@@ -603,6 +610,7 @@ ${profile_path}/airootfs/usr/share/applications/ahmados-run-smoke-checks.desktop
 ${profile_path}/airootfs/usr/share/applications/ahmados-update-center.desktop|Exec=/usr/local/bin/lumina-update-center
 ${profile_path}/airootfs/usr/share/applications/ahmados-welcome.desktop|Exec=/usr/local/bin/lumina-welcome
 ${profile_path}/airootfs/usr/share/applications/lumina-finalize-install.desktop|Exec=/usr/local/bin/lumina-finalize-install
+${profile_path}/airootfs/usr/share/applications/lumina-hardware-readiness-check.desktop|Exec=/usr/local/bin/lumina-hardware-readiness-check --open
 ${profile_path}/airootfs/usr/share/applications/lumina-install-finalize-report.desktop|Exec=/usr/local/bin/lumina-open-install-finalize-report
 ${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop|Exec=/usr/local/bin/lumina-installer
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-apps.desktop|Exec=/usr/local/bin/lumina-windows-daily-home --launch

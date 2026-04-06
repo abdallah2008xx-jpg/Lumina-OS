@@ -52,6 +52,14 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Finish the cycle with `.\scripts\finish-vm-test-cycle.ps1`
 - [ ] Review blockers, readiness, validation matrix, and cycle-chain audit
 
+## Real Hardware Validation
+- [ ] Create a hardware validation report with `.\scripts\new-hardware-test-report.ps1`
+- [ ] Follow `docs/HARDWARE-TEST-CHECKLIST.md`
+- [ ] Boot the ISO or installed system on at least one real device
+- [ ] Run `Lumina-OS Hardware Readiness Check`
+- [ ] Confirm Wi-Fi, audio, graphics, and storage basics
+- [ ] Record blockers immediately if any core hardware path fails
+
 ## Release Gate
 - [ ] `status/readiness/CURRENT-READINESS.md` is no longer `needs-build`
 - [ ] `status/validation-matrix/CURRENT-VALIDATION-MATRIX.md` shows acceptable mode coverage

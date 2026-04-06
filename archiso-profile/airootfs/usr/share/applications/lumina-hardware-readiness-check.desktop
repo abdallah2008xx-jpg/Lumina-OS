@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Lumina-OS Hardware Readiness Check
+Comment=Create a real-device readiness report for Wi-Fi, audio, storage, graphics, and power basics
+Exec=/usr/local/bin/lumina-hardware-readiness-check --open
+Icon=tools-report-bug
+Terminal=false
+Categories=Qt;KDE;System;Utility;
+StartupNotify=true

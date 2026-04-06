@@ -264,6 +264,7 @@ required_paths=(
     "${repo_root}/scripts/new-hardware-test-report.ps1"
     "${repo_root}/scripts/new-release-evidence-pack.ps1"
     "${repo_root}/scripts/new-release-evidence-runbook.ps1"
+    "${repo_root}/scripts/start-release-evidence-session.ps1"
     "${repo_root}/scripts/sync-release-evidence-pack.ps1"
     "${repo_root}/scripts/sync-release-evidence-pack-status.ps1"
     "${repo_root}/scripts/sync-release-control-center.ps1"

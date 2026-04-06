@@ -72,6 +72,7 @@ $installTestScript = Join-Path $PSScriptRoot "new-install-test-report.ps1"
 $hardwareTestScript = Join-Path $PSScriptRoot "new-hardware-test-report.ps1"
 $releaseEvidencePackScript = Join-Path $PSScriptRoot "new-release-evidence-pack.ps1"
 $releaseEvidenceRunbookScript = Join-Path $PSScriptRoot "new-release-evidence-runbook.ps1"
+$releaseEvidenceSessionScript = Join-Path $PSScriptRoot "start-release-evidence-session.ps1"
 $syncReleaseEvidencePackScript = Join-Path $PSScriptRoot "sync-release-evidence-pack.ps1"
 $syncReleaseEvidencePackStatusScript = Join-Path $PSScriptRoot "sync-release-evidence-pack-status.ps1"
 $syncReleaseControlCenterScript = Join-Path $PSScriptRoot "sync-release-control-center.ps1"
@@ -122,6 +123,10 @@ if (-not (Test-Path $releaseEvidencePackScript)) {
 
 if (-not (Test-Path $releaseEvidenceRunbookScript)) {
     throw "Missing smoke-test target: $releaseEvidenceRunbookScript"
+}
+
+if (-not (Test-Path $releaseEvidenceSessionScript)) {
+    throw "Missing smoke-test target: $releaseEvidenceSessionScript"
 }
 
 if (-not (Test-Path $syncReleaseEvidencePackScript)) {
@@ -351,6 +356,19 @@ try {
     $releaseEvidenceRunbookContent = Get-Content -Raw $releaseEvidenceRunbookPath
     Assert-Condition -Condition ($releaseEvidenceRunbookContent -match [regex]::Escape("- Evidence Pack: $releaseEvidencePackPath")) -Message "Release evidence runbook did not record the evidence pack path."
     Assert-Condition -Condition ($releaseEvidenceRunbookContent -match [regex]::Escape('.\scripts\prepare-release-candidate.ps1 -Version "0.1.0-ci" -Mode stable -RunLabel "' + $smokeRunLabel + '" -IsoPath "' + $isoPath + '" -EvidencePackPath "' + $releaseEvidencePackPath + '"')) -Message "Release evidence runbook did not include the expected candidate command."
+
+    $releaseEvidenceSessionPath = & $releaseEvidenceSessionScript `
+        -EvidencePackPath $releaseEvidencePackPath `
+        -ReleaseVersion "0.1.0-ci" `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $releaseEvidenceSessionPath) -Message "Release evidence session was not created."
+    $releaseEvidenceSessionContent = Get-Content -Raw $releaseEvidenceSessionPath
+    Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Evidence Pack: $releaseEvidencePackPath")) -Message "Release evidence session did not record the evidence pack path."
+    Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Runbook Path: $releaseEvidenceRunbookPath")) -Message "Release evidence session did not record the runbook path."
+    Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Session State: ready-to-collect-evidence")) -Message "Release evidence session did not record the expected session state."
+    Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("CURRENT-RELEASE-CONTROL-CENTER.md")) -Message "Release evidence session did not point to the release control center."
 
     $releaseLoginTestReportContent = (Get-Content -Raw $releaseLoginTestReportPath) -replace '(?m)^- Overall Status: .+$', '- Overall Status: completed'
     Set-Content -Path $releaseLoginTestReportPath -Value $releaseLoginTestReportContent -Encoding UTF8

@@ -218,13 +218,19 @@ For a strict release gate:
 
     .\scripts\prepare-release-candidate.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel __RUN_LABEL__ -RequireExactEvidenceRunLabel
 
-## Step 9: Review Candidate Output
+## Step 9: Audit Release Readiness
+Use this after candidate prep to get a direct go/no-go summary:
+
+    .\scripts\audit-release-readiness.ps1 -Version "__RELEASE_VERSION__" -Mode __MODE__ -RunLabel __RUN_LABEL__
+
+## Step 10: Review Candidate Output
 Review these files before publishing:
 - `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md`
 - generated `release-evidence-audit.md` under `status/releases/`
+- generated `release-readiness-audit.md` under `status/releases/`
 - generated `release-validation.md` under `status/releases/`
 
-## Step 10: Publish GitHub Release
+## Step 11: Publish GitHub Release
 Use this only after the validation report passes and the token is available:
 
     .\scripts\publish-github-release.ps1 -ReleaseManifestPath "C:\Path\To\release-manifest.md"

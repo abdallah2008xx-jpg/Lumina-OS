@@ -273,6 +273,7 @@ $requiredPaths = @(
     "scripts\import-diagnostics-bundle.ps1",
     "scripts\prepare-release-package.ps1",
     "scripts\audit-release-evidence.ps1",
+    "scripts\audit-release-readiness.ps1",
     "scripts\prepare-release-candidate.ps1",
     "scripts\sync-release-candidate-status.ps1",
     "scripts\validate-github-release-context.ps1",

@@ -115,6 +115,7 @@ $releaseCandidateContent = Get-Content -Raw $resolvedReleaseCandidatePath
 $readinessState = Get-MetadataValue -Content $shareableContent -Label "Readiness State"
 $validationState = Get-MetadataValue -Content $shareableContent -Label "Validation Matrix State"
 $candidateState = Get-MetadataValue -Content $shareableContent -Label "Release Candidate State"
+$releaseReadinessState = Get-MetadataValue -Content $shareableContent -Label "Release Readiness State"
 $evidenceSoftGateState = Get-MetadataValue -Content $shareableContent -Label "Release Evidence Soft Gate"
 $evidenceStrictGateState = Get-MetadataValue -Content $shareableContent -Label "Release Evidence Strict Gate"
 $runLabel = Get-FirstNonEmptyValue @(
@@ -163,6 +164,7 @@ $englishLines.Add("- Generated At: $(Get-Date -Format s)") | Out-Null
 $englishLines.Add("- Readiness State: $(if ([string]::IsNullOrWhiteSpace($readinessState)) { "not-recorded-yet" } else { $readinessState })") | Out-Null
 $englishLines.Add("- Validation Matrix State: $(if ([string]::IsNullOrWhiteSpace($validationState)) { "not-recorded-yet" } else { $validationState })") | Out-Null
 $englishLines.Add("- Release Candidate State: $(if ([string]::IsNullOrWhiteSpace($candidateState)) { "not-recorded-yet" } else { $candidateState })") | Out-Null
+$englishLines.Add("- Release Readiness State: $(if ([string]::IsNullOrWhiteSpace($releaseReadinessState)) { "not-recorded-yet" } else { $releaseReadinessState })") | Out-Null
 $englishLines.Add("- Release Evidence Soft Gate: $(if ([string]::IsNullOrWhiteSpace($evidenceSoftGateState)) { "not-recorded-yet" } else { $evidenceSoftGateState })") | Out-Null
 $englishLines.Add("- Release Evidence Strict Gate: $(if ([string]::IsNullOrWhiteSpace($evidenceStrictGateState)) { "not-recorded-yet" } else { $evidenceStrictGateState })") | Out-Null
 $englishLines.Add("- Current Run Label: $(if ([string]::IsNullOrWhiteSpace($runLabel)) { "not-recorded-yet" } else { $runLabel })") | Out-Null
@@ -194,6 +196,7 @@ $arabicLines.Add("- Generated At: $(Get-Date -Format s)") | Out-Null
 $arabicLines.Add("- Readiness State: $(if ([string]::IsNullOrWhiteSpace($readinessState)) { "not-recorded-yet" } else { $readinessState })") | Out-Null
 $arabicLines.Add("- Validation Matrix State: $(if ([string]::IsNullOrWhiteSpace($validationState)) { "not-recorded-yet" } else { $validationState })") | Out-Null
 $arabicLines.Add("- Release Candidate State: $(if ([string]::IsNullOrWhiteSpace($candidateState)) { "not-recorded-yet" } else { $candidateState })") | Out-Null
+$arabicLines.Add("- Release Readiness State: $(if ([string]::IsNullOrWhiteSpace($releaseReadinessState)) { "not-recorded-yet" } else { $releaseReadinessState })") | Out-Null
 $arabicLines.Add("- Release Evidence Soft Gate: $(if ([string]::IsNullOrWhiteSpace($evidenceSoftGateState)) { "not-recorded-yet" } else { $evidenceSoftGateState })") | Out-Null
 $arabicLines.Add("- Release Evidence Strict Gate: $(if ([string]::IsNullOrWhiteSpace($evidenceStrictGateState)) { "not-recorded-yet" } else { $evidenceStrictGateState })") | Out-Null
 $arabicLines.Add("- Current Run Label: $(if ([string]::IsNullOrWhiteSpace($runLabel)) { "not-recorded-yet" } else { $runLabel })") | Out-Null

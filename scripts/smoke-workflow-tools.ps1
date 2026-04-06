@@ -79,6 +79,7 @@ $githubArtifactCycleScript = Join-Path $PSScriptRoot "start-github-actions-vm-cy
 $githubArtifactCycleFinishScript = Join-Path $PSScriptRoot "finish-github-actions-vm-cycle.ps1"
 $prepareReleasePackageScript = Join-Path $PSScriptRoot "prepare-release-package.ps1"
 $releaseEvidenceAuditScript = Join-Path $PSScriptRoot "audit-release-evidence.ps1"
+$releaseReadinessAuditScript = Join-Path $PSScriptRoot "audit-release-readiness.ps1"
 $cycleChainAuditScript = Join-Path $PSScriptRoot "audit-cycle-chain.ps1"
 $releaseCandidateScript = Join-Path $PSScriptRoot "prepare-release-candidate.ps1"
 $syncReleaseCandidateScript = Join-Path $PSScriptRoot "sync-release-candidate-status.ps1"
@@ -141,6 +142,10 @@ if (-not (Test-Path $prepareReleasePackageScript)) {
 
 if (-not (Test-Path $releaseEvidenceAuditScript)) {
     throw "Missing smoke-test target: $releaseEvidenceAuditScript"
+}
+
+if (-not (Test-Path $releaseReadinessAuditScript)) {
+    throw "Missing smoke-test target: $releaseReadinessAuditScript"
 }
 
 if (-not (Test-Path $cycleChainAuditScript)) {
@@ -511,6 +516,31 @@ try {
     Assert-Condition -Condition ($candidateContent -match [regex]::Escape("- Candidate State: ready-to-publish")) -Message "Release candidate summary is not ready-to-publish."
     Assert-Condition -Condition ($candidateContent -match [regex]::Escape("- Run Label: $smokeRunLabel")) -Message "Release candidate summary does not contain the expected run label."
 
+    $releaseReadinessAuditPath = & $releaseReadinessAuditScript `
+        -Version "0.1.0-ci" `
+        -Mode stable `
+        -RunLabel $smokeRunLabel `
+        -IsoPath $isoPath `
+        -BuildManifestPath $buildPath `
+        -VmReportPath $vmPath `
+        -InstallReportPath $releaseInstallReportPath `
+        -HardwareReportPath $releaseHardwareReportPath `
+        -SessionPath $sessionPath `
+        -AuditPath $auditPath `
+        -CycleChainAuditPath $cycleChainAuditPath `
+        -ReadinessPath $readinessPath `
+        -ValidationMatrixPath $validationPath `
+        -ReleaseCandidatePath $candidateSummaryPath `
+        -ReleaseEvidenceAuditPath $releaseEvidenceAuditPath `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $releaseReadinessAuditPath) -Message "Release readiness audit was not created."
+    $releaseReadinessAuditContent = Get-Content -Raw $releaseReadinessAuditPath
+    Assert-Condition -Condition ($releaseReadinessAuditContent -match [regex]::Escape("- Overall Readiness: ready-to-publish")) -Message "Release readiness audit was not ready-to-publish."
+    Assert-Condition -Condition ($releaseReadinessAuditContent -match [regex]::Escape("- Soft Gate State: passed")) -Message "Release readiness audit did not record the soft gate state."
+    Assert-Condition -Condition ($releaseReadinessAuditContent -match [regex]::Escape("- Strict Gate State: passed")) -Message "Release readiness audit did not record the strict gate state."
+
     $releaseManifestPath = Get-MetadataValue -Content $candidateContent -Label "Release Manifest"
     $validationReportPath = Get-MetadataValue -Content $candidateContent -Label "Validation Report"
 
@@ -582,12 +612,14 @@ try {
         -ValidationMatrixPath $validationPath `
         -ReleaseCandidatePath (Join-Path $tempRoot "status\\release-candidates\\CURRENT-RELEASE-CANDIDATE.md") `
         -ReleaseEvidenceAuditPath $releaseEvidenceAuditPath `
+        -ReleaseReadinessAuditPath $releaseReadinessAuditPath `
         -RepoRoot $tempRoot `
         -OutputPathOnly
 
     Assert-Condition -Condition (Test-Path $shareableUpdatePath) -Message "Shareable update snapshot was not created."
     $shareableContent = Get-Content -Raw $shareableUpdatePath
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Candidate State: published")) -Message "Shareable update did not include the published release-candidate state."
+    Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Readiness State: ready-to-publish")) -Message "Shareable update did not include the release readiness state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Evidence Soft Gate: passed")) -Message "Shareable update did not include the soft evidence gate state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Evidence Strict Gate: passed")) -Message "Shareable update did not include the strict evidence gate state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- run the first real stable build in Arch")) -Message "Shareable update did not include the expected next step."
@@ -601,12 +633,14 @@ try {
     Assert-Condition -Condition (Test-Path $shareableBriefPath) -Message "English shareable brief was not created."
     $shareableBriefContent = Get-Content -Raw $shareableBriefPath
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Candidate State: published")) -Message "English shareable brief did not include the published release-candidate state."
+    Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Readiness State: ready-to-publish")) -Message "English shareable brief did not include the release readiness state."
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Evidence Soft Gate: passed")) -Message "English shareable brief did not include the soft evidence gate state."
 
     $shareableArabicBriefPath = Join-Path $tempRoot "status\\SHAREABLE-BRIEF-AR.md"
     Assert-Condition -Condition (Test-Path $shareableArabicBriefPath) -Message "Arabic shareable brief was not created."
     $shareableArabicBriefContent = Get-Content -Raw $shareableArabicBriefPath
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Candidate State: published")) -Message "Arabic shareable brief did not include the published release-candidate state."
+    Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Readiness State: ready-to-publish")) -Message "Arabic shareable brief did not include the release readiness state."
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Evidence Soft Gate: passed")) -Message "Arabic shareable brief did not include the soft evidence gate state."
 }
 finally {

@@ -110,6 +110,7 @@ The current phase adds:
 - a daily-quick-launch layer that saves the smoothest current daily entry path and reuses it directly from Lumina
 - a daily-refresh integration that keeps the quick-launch path fresh alongside the rest of the daily Windows surfaces
 - a pressure-aware daily-quick-launch layer that falls back to queue sync first when Windows launch pressure is already high
+- a workflow-state and workflow-hub visibility layer that surfaces quick-launch mode, outcome, and command directly in the main daily reports instead of hiding them in a separate report only
 
 ## Current Limits
 

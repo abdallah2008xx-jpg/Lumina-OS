@@ -43,6 +43,8 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Confirm a build manifest is written under `status/builds/`
 
 ## Login-Test VM Cycle
+- [ ] Create a dedicated login-test report with `.\scripts\new-login-test-report.ps1`
+- [ ] Follow `docs/LOGIN-TEST-VM-CHECKLIST.md`
 - [ ] Start a labeled cycle with `.\scripts\start-vm-test-cycle.ps1`
 - [ ] Boot the ISO in a VM
 - [ ] Confirm SDDM appears correctly

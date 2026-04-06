@@ -102,6 +102,9 @@ $currentCandidatePath = Resolve-RequiredPath -Label "Current release candidate" 
 $version = Get-MetadataValue -Content $manifestContent -Label "Version"
 $runLabel = Get-MetadataValue -Content $manifestContent -Label "Run Label"
 $mode = Get-MetadataValue -Content $manifestContent -Label "Mode"
+$loginTestReportPath = Resolve-RequiredPath -Label "Login-Test Report" -Value (Get-MetadataValue -Content $manifestContent -Label "Login-Test Report") -Errors $errors
+$loginTestReportRunLabel = Get-MetadataValue -Content $manifestContent -Label "Login-Test Report Run Label"
+$loginTestReportSelection = Get-MetadataValue -Content $manifestContent -Label "Login-Test Report Selection"
 $installReportPath = Resolve-RequiredPath -Label "Install Report" -Value (Get-MetadataValue -Content $manifestContent -Label "Install Report") -Errors $errors
 $installReportRunLabel = Get-MetadataValue -Content $manifestContent -Label "Install Report Run Label"
 $installReportSelection = Get-MetadataValue -Content $manifestContent -Label "Install Report Selection"
@@ -157,8 +160,16 @@ if (-not [string]::IsNullOrWhiteSpace($resolvedToken)) {
 $validationContent = if (-not [string]::IsNullOrWhiteSpace($validationReportPath)) { Get-Content -Raw $validationReportPath } else { "" }
 $validationResult = Get-MetadataValue -Content $validationContent -Label "Result"
 $validationRunLabel = Get-MetadataValue -Content $validationContent -Label "Run Label"
+$loginTestReportState = Get-MetadataValue -Content $validationContent -Label "Login-Test Report Status"
 $installReportState = Get-MetadataValue -Content $validationContent -Label "Install Report Status"
 $hardwareReportState = Get-MetadataValue -Content $validationContent -Label "Hardware Report Status"
+
+if ([string]::IsNullOrWhiteSpace($loginTestReportState) -or $loginTestReportState -eq "not-recorded-yet") {
+    Add-ValidationItem -Bucket $errors -Message "Login-test report status is missing from the release validation report."
+}
+else {
+    Add-ValidationItem -Bucket $notes -Message "Login-test report status resolved as $loginTestReportState."
+}
 
 if ($validationResult -ne "passed") {
     Add-ValidationItem -Bucket $errors -Message "Release validation result is not passed: $(if ([string]::IsNullOrWhiteSpace($validationResult)) { "not-recorded-yet" } else { $validationResult })"
@@ -280,6 +291,10 @@ $report = @"
 - Run Label: $(if ([string]::IsNullOrWhiteSpace($runLabel)) { "not-recorded-yet" } else { $runLabel })
 - GitHub Repository: $(if ([string]::IsNullOrWhiteSpace($resolvedOwner) -or [string]::IsNullOrWhiteSpace($resolvedRepo)) { "not-recorded-yet" } else { "$resolvedOwner/$resolvedRepo" })
 - Token Source: $(if ([string]::IsNullOrWhiteSpace($tokenSource)) { "not-recorded-yet" } else { $tokenSource })
+- Login-Test Report: $(if ([string]::IsNullOrWhiteSpace($loginTestReportPath)) { "not-recorded-yet" } else { $loginTestReportPath })
+- Login-Test Report Status: $(if ([string]::IsNullOrWhiteSpace($loginTestReportState)) { "not-recorded-yet" } else { $loginTestReportState })
+- Login-Test Report Run Label: $(if ([string]::IsNullOrWhiteSpace($loginTestReportRunLabel)) { "not-recorded-yet" } else { $loginTestReportRunLabel })
+- Login-Test Report Selection: $(if ([string]::IsNullOrWhiteSpace($loginTestReportSelection)) { "not-recorded-yet" } else { $loginTestReportSelection })
 - Install Report: $(if ([string]::IsNullOrWhiteSpace($installReportPath)) { "not-recorded-yet" } else { $installReportPath })
 - Install Report Status: $(if ([string]::IsNullOrWhiteSpace($installReportState)) { "not-recorded-yet" } else { $installReportState })
 - Install Report Run Label: $(if ([string]::IsNullOrWhiteSpace($installReportRunLabel)) { "not-recorded-yet" } else { $installReportRunLabel })

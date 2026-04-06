@@ -148,6 +148,20 @@ $checksumPath = Resolve-ExistingPath -Label "Checksum File" -Value (Get-Metadata
 $releaseNotesPath = Resolve-ExistingPath -Label "Release Notes" -Value (Get-MetadataValue -Content $manifestContent -Label "Release Notes") -Errors $errors
 $buildManifestPath = Resolve-ExistingPath -Label "Build Manifest" -Value (Get-MetadataValue -Content $manifestContent -Label "Build Manifest") -Errors $errors
 $vmReportPath = Resolve-ExistingPath -Label "VM Report" -Value (Get-MetadataValue -Content $manifestContent -Label "VM Report") -Errors $errors
+$loginTestEvidence = Test-EvidenceReport `
+    -Label "Login-Test Report" `
+    -PathValue (Get-MetadataValue -Content $manifestContent -Label "Login-Test Report") `
+    -StatusLabels @("Overall Status", "Overall State", "Result") `
+    -PassStates @("pass", "passed", "complete", "completed", "success", "successful", "ready-for-release") `
+    -WarningStates @("attention", "attention-needed", "warning", "warnings", "review-required") `
+    -ErrorStates @("in-progress", "blocked", "block", "fail", "failed", "error", "errors", "pending", "not-started", "not-recorded-yet") `
+    -Errors $errors `
+    -Warnings $warnings `
+    -Notes $notes
+$loginTestReportPath = $loginTestEvidence.Path
+$loginTestReportState = $loginTestEvidence.Status
+$loginTestReportRunLabel = $loginTestEvidence.RunLabel
+$loginTestReportSelection = $loginTestEvidence.Selection
 $installEvidence = Test-EvidenceReport `
     -Label "Install Report" `
     -PathValue (Get-MetadataValue -Content $manifestContent -Label "Install Report") `
@@ -335,6 +349,10 @@ $report = @"
 - Run Label: $(if ([string]::IsNullOrWhiteSpace($runLabel)) { "not-recorded-yet" } else { $runLabel })
 - Release Manifest: $resolvedManifestPath
 - ISO Path: $(if ([string]::IsNullOrWhiteSpace($isoPath)) { "not-recorded-yet" } else { $isoPath })
+- Login-Test Report: $(if ([string]::IsNullOrWhiteSpace($loginTestReportPath)) { "not-recorded-yet" } else { $loginTestReportPath })
+- Login-Test Report Status: $(if ([string]::IsNullOrWhiteSpace($loginTestReportState)) { "not-recorded-yet" } else { $loginTestReportState })
+- Login-Test Report Run Label: $(if ([string]::IsNullOrWhiteSpace($loginTestReportRunLabel)) { "not-recorded-yet" } else { $loginTestReportRunLabel })
+- Login-Test Report Selection: $(if ([string]::IsNullOrWhiteSpace($loginTestReportSelection)) { "not-recorded-yet" } else { $loginTestReportSelection })
 - Install Report: $(if ([string]::IsNullOrWhiteSpace($installReportPath)) { "not-recorded-yet" } else { $installReportPath })
 - Install Report Status: $(if ([string]::IsNullOrWhiteSpace($installReportState)) { "not-recorded-yet" } else { $installReportState })
 - Install Report Run Label: $(if ([string]::IsNullOrWhiteSpace($installReportRunLabel)) { "not-recorded-yet" } else { $installReportRunLabel })

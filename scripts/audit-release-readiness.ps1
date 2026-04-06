@@ -7,6 +7,7 @@ param(
     [string]$IsoPath = "",
     [string]$BuildManifestPath = "",
     [string]$VmReportPath = "",
+    [string]$LoginTestReportPath = "",
     [string]$InstallReportPath = "",
     [string]$HardwareReportPath = "",
     [string]$SessionPath = "",
@@ -116,6 +117,7 @@ if ([string]::IsNullOrWhiteSpace($resolvedReleaseEvidenceAuditPath) -or -not (Te
         IsoPath = $IsoPath
         BuildManifestPath = $BuildManifestPath
         VmReportPath = $VmReportPath
+        LoginTestReportPath = $LoginTestReportPath
         InstallReportPath = $InstallReportPath
         HardwareReportPath = $HardwareReportPath
         SessionPath = $SessionPath

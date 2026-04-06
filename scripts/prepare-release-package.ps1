@@ -7,6 +7,7 @@ param(
     [string]$RunLabel = "",
     [string]$BuildManifestPath = "",
     [string]$VmReportPath = "",
+    [string]$LoginTestReportPath = "",
     [string]$InstallReportPath = "",
     [string]$HardwareReportPath = "",
     [string]$SessionPath = "",
@@ -362,6 +363,23 @@ if ([string]::IsNullOrWhiteSpace($resolvedInstallReportPath)) {
     }
 }
 
+$resolvedLoginTestReportPath = $LoginTestReportPath
+$loginTestReportSelection = if ([string]::IsNullOrWhiteSpace($resolvedLoginTestReportPath)) { "auto" } else { "explicit-path" }
+if ([string]::IsNullOrWhiteSpace($resolvedLoginTestReportPath)) {
+    $candidateSelection = Get-BestEvidenceFile `
+        -Path (Join-Path $RepoRoot "status\login-tests") `
+        -Filter "*.md" `
+        -RunLabel $RunLabel `
+        -Mode "login-test" `
+        -StatusLabels @("Overall Status", "Overall State", "Result") `
+        -PassStates @("pass", "passed", "complete", "completed", "success", "successful", "ready-for-release")
+
+    if ($candidateSelection.File) {
+        $resolvedLoginTestReportPath = $candidateSelection.File.FullName
+        $loginTestReportSelection = $candidateSelection.Selection
+    }
+}
+
 $resolvedHardwareReportPath = $HardwareReportPath
 $hardwareReportSelection = if ([string]::IsNullOrWhiteSpace($resolvedHardwareReportPath)) { "auto" } else { "explicit-path" }
 if ([string]::IsNullOrWhiteSpace($resolvedHardwareReportPath)) {
@@ -491,12 +509,16 @@ New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
 $checksumContent = "$sha256 *$isoName"
 Set-Content -Path $checksumPath -Value $checksumContent -Encoding ASCII
 
+$loginTestReportMetadata = Get-ReportMetadata -Path $resolvedLoginTestReportPath
 $installReportMetadata = Get-ReportMetadata -Path $resolvedInstallReportPath
 $hardwareReportMetadata = Get-ReportMetadata -Path $resolvedHardwareReportPath
 
 $releaseEvidenceLines = @(
     "- Build Manifest: $(Get-ResolvedPathOrDefault -Value $resolvedBuildManifestPath -DefaultValue "not-recorded-yet")",
     "- VM Report: $(Get-ResolvedPathOrDefault -Value $resolvedVmReportPath -DefaultValue "not-recorded-yet")",
+    "- Login-Test Report: $(Get-ResolvedPathOrDefault -Value $resolvedLoginTestReportPath -DefaultValue "not-recorded-yet")",
+    "- Login-Test Report Run Label: $(Get-ResolvedPathOrDefault -Value $loginTestReportMetadata.RunLabel -DefaultValue "not-recorded-yet")",
+    "- Login-Test Report Selection: $(Get-ResolvedPathOrDefault -Value $loginTestReportSelection -DefaultValue "not-recorded-yet")",
     "- Install Report: $(Get-ResolvedPathOrDefault -Value $resolvedInstallReportPath -DefaultValue "not-recorded-yet")",
     "- Install Report Run Label: $(Get-ResolvedPathOrDefault -Value $installReportMetadata.RunLabel -DefaultValue "not-recorded-yet")",
     "- Install Report Selection: $(Get-ResolvedPathOrDefault -Value $installReportSelection -DefaultValue "not-recorded-yet")",

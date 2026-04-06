@@ -67,6 +67,7 @@ function Test-SessionHasExpectedBuildManifest {
 
 $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
 $startCycleScript = Join-Path $PSScriptRoot "start-vm-test-cycle.ps1"
+$loginTestReportScript = Join-Path $PSScriptRoot "new-login-test-report.ps1"
 $installTestScript = Join-Path $PSScriptRoot "new-install-test-report.ps1"
 $hardwareTestScript = Join-Path $PSScriptRoot "new-hardware-test-report.ps1"
 $buildManifestImportScript = Join-Path $PSScriptRoot "import-build-manifest.ps1"
@@ -94,6 +95,10 @@ if (-not (Test-Path $handoffScript)) {
 
 if (-not (Test-Path $startCycleScript)) {
     throw "Missing smoke-test target: $startCycleScript"
+}
+
+if (-not (Test-Path $loginTestReportScript)) {
+    throw "Missing smoke-test target: $loginTestReportScript"
 }
 
 if (-not (Test-Path $installTestScript)) {
@@ -295,6 +300,18 @@ try {
     $releaseInstallReportContent = (Get-Content -Raw $releaseInstallReportPath) -replace '(?m)^- Overall Status: .+$', '- Overall Status: completed'
     Set-Content -Path $releaseInstallReportPath -Value $releaseInstallReportContent -Encoding UTF8
 
+    $releaseLoginTestReportPath = & $loginTestReportScript `
+        -VmType VirtualBox `
+        -Firmware UEFI `
+        -IsoPath $isoPath `
+        -RunLabel "ci-login-evidence" `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
+    Assert-Condition -Condition (Test-Path $releaseLoginTestReportPath) -Message "Release smoke login-test report was not created."
+    $releaseLoginTestReportContent = (Get-Content -Raw $releaseLoginTestReportPath) -replace '(?m)^- Overall Status: .+$', '- Overall Status: completed'
+    Set-Content -Path $releaseLoginTestReportPath -Value $releaseLoginTestReportContent -Encoding UTF8
+
     $releaseHardwareReportPath = & $hardwareTestScript `
         -DeviceLabel "smoke-device" `
         -Firmware UEFI `
@@ -314,6 +331,7 @@ try {
         -IsoPath $isoPath `
         -BuildManifestPath $buildPath `
         -VmReportPath $vmPath `
+        -LoginTestReportPath $releaseLoginTestReportPath `
         -InstallReportPath $releaseInstallReportPath `
         -HardwareReportPath $releaseHardwareReportPath `
         -SessionPath $sessionPath `
@@ -499,6 +517,7 @@ try {
         -IsoPath $isoPath `
         -BuildManifestPath $buildPath `
         -VmReportPath $vmPath `
+        -LoginTestReportPath $releaseLoginTestReportPath `
         -InstallReportPath $releaseInstallReportPath `
         -HardwareReportPath $releaseHardwareReportPath `
         -SessionPath $sessionPath `
@@ -558,6 +577,7 @@ try {
     $validationContent = Get-Content -Raw $validationReportPath
     Assert-Condition -Condition ($validationContent -match [regex]::Escape("- Result: passed")) -Message "Release validation report did not pass."
     Assert-Condition -Condition ($validationContent -match [regex]::Escape("- Run Label: $smokeRunLabel")) -Message "Release validation report does not contain the expected run label."
+    Assert-Condition -Condition ($validationContent -match [regex]::Escape("- Login-Test Report Status: completed")) -Message "Release validation report did not include the login-test evidence status."
     Assert-Condition -Condition ($validationContent -match [regex]::Escape("- Exact Evidence Required: True")) -Message "Release validation report did not record exact evidence gating."
 
     $contextReportPath = & $releaseContextScript `

@@ -7,6 +7,7 @@ param(
     [string]$IsoPath = "",
     [string]$BuildManifestPath = "",
     [string]$VmReportPath = "",
+    [string]$LoginTestReportPath = "",
     [string]$InstallReportPath = "",
     [string]$HardwareReportPath = "",
     [string]$SessionPath = "",
@@ -137,6 +138,7 @@ $prepareArgs = @{
     IsoPath = $IsoPath
     BuildManifestPath = $BuildManifestPath
     VmReportPath = $VmReportPath
+    LoginTestReportPath = $LoginTestReportPath
     InstallReportPath = $InstallReportPath
     HardwareReportPath = $HardwareReportPath
     SessionPath = $SessionPath
@@ -188,6 +190,9 @@ $summaryItems = [System.Collections.Generic.List[string]]::new()
 
 $runLabelValue = Get-MetadataValue -Content $manifestContent -Label "Run Label"
 $isoPathValue = Get-MetadataValue -Content $manifestContent -Label "ISO Path"
+$loginTestReportValue = Get-MetadataValue -Content $manifestContent -Label "Login-Test Report"
+$loginTestRunLabelValue = Get-MetadataValue -Content $manifestContent -Label "Login-Test Report Run Label"
+$loginTestSelectionValue = Get-MetadataValue -Content $manifestContent -Label "Login-Test Report Selection"
 $installReportValue = Get-MetadataValue -Content $manifestContent -Label "Install Report"
 $installRunLabelValue = Get-MetadataValue -Content $manifestContent -Label "Install Report Run Label"
 $installSelectionValue = Get-MetadataValue -Content $manifestContent -Label "Install Report Selection"
@@ -241,6 +246,9 @@ $reportContent = @"
 
 ## Evidence Links
 - ISO Path: $(Get-ResolvedPathOrDefault -Value $isoPathValue -DefaultValue "not-recorded-yet")
+- Login-Test Report: $(Get-ResolvedPathOrDefault -Value $loginTestReportValue -DefaultValue "not-recorded-yet")
+- Login-Test Report Run Label: $(Get-ResolvedPathOrDefault -Value $loginTestRunLabelValue -DefaultValue "not-recorded-yet")
+- Login-Test Report Selection: $(Get-ResolvedPathOrDefault -Value $loginTestSelectionValue -DefaultValue "not-recorded-yet")
 - Install Report: $(Get-ResolvedPathOrDefault -Value $installReportValue -DefaultValue "not-recorded-yet")
 - Install Report Run Label: $(Get-ResolvedPathOrDefault -Value $installRunLabelValue -DefaultValue "not-recorded-yet")
 - Install Report Selection: $(Get-ResolvedPathOrDefault -Value $installSelectionValue -DefaultValue "not-recorded-yet")

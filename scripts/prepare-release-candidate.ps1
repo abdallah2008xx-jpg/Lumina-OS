@@ -7,6 +7,7 @@ param(
     [string]$IsoPath = "",
     [string]$BuildManifestPath = "",
     [string]$VmReportPath = "",
+    [string]$LoginTestReportPath = "",
     [string]$InstallReportPath = "",
     [string]$HardwareReportPath = "",
     [string]$SessionPath = "",
@@ -109,6 +110,7 @@ $prepareArgs = @{
     RunLabel = $RunLabel
     BuildManifestPath = $BuildManifestPath
     VmReportPath = $VmReportPath
+    LoginTestReportPath = $LoginTestReportPath
     InstallReportPath = $InstallReportPath
     HardwareReportPath = $HardwareReportPath
     SessionPath = $SessionPath

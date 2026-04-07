@@ -86,10 +86,10 @@ function Set-OrAddMetadataValue {
 $runbookScript = Join-Path $PSScriptRoot "new-release-validation-runbook.ps1"
 $workboardScript = Join-Path $PSScriptRoot "new-release-validation-workboard.ps1"
 $syncExecutionStatusScript = Join-Path $PSScriptRoot "sync-release-execution-status.ps1"
-$syncEvidenceSessionStatusScript = Join-Path $PSScriptRoot "sync-release-evidence-session-status.ps1"
+$syncEvidenceSessionScript = Join-Path $PSScriptRoot "sync-release-evidence-session.ps1"
 $syncControlCenterScript = Join-Path $PSScriptRoot "sync-release-control-center.ps1"
 
-foreach ($requiredScript in @($runbookScript, $workboardScript, $syncExecutionStatusScript, $syncEvidenceSessionStatusScript, $syncControlCenterScript)) {
+foreach ($requiredScript in @($runbookScript, $workboardScript, $syncExecutionStatusScript, $syncEvidenceSessionScript, $syncControlCenterScript)) {
     if (-not (Test-Path $requiredScript)) {
         throw "Missing helper script: $requiredScript"
     }
@@ -111,8 +111,9 @@ else {
 
 $evidenceSessionPath = Get-RecordedValue -Content $executionContent -Label "Evidence Session" -DefaultValue ""
 if (-not [string]::IsNullOrWhiteSpace($evidenceSessionPath) -and $evidenceSessionPath -ne "not-recorded-yet" -and (Test-Path $evidenceSessionPath)) {
-    $null = & $syncEvidenceSessionStatusScript `
+    $null = & $syncEvidenceSessionScript `
         -EvidenceSessionPath $evidenceSessionPath `
+        -ReleaseVersion $releaseVersionValue `
         -RepoRoot $RepoRoot `
         -OutputPathOnly
 }

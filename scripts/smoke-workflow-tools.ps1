@@ -73,6 +73,7 @@ $hardwareTestScript = Join-Path $PSScriptRoot "new-hardware-test-report.ps1"
 $releaseEvidencePackScript = Join-Path $PSScriptRoot "new-release-evidence-pack.ps1"
 $releaseEvidenceRunbookScript = Join-Path $PSScriptRoot "new-release-evidence-runbook.ps1"
 $releaseEvidenceSessionScript = Join-Path $PSScriptRoot "start-release-evidence-session.ps1"
+$syncReleaseEvidenceSessionScript = Join-Path $PSScriptRoot "sync-release-evidence-session.ps1"
 $releaseValidationPassScript = Join-Path $PSScriptRoot "start-release-validation-pass.ps1"
 $syncReleaseValidationPassScript = Join-Path $PSScriptRoot "sync-release-validation-pass.ps1"
 $releaseValidationRunbookScript = Join-Path $PSScriptRoot "new-release-validation-runbook.ps1"
@@ -133,6 +134,10 @@ if (-not (Test-Path $releaseEvidenceRunbookScript)) {
 
 if (-not (Test-Path $releaseEvidenceSessionScript)) {
     throw "Missing smoke-test target: $releaseEvidenceSessionScript"
+}
+
+if (-not (Test-Path $syncReleaseEvidenceSessionScript)) {
+    throw "Missing smoke-test target: $syncReleaseEvidenceSessionScript"
 }
 
 if (-not (Test-Path $releaseValidationPassScript)) {
@@ -397,12 +402,14 @@ try {
     $releaseEvidenceSessionContent = Get-Content -Raw $releaseEvidenceSessionPath
     Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Evidence Pack: $releaseEvidencePackPath")) -Message "Release evidence session did not record the evidence pack path."
     Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Runbook Path: $releaseEvidenceRunbookPath")) -Message "Release evidence session did not record the runbook path."
-    Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Session State: ready-to-collect-evidence")) -Message "Release evidence session did not record the expected session state."
+    Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Session State: evidence-in-progress")) -Message "Release evidence session did not record the expected session state."
+    Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Evidence Pack State: incomplete")) -Message "Release evidence session did not record the expected evidence-pack state."
+    Assert-Condition -Condition ($releaseEvidenceSessionContent -match "(?m)^- Synced At: (?!not-recorded-yet).+$") -Message "Release evidence session did not record an initial sync timestamp."
     Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("CURRENT-RELEASE-CONTROL-CENTER.md")) -Message "Release evidence session did not point to the release control center."
     $currentEvidenceSessionPath = Join-Path $tempRoot "status\\evidence-packs\\CURRENT-EVIDENCE-SESSION.md"
     Assert-Condition -Condition (Test-Path $currentEvidenceSessionPath) -Message "Current evidence session summary was not created."
     $currentEvidenceSessionContent = Get-Content -Raw $currentEvidenceSessionPath
-    Assert-Condition -Condition ($currentEvidenceSessionContent -match [regex]::Escape("- Session State: ready-to-collect-evidence")) -Message "Current evidence session summary did not record the expected session state."
+    Assert-Condition -Condition ($currentEvidenceSessionContent -match [regex]::Escape("- Session State: evidence-in-progress")) -Message "Current evidence session summary did not record the expected session state."
     Assert-Condition -Condition ($currentEvidenceSessionContent -match [regex]::Escape("- Evidence Session: $releaseEvidenceSessionPath")) -Message "Current evidence session summary did not record the latest session path."
 
     $releaseExecutionPath = & $releaseValidationPassScript `
@@ -477,6 +484,20 @@ try {
     Assert-Condition -Condition ($currentEvidencePackContent -match [regex]::Escape("- Evidence Pack State: ready-for-rc-gating")) -Message "Current evidence pack summary did not sync to ready-for-rc-gating."
     Assert-Condition -Condition ($currentEvidencePackContent -match [regex]::Escape("- Evidence Pack: $releaseEvidencePackPath")) -Message "Current evidence pack summary did not record the latest pack path."
     Assert-Condition -Condition ($currentEvidencePackContent -match [regex]::Escape("- Runbook Path: $releaseEvidenceRunbookPath")) -Message "Current evidence pack summary did not record the runbook path."
+    $syncedReleaseEvidenceSessionPath = & $syncReleaseEvidenceSessionScript `
+        -EvidenceSessionPath $releaseEvidenceSessionPath `
+        -ReleaseVersion "0.1.0-ci" `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+    Assert-Condition -Condition ((Resolve-Path $syncedReleaseEvidenceSessionPath).Path -eq (Resolve-Path $releaseEvidenceSessionPath).Path) -Message "Release evidence session sync did not return the original session path."
+    $releaseEvidenceSessionContent = Get-Content -Raw $releaseEvidenceSessionPath
+    Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Session State: ready-for-rc-gating")) -Message "Release evidence session did not advance to ready-for-rc-gating."
+    Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Login-Test Status: completed")) -Message "Release evidence session did not record completed login-test status."
+    Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Install Status: completed")) -Message "Release evidence session did not record completed install status."
+    Assert-Condition -Condition ($releaseEvidenceSessionContent -match [regex]::Escape("- Hardware Status: completed")) -Message "Release evidence session did not record completed hardware status."
+    $currentEvidenceSessionContent = Get-Content -Raw $currentEvidenceSessionPath
+    Assert-Condition -Condition ($currentEvidenceSessionContent -match [regex]::Escape("- Session State: ready-for-rc-gating")) -Message "Current evidence session summary did not advance to ready-for-rc-gating."
+    Assert-Condition -Condition ($currentEvidenceSessionContent -match [regex]::Escape("- Evidence Pack State: ready-for-rc-gating")) -Message "Current evidence session summary did not record the ready-for-rc-gating evidence-pack state."
     $currentReleaseControlCenterPath = Join-Path $tempRoot "status\\releases\\CURRENT-RELEASE-CONTROL-CENTER.md"
     Assert-Condition -Condition (Test-Path $currentReleaseControlCenterPath) -Message "Release control center was not created."
     $currentReleaseControlCenterContent = Get-Content -Raw $currentReleaseControlCenterPath

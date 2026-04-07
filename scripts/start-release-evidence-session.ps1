@@ -72,10 +72,9 @@ function Get-SafeFileSegment {
 $newPackScript = Join-Path $PSScriptRoot "new-release-evidence-pack.ps1"
 $runbookScript = Join-Path $PSScriptRoot "new-release-evidence-runbook.ps1"
 $syncPackScript = Join-Path $PSScriptRoot "sync-release-evidence-pack.ps1"
-$syncSessionStatusScript = Join-Path $PSScriptRoot "sync-release-evidence-session-status.ps1"
-$syncControlCenterScript = Join-Path $PSScriptRoot "sync-release-control-center.ps1"
+$syncSessionScript = Join-Path $PSScriptRoot "sync-release-evidence-session.ps1"
 
-foreach ($requiredScript in @($newPackScript, $runbookScript, $syncPackScript, $syncSessionStatusScript, $syncControlCenterScript)) {
+foreach ($requiredScript in @($newPackScript, $runbookScript, $syncPackScript, $syncSessionScript)) {
     if (-not (Test-Path $requiredScript)) {
         throw "Missing helper script: $requiredScript"
     }
@@ -126,11 +125,6 @@ if ($runbookPath -eq "not-recorded-yet" -or -not (Test-Path $runbookPath)) {
         -OutputPathOnly
 }
 
-$null = & $syncControlCenterScript -RepoRoot $RepoRoot -OutputPathOnly
-
-$currentEvidencePackSummaryPath = Join-Path $RepoRoot "status\evidence-packs\CURRENT-EVIDENCE-PACK.md"
-$currentReleaseControlCenterPath = Join-Path $RepoRoot "status\releases\CURRENT-RELEASE-CONTROL-CENTER.md"
-
 $dateStamp = Get-Date -Format "yyyy-MM-dd"
 $safeRunLabel = Get-SafeFileSegment $runLabelValue
 $sessionDir = Join-Path $RepoRoot ("status\evidence-packs\" + $dateStamp)
@@ -142,25 +136,33 @@ $content = @"
 # Lumina-OS Release Evidence Session
 
 - Created At: $(Get-Date -Format s)
+- Synced At: not-recorded-yet
 - Session State: ready-to-collect-evidence
 - Run Label: $runLabelValue
 - Release Version: $releaseVersionValue
 - Mode: $modeValue
 - Evidence Pack: $resolvedEvidencePackPath
+- Evidence Pack State: not-recorded-yet
 - Runbook Path: $runbookPath
 - Login-Test Report: $loginTestReportPath
+- Login-Test Status: not-recorded-yet
+- Login-Test Run Label: not-recorded-yet
 - Install Report: $installReportPath
+- Install Status: not-recorded-yet
+- Install Run Label: not-recorded-yet
 - Hardware Report: $hardwareReportPath
-- Current Evidence Pack Summary: $(if (Test-Path $currentEvidencePackSummaryPath) { $currentEvidencePackSummaryPath } else { "not-recorded-yet" })
-- Current Release Control Center: $(if (Test-Path $currentReleaseControlCenterPath) { $currentReleaseControlCenterPath } else { "not-recorded-yet" })
+- Hardware Status: not-recorded-yet
+- Hardware Run Label: not-recorded-yet
+- Current Evidence Pack Summary: not-recorded-yet
+- Current Release Control Center: not-recorded-yet
 
 ## Practical Order
 1. Update the login-test report at: $loginTestReportPath
 2. Update the install report at: $installReportPath
 3. Update the hardware report at: $hardwareReportPath
-4. Sync the shared evidence pack with:
-   .\scripts\sync-release-evidence-pack.ps1 -EvidencePackPath "$resolvedEvidencePackPath" -ReleaseVersion "$releaseVersionValue"
-5. Review status/evidence-packs/CURRENT-EVIDENCE-PACK.md.
+4. Refresh this evidence session after report updates with:
+   .\scripts\sync-release-evidence-session.ps1 -EvidenceSessionPath "$sessionPath" -ReleaseVersion "$releaseVersionValue"
+5. Review status/evidence-packs/CURRENT-EVIDENCE-SESSION.md and status/evidence-packs/CURRENT-EVIDENCE-PACK.md.
 6. Run the evidence and readiness audits from the generated runbook:
    $runbookPath
 
@@ -171,8 +173,9 @@ $content = @"
 
 Set-Content -Path $sessionPath -Value $content -Encoding UTF8
 
-$null = & $syncSessionStatusScript `
+$null = & $syncSessionScript `
     -EvidenceSessionPath $sessionPath `
+    -ReleaseVersion $releaseVersionValue `
     -RepoRoot $RepoRoot `
     -OutputPathOnly
 

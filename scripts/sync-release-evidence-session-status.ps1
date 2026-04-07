@@ -99,15 +99,20 @@ $resolvedEvidenceSessionPath = (Resolve-Path $EvidenceSessionPath).Path
 $sessionContent = Get-Content -Raw $resolvedEvidenceSessionPath
 
 $createdAt = Get-RecordedValue -Content $sessionContent -Label "Created At"
+$syncedAt = Get-RecordedValue -Content $sessionContent -Label "Synced At"
 $sessionState = Get-RecordedValue -Content $sessionContent -Label "Session State"
 $runLabel = Get-RecordedValue -Content $sessionContent -Label "Run Label"
 $releaseVersion = Get-RecordedValue -Content $sessionContent -Label "Release Version"
 $mode = Get-RecordedValue -Content $sessionContent -Label "Mode"
 $evidencePackPath = Get-RecordedValue -Content $sessionContent -Label "Evidence Pack"
+$evidencePackState = Get-RecordedValue -Content $sessionContent -Label "Evidence Pack State"
 $runbookPath = Get-RecordedValue -Content $sessionContent -Label "Runbook Path"
 $loginTestReportPath = Get-RecordedValue -Content $sessionContent -Label "Login-Test Report"
+$loginTestStatus = Get-RecordedValue -Content $sessionContent -Label "Login-Test Status"
 $installReportPath = Get-RecordedValue -Content $sessionContent -Label "Install Report"
+$installStatus = Get-RecordedValue -Content $sessionContent -Label "Install Status"
 $hardwareReportPath = Get-RecordedValue -Content $sessionContent -Label "Hardware Report"
+$hardwareStatus = Get-RecordedValue -Content $sessionContent -Label "Hardware Status"
 $currentEvidencePackSummaryPath = Get-RecordedValue -Content $sessionContent -Label "Current Evidence Pack Summary"
 $currentReleaseControlCenterPath = Get-RecordedValue -Content $sessionContent -Label "Current Release Control Center"
 
@@ -115,12 +120,21 @@ $summaryItems = [System.Collections.Generic.List[string]]::new()
 $summaryItems.Add("Run Label: $runLabel") | Out-Null
 $summaryItems.Add("Mode: $mode") | Out-Null
 $summaryItems.Add("Session State: $sessionState") | Out-Null
+$summaryItems.Add("Evidence Pack State: $evidencePackState") | Out-Null
+$summaryItems.Add("Synced At: $syncedAt") | Out-Null
 
 $nextItems = [System.Collections.Generic.List[string]]::new()
 switch ($sessionState) {
     "ready-to-collect-evidence" {
         $nextItems.Add("Update the login-test, install, and hardware reports linked from this session.") | Out-Null
-        $nextItems.Add("Rerun sync-release-evidence-pack.ps1 after each real evidence update.") | Out-Null
+        $nextItems.Add("Rerun sync-release-evidence-session.ps1 after each real evidence update.") | Out-Null
+    }
+    "evidence-in-progress" {
+        $nextItems.Add("Keep updating the linked reports until all three move to completed or pass states.") | Out-Null
+        $nextItems.Add("Rerun sync-release-evidence-session.ps1 after each report update.") | Out-Null
+    }
+    "ready-for-rc-gating" {
+        $nextItems.Add("Use the linked runbook to start evidence audit and release-candidate prep.") | Out-Null
     }
     default {
         $nextItems.Add("Review the linked reports and refresh the evidence pack before RC gating.") | Out-Null
@@ -151,15 +165,20 @@ $summaryContent = @"
 - Release Version: $releaseVersion
 - Mode: $mode
 - Created At: $createdAt
+- Synced At: $syncedAt
 - Evidence Pack: $evidencePackPath
+- Evidence Pack State: $evidencePackState
 - Runbook Path: $runbookPath
 - Current Evidence Pack Summary: $currentEvidencePackSummaryPath
 - Current Release Control Center: $currentReleaseControlCenterPath
 
 ## Linked Reports
 - Login-Test Report: $loginTestReportPath
+- Login-Test Status: $loginTestStatus
 - Install Report: $installReportPath
+- Install Status: $installStatus
 - Hardware Report: $hardwareReportPath
+- Hardware Status: $hardwareStatus
 
 ## Summary
 $(Format-Items -Items $summaryItems)
@@ -179,7 +198,9 @@ $currentContent = @"
 - Release Version: $releaseVersion
 - Mode: $mode
 - Evidence Pack: $(Get-ResolvedValue -Value $evidencePackPath)
+- Evidence Pack State: $(Get-ResolvedValue -Value $evidencePackState)
 - Runbook Path: $(Get-ResolvedValue -Value $runbookPath)
+- Synced At: $(Get-ResolvedValue -Value $syncedAt)
 - Current Evidence Pack Summary: $(Get-ResolvedValue -Value $currentEvidencePackSummaryPath)
 - Current Release Control Center: $(Get-ResolvedValue -Value $currentReleaseControlCenterPath)
 

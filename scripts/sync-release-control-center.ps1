@@ -135,6 +135,9 @@ $nextEvidenceTarget = Get-MetadataValue -Content $evidenceSessionContent -Label 
 $nextEvidenceReportPath = Get-MetadataValue -Content $evidenceSessionContent -Label "Next Evidence Report"
 $nextEvidenceTester = Get-MetadataValue -Content $evidenceSessionContent -Label "Next Evidence Tester"
 $nextEvidenceProgress = Get-MetadataValue -Content $evidenceSessionContent -Label "Next Evidence Progress"
+$evidenceActionPackPath = Get-MetadataValue -Content $evidenceSessionContent -Label "Action Pack Path"
+$evidenceNextActionPath = Get-MetadataValue -Content $evidenceSessionContent -Label "Next Action Path"
+$evidenceNextActionLauncherPath = Get-MetadataValue -Content $evidenceSessionContent -Label "Next Action Launcher"
 $evidenceAuditState = Get-MetadataValue -Content $evidenceAuditContent -Label "Evidence Audit State"
 $readinessState = Get-MetadataValue -Content $readinessContent -Label "Overall Readiness"
 $candidateState = Get-MetadataValue -Content $candidateContent -Label "Candidate State"
@@ -157,6 +160,7 @@ $summaryItems.Add("Evidence Ready Count: $(Get-ResolvedValue -Value $evidenceRea
 $summaryItems.Add("Evidence Checklist Progress: $(Get-ResolvedValue -Value $evidenceChecklistProgress)") | Out-Null
 $summaryItems.Add("Next Evidence Target: $(Get-ResolvedValue -Value $nextEvidenceTarget)") | Out-Null
 $summaryItems.Add("Next Evidence Progress: $(Get-ResolvedValue -Value $nextEvidenceProgress)") | Out-Null
+$summaryItems.Add("Evidence Next Action: $(Get-ResolvedValue -Value $evidenceNextActionPath)") | Out-Null
 $summaryItems.Add("Evidence Audit State: $(Get-ResolvedValue -Value $evidenceAuditState)") | Out-Null
 $summaryItems.Add("Release Readiness: $(Get-ResolvedValue -Value $readinessState)") | Out-Null
 $summaryItems.Add("Release Candidate State: $(Get-ResolvedValue -Value $candidateState)") | Out-Null
@@ -195,6 +199,12 @@ switch ($controlState) {
         if (-not [string]::IsNullOrWhiteSpace($nextEvidenceTester) -and $nextEvidenceTester -ne "not-recorded-yet") {
             $nextItems.Add("Next Evidence Tester: $nextEvidenceTester") | Out-Null
         }
+        if (-not [string]::IsNullOrWhiteSpace($evidenceNextActionPath) -and $evidenceNextActionPath -ne "not-recorded-yet") {
+            $nextItems.Add("Evidence Next Action: $evidenceNextActionPath") | Out-Null
+        }
+        if (-not [string]::IsNullOrWhiteSpace($evidenceNextActionLauncherPath) -and $evidenceNextActionLauncherPath -ne "not-recorded-yet") {
+            $nextItems.Add("Evidence Next Action Launcher: $evidenceNextActionLauncherPath") | Out-Null
+        }
     }
 }
 
@@ -226,6 +236,9 @@ $summaryContent = @"
 - Next Evidence Report: $(Get-ResolvedValue -Value $nextEvidenceReportPath)
 - Next Evidence Tester: $(Get-ResolvedValue -Value $nextEvidenceTester)
 - Next Evidence Progress: $(Get-ResolvedValue -Value $nextEvidenceProgress)
+- Evidence Action Pack: $(Get-ResolvedValue -Value $evidenceActionPackPath)
+- Evidence Next Action: $(Get-ResolvedValue -Value $evidenceNextActionPath)
+- Evidence Next Action Launcher: $(Get-ResolvedValue -Value $evidenceNextActionLauncherPath)
 - Evidence Ready Count: $(Get-ResolvedValue -Value $evidenceReadyCount)
 - Evidence Checklist Progress: $(Get-ResolvedValue -Value $evidenceChecklistProgress)
 - Current Evidence Pack: $(if (Test-Path $currentEvidencePackPath) { $currentEvidencePackPath } else { "not-recorded-yet" })
@@ -255,6 +268,9 @@ $currentContent = @"
 - Next Evidence Report: $(Get-ResolvedValue -Value $nextEvidenceReportPath)
 - Next Evidence Tester: $(Get-ResolvedValue -Value $nextEvidenceTester)
 - Next Evidence Progress: $(Get-ResolvedValue -Value $nextEvidenceProgress)
+- Evidence Action Pack: $(Get-ResolvedValue -Value $evidenceActionPackPath)
+- Evidence Next Action: $(Get-ResolvedValue -Value $evidenceNextActionPath)
+- Evidence Next Action Launcher: $(Get-ResolvedValue -Value $evidenceNextActionLauncherPath)
 - Evidence Ready Count: $(Get-ResolvedValue -Value $evidenceReadyCount)
 - Evidence Checklist Progress: $(Get-ResolvedValue -Value $evidenceChecklistProgress)
 - Current Evidence Pack: $(if (Test-Path $currentEvidencePackPath) { $currentEvidencePackPath } else { "not-recorded-yet" })

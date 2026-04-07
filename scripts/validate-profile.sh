@@ -265,6 +265,7 @@ required_paths=(
     "${repo_root}/scripts/new-release-evidence-pack.ps1"
     "${repo_root}/scripts/audit-release-evidence-target.ps1"
     "${repo_root}/scripts/new-release-evidence-runbook.ps1"
+    "${repo_root}/scripts/new-release-evidence-action-pack.ps1"
     "${repo_root}/scripts/start-release-evidence-session.ps1"
     "${repo_root}/scripts/open-next-release-evidence.ps1"
     "${repo_root}/scripts/open-next-release-action.ps1"

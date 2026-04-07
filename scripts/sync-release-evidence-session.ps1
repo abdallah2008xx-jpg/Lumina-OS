@@ -69,8 +69,10 @@ function Test-PassState {
 $syncPackScript = Join-Path $PSScriptRoot "sync-release-evidence-pack.ps1"
 $syncSessionStatusScript = Join-Path $PSScriptRoot "sync-release-evidence-session-status.ps1"
 $syncControlCenterScript = Join-Path $PSScriptRoot "sync-release-control-center.ps1"
+$evidenceActionPackScript = Join-Path $PSScriptRoot "new-release-evidence-action-pack.ps1"
+$openNextEvidenceScript = Join-Path $PSScriptRoot "open-next-release-evidence.ps1"
 
-foreach ($requiredScript in @($syncPackScript, $syncSessionStatusScript, $syncControlCenterScript)) {
+foreach ($requiredScript in @($syncPackScript, $syncSessionStatusScript, $syncControlCenterScript, $evidenceActionPackScript, $openNextEvidenceScript)) {
     if (-not (Test-Path $requiredScript)) {
         throw "Missing helper script: $requiredScript"
     }
@@ -176,6 +178,25 @@ elseif ($evidencePackState -eq "ready-for-rc-gating") {
     $nextEvidenceProgress = $evidenceChecklistProgress
 }
 
+$actionPackPath = & $evidenceActionPackScript `
+    -EvidenceSessionPath $resolvedEvidenceSessionPath `
+    -ReleaseVersion $releaseVersionValue `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
+
+$actionPackDir = Split-Path -Parent $actionPackPath
+$nextActionLauncherPath = if (Test-Path (Join-Path $actionPackDir "00-run-next-step.ps1")) {
+    (Resolve-Path (Join-Path $actionPackDir "00-run-next-step.ps1")).Path
+}
+else {
+    "not-recorded-yet"
+}
+
+$nextActionPath = & $openNextEvidenceScript `
+    -EvidenceSessionPath $resolvedEvidenceSessionPath `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
+
 $content = @"
 # Lumina-OS Release Evidence Session
 
@@ -190,6 +211,7 @@ $content = @"
 - Evidence Ready Count: $evidenceReadyCount
 - Evidence Checklist Progress: $evidenceChecklistProgress
 - Runbook Path: $runbookPath
+- Action Pack Path: $actionPackPath
 - Login-Test Report: $loginTestReportPath
 - Login-Test Status: $loginTestStatus
 - Login-Test Run Label: $loginTestRunLabel
@@ -215,6 +237,8 @@ $content = @"
 - Next Evidence Report: $nextEvidenceReportPath
 - Next Evidence Tester: $nextEvidenceTester
 - Next Evidence Progress: $nextEvidenceProgress
+- Next Action Path: $nextActionPath
+- Next Action Launcher: $nextActionLauncherPath
 - Current Evidence Pack Summary: $(if (Test-Path $currentEvidencePackSummaryPath) { $currentEvidencePackSummaryPath } else { "not-recorded-yet" })
 - Current Release Control Center: $(if (Test-Path $currentReleaseControlCenterPath) { $currentReleaseControlCenterPath } else { "not-recorded-yet" })
 
@@ -225,7 +249,9 @@ $content = @"
 4. Refresh this evidence session after report updates with:
    .\scripts\sync-release-evidence-session.ps1 -EvidenceSessionPath "$resolvedEvidenceSessionPath" -ReleaseVersion "$releaseVersionValue"
 5. Review status/evidence-packs/CURRENT-EVIDENCE-SESSION.md and status/evidence-packs/CURRENT-EVIDENCE-PACK.md.
-6. Run the evidence and readiness audits from the generated runbook:
+6. Use the action-pack launcher for the current next step:
+   $nextActionLauncherPath
+7. Run the evidence and readiness audits from the generated runbook:
    $runbookPath
 
 ## Goal

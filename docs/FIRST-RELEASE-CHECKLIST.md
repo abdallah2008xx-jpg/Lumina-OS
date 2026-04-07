@@ -73,8 +73,9 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Optional but recommended: after evidence updates, run `.\scripts\sync-release-evidence-session.ps1 -EvidenceSessionPath "<path-to-evidence-session>"` to refresh the evidence session, report statuses, and current evidence-session pointer together
 - [ ] Optional but recommended: after evidence updates, run `.\scripts\sync-release-validation-pass.ps1 -ExecutionPath "<path-to-release-validation-pass>"` to refresh the execution runbook, workboard, and current execution pointer together
 - [ ] Optional but recommended: review `status/evidence-packs/CURRENT-EVIDENCE-SESSION.md` after starting the shared evidence session
-- [ ] Optional but recommended: use `CURRENT-EVIDENCE-SESSION.md` to see the next missing evidence target, its direct report path, and its current checklist progress
+- [ ] Optional but recommended: use `CURRENT-EVIDENCE-SESSION.md` to see the next missing evidence target, its direct report path, its current checklist progress, and the current evidence-session action pack
 - [ ] Optional but recommended: use `.\scripts\open-next-release-evidence.ps1` if you want to jump straight to that next missing evidence file
+- [ ] Optional but recommended: use the generated `release-evidence-actions-*/README.md` if you want one small helper pack for open/sync/control-center while collecting real evidence
 - [ ] Optional but recommended: use `.\scripts\open-next-release-action.ps1` if you want one launcher that resolves the next practical release-validation step automatically
 - [ ] Optional but recommended: create one shared evidence pack with `.\scripts\new-release-evidence-pack.ps1 -Mode stable -RunLabel "<run-label>"`
 - [ ] Optional but recommended: review the generated `release-evidence-runbook-*.md` from the shared evidence pack before RC prep
@@ -92,7 +93,7 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Run `.\scripts\audit-release-readiness.ps1 -Version "<version>" -Mode stable -RunLabel "<run-label>"` after RC prep to confirm the final go/no-go state, or pass the shared pack with `-EvidencePackPath`
 - [ ] Review `status/releases/CURRENT-RELEASE-READINESS.md` after the readiness audit
 - [ ] Review `status/releases/CURRENT-RELEASE-CONTROL-CENTER.md` before publish
-- [ ] Review `status/SHAREABLE-UPDATE.md` if you want the next missing evidence target, its progress, and the current next action surfaced in one brief summary
+- [ ] Review `status/SHAREABLE-UPDATE.md` if you want the next missing evidence target, its progress, the evidence-session action pack, and the current next action surfaced in one brief summary
 - [ ] If the ISO was built in a separate Arch clone or VM, a local Windows-accessible copy has been imported with `.\scripts\import-iso-artifact.ps1`
 - [ ] If the build manifest and ISO were transferred together, the handoff folder has been imported with `.\scripts\import-build-handoff.ps1`
 - [ ] ISO checksum is generated

@@ -125,6 +125,9 @@ $nextEvidenceTarget = Get-RecordedValue -Content $sessionContent -Label "Next Ev
 $nextEvidenceReportPath = Get-RecordedValue -Content $sessionContent -Label "Next Evidence Report"
 $nextEvidenceTester = Get-RecordedValue -Content $sessionContent -Label "Next Evidence Tester"
 $nextEvidenceProgress = Get-RecordedValue -Content $sessionContent -Label "Next Evidence Progress"
+$nextActionPath = Get-RecordedValue -Content $sessionContent -Label "Next Action Path"
+$nextActionLauncherPath = Get-RecordedValue -Content $sessionContent -Label "Next Action Launcher"
+$actionPackPath = Get-RecordedValue -Content $sessionContent -Label "Action Pack Path"
 $currentEvidencePackSummaryPath = Get-RecordedValue -Content $sessionContent -Label "Current Evidence Pack Summary"
 $currentReleaseControlCenterPath = Get-RecordedValue -Content $sessionContent -Label "Current Release Control Center"
 
@@ -137,6 +140,7 @@ $summaryItems.Add("Evidence Ready Count: $evidenceReadyCount") | Out-Null
 $summaryItems.Add("Evidence Checklist Progress: $evidenceChecklistProgress") | Out-Null
 $summaryItems.Add("Next Evidence Target: $nextEvidenceTarget") | Out-Null
 $summaryItems.Add("Next Evidence Progress: $nextEvidenceProgress") | Out-Null
+$summaryItems.Add("Next Action Path: $nextActionPath") | Out-Null
 $summaryItems.Add("Synced At: $syncedAt") | Out-Null
 
 $nextItems = [System.Collections.Generic.List[string]]::new()
@@ -147,6 +151,8 @@ switch ($sessionState) {
         $nextItems.Add("Next Evidence Report: $nextEvidenceReportPath") | Out-Null
         $nextItems.Add("Next Evidence Progress: $nextEvidenceProgress") | Out-Null
         $nextItems.Add("Next Evidence Tester: $nextEvidenceTester") | Out-Null
+        $nextItems.Add("Next Action Path: $nextActionPath") | Out-Null
+        $nextItems.Add("Next Action Launcher: $nextActionLauncherPath") | Out-Null
         $nextItems.Add("Rerun sync-release-evidence-session.ps1 after each real evidence update.") | Out-Null
     }
     "evidence-in-progress" {
@@ -155,13 +161,18 @@ switch ($sessionState) {
         $nextItems.Add("Next Evidence Report: $nextEvidenceReportPath") | Out-Null
         $nextItems.Add("Next Evidence Progress: $nextEvidenceProgress") | Out-Null
         $nextItems.Add("Next Evidence Tester: $nextEvidenceTester") | Out-Null
+        $nextItems.Add("Next Action Path: $nextActionPath") | Out-Null
+        $nextItems.Add("Next Action Launcher: $nextActionLauncherPath") | Out-Null
         $nextItems.Add("Rerun sync-release-evidence-session.ps1 after each report update.") | Out-Null
     }
     "ready-for-rc-gating" {
         $nextItems.Add("Use the linked runbook to start evidence audit and release-candidate prep.") | Out-Null
+        $nextItems.Add("Next Action Path: $nextActionPath") | Out-Null
+        $nextItems.Add("Next Action Launcher: $nextActionLauncherPath") | Out-Null
     }
     default {
         $nextItems.Add("Review the linked reports and refresh the evidence pack before RC gating.") | Out-Null
+        $nextItems.Add("Next Action Path: $nextActionPath") | Out-Null
     }
 }
 
@@ -195,10 +206,13 @@ $summaryContent = @"
 - Evidence Ready Count: $evidenceReadyCount
 - Evidence Checklist Progress: $evidenceChecklistProgress
 - Runbook Path: $runbookPath
+- Action Pack Path: $actionPackPath
 - Next Evidence Target: $nextEvidenceTarget
 - Next Evidence Report: $nextEvidenceReportPath
 - Next Evidence Tester: $nextEvidenceTester
 - Next Evidence Progress: $nextEvidenceProgress
+- Next Action Path: $nextActionPath
+- Next Action Launcher: $nextActionLauncherPath
 - Current Evidence Pack Summary: $currentEvidencePackSummaryPath
 - Current Release Control Center: $currentReleaseControlCenterPath
 
@@ -238,10 +252,13 @@ $currentContent = @"
 - Evidence Ready Count: $(Get-ResolvedValue -Value $evidenceReadyCount)
 - Evidence Checklist Progress: $(Get-ResolvedValue -Value $evidenceChecklistProgress)
 - Runbook Path: $(Get-ResolvedValue -Value $runbookPath)
+- Action Pack Path: $(Get-ResolvedValue -Value $actionPackPath)
 - Next Evidence Target: $(Get-ResolvedValue -Value $nextEvidenceTarget)
 - Next Evidence Report: $(Get-ResolvedValue -Value $nextEvidenceReportPath)
 - Next Evidence Tester: $(Get-ResolvedValue -Value $nextEvidenceTester)
 - Next Evidence Progress: $(Get-ResolvedValue -Value $nextEvidenceProgress)
+- Next Action Path: $(Get-ResolvedValue -Value $nextActionPath)
+- Next Action Launcher: $(Get-ResolvedValue -Value $nextActionLauncherPath)
 - Synced At: $(Get-ResolvedValue -Value $syncedAt)
 - Current Evidence Pack Summary: $(Get-ResolvedValue -Value $currentEvidencePackSummaryPath)
 - Current Release Control Center: $(Get-ResolvedValue -Value $currentReleaseControlCenterPath)

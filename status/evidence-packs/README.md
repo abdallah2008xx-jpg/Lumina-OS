@@ -10,15 +10,17 @@ Keep one manifest here when you want to prepare `login-test`, `install`, and `ha
 5. Or refresh the pack only with `scripts/sync-release-evidence-pack.ps1 -EvidencePackPath "<path-to-pack>"`
 6. If you want to jump straight to the next missing evidence file, run `scripts/open-next-release-evidence.ps1`
    - pass `-Open` to open the resolved file immediately
-7. Pass the same pack into:
+7. Review the generated `release-evidence-actions-*/README.md` when you want a small helper pack for open/sync/control-center during the real evidence pass
+   - it includes `00-run-next-step.ps1` for the next missing evidence target
+8. Pass the same pack into:
    - `scripts/audit-release-evidence.ps1 -EvidencePackPath "<path-to-pack>"`
    - `scripts/audit-release-readiness.ps1 -EvidencePackPath "<path-to-pack>"`
    - `scripts/prepare-release-candidate.ps1 -EvidencePackPath "<path-to-pack>"`
-8. Review `CURRENT-EVIDENCE-SESSION.md` when you want the latest practical evidence-session summary in one place
-   - it now shows the next missing evidence target, its direct report path, its tester, and its checklist progress
-9. Review `CURRENT-EVIDENCE-PACK.md` when you want the latest synced pack summary in one place
+9. Review `CURRENT-EVIDENCE-SESSION.md` when you want the latest practical evidence-session summary in one place
+   - it now shows the next missing evidence target, its direct report path, its tester, its checklist progress, and the current evidence-session action pack
+10. Review `CURRENT-EVIDENCE-PACK.md` when you want the latest synced pack summary in one place
    - it now shows `Evidence Ready Count` and `Evidence Checklist Progress` across login-test, install, and hardware
-10. Review `../releases/CURRENT-RELEASE-CONTROL-CENTER.md` when you want the top-level release state after evidence, readiness, and candidate syncs
+11. Review `../releases/CURRENT-RELEASE-CONTROL-CENTER.md` when you want the top-level release state after evidence, readiness, and candidate syncs
 
 ## Intended Contents
 - one manifest per shared evidence set

@@ -254,6 +254,7 @@ $requiredPaths = @(
     "scripts\new-release-evidence-pack.ps1",
     "scripts\audit-release-evidence-target.ps1",
     "scripts\new-release-evidence-runbook.ps1",
+    "scripts\new-release-evidence-action-pack.ps1",
     "scripts\start-release-evidence-session.ps1",
     "scripts\open-next-release-evidence.ps1",
     "scripts\open-next-release-action.ps1",

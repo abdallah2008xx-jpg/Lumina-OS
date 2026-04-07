@@ -324,6 +324,24 @@ $nextEvidenceProgress = if (Test-Path $currentEvidenceSessionPath) {
 else {
     ""
 }
+$evidenceActionPackPath = if (Test-Path $currentEvidenceSessionPath) {
+    Get-MetadataValue -Content (Get-Content -Raw $currentEvidenceSessionPath) -Label "Action Pack Path"
+}
+else {
+    ""
+}
+$evidenceNextActionPath = if (Test-Path $currentEvidenceSessionPath) {
+    Get-MetadataValue -Content (Get-Content -Raw $currentEvidenceSessionPath) -Label "Next Action Path"
+}
+else {
+    ""
+}
+$evidenceNextActionLauncherPath = if (Test-Path $currentEvidenceSessionPath) {
+    Get-MetadataValue -Content (Get-Content -Raw $currentEvidenceSessionPath) -Label "Next Action Launcher"
+}
+else {
+    ""
+}
 $controlCenterState = if (Test-Path $controlCenterPath) {
     Get-MetadataValue -Content (Get-Content -Raw $controlCenterPath) -Label "Release Control State"
 }
@@ -392,6 +410,9 @@ if (-not [string]::IsNullOrWhiteSpace($nextEvidenceProgress) -and $nextEvidenceP
 if (-not [string]::IsNullOrWhiteSpace($nextReleaseActionPath) -and $nextReleaseActionPath -ne "not-recorded-yet") {
     $shareableSummary.Add("Release next action: $nextReleaseActionPath") | Out-Null
 }
+if (-not [string]::IsNullOrWhiteSpace($evidenceNextActionPath) -and $evidenceNextActionPath -ne "not-recorded-yet") {
+    $shareableSummary.Add("Evidence next action: $evidenceNextActionPath") | Out-Null
+}
 
 if (-not [string]::IsNullOrWhiteSpace($evidenceSoftGateState)) {
     $shareableSummary.Add("Release evidence soft gate: $evidenceSoftGateState") | Out-Null
@@ -424,6 +445,9 @@ if (-not [string]::IsNullOrWhiteSpace($nextEvidenceTester) -and $nextEvidenceTes
 if (-not [string]::IsNullOrWhiteSpace($nextReleaseActionPath) -and $nextReleaseActionPath -ne "not-recorded-yet") {
     $immediateNext.Insert([Math]::Min(4, $immediateNext.Count), "Release next action: $nextReleaseActionPath") | Out-Null
 }
+if (-not [string]::IsNullOrWhiteSpace($evidenceNextActionLauncherPath) -and $evidenceNextActionLauncherPath -ne "not-recorded-yet") {
+    $immediateNext.Insert([Math]::Min(5, $immediateNext.Count), "Evidence next action launcher: $evidenceNextActionLauncherPath") | Out-Null
+}
 
 $dateStamp = Get-Date -Format "yyyy-MM-dd"
 $timeStamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -452,6 +476,9 @@ $content = @"
 - Release Next Evidence Report: $(Get-ResolvedPathOrDefault -Value $nextEvidenceReportPath -DefaultValue "not-recorded-yet")
 - Release Next Evidence Tester: $(Get-ResolvedPathOrDefault -Value $nextEvidenceTester -DefaultValue "not-recorded-yet")
 - Release Next Evidence Progress: $(Get-ResolvedPathOrDefault -Value $nextEvidenceProgress -DefaultValue "not-recorded-yet")
+- Release Evidence Action Pack: $(Get-ResolvedPathOrDefault -Value $evidenceActionPackPath -DefaultValue "not-recorded-yet")
+- Release Evidence Next Action: $(Get-ResolvedPathOrDefault -Value $evidenceNextActionPath -DefaultValue "not-recorded-yet")
+- Release Evidence Next Action Launcher: $(Get-ResolvedPathOrDefault -Value $evidenceNextActionLauncherPath -DefaultValue "not-recorded-yet")
 - Release Evidence Pack: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidencePackPath -DefaultValue "not-recorded-yet")
 - Release Evidence Pack State: $(Get-ResolvedPathOrDefault -Value $evidencePackState -DefaultValue "not-recorded-yet")
 - Release Evidence Ready Count: $(Get-ResolvedPathOrDefault -Value $evidenceReadyCount -DefaultValue "not-recorded-yet")

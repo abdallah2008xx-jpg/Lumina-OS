@@ -7,7 +7,6 @@ Keep one manifest here when you want to prepare `login-test`, `install`, and `ha
 2. Or create an evidence pack directly with `scripts/new-release-evidence-pack.ps1`
 3. Use the generated `release-evidence-runbook-*.md`, session note, and report paths during the real validation run
 4. Preferred after report updates: refresh the whole session with `scripts/sync-release-evidence-session.ps1 -EvidenceSessionPath "<path-to-session>"`
-   - Tip: run `scripts/capture-release-evidence.ps1 -Target all` to quickly complete all drafted reports and auto-sync in one step.
 5. Or refresh the pack only with `scripts/sync-release-evidence-pack.ps1 -EvidencePackPath "<path-to-pack>"`
 6. Pass the same pack into:
    - `scripts/audit-release-evidence.ps1 -EvidencePackPath "<path-to-pack>"`

@@ -322,6 +322,20 @@ $tempRoot = Join-Path $env:TEMP ("lumina-workflow-smoke-" + [guid]::NewGuid().To
 New-Item -ItemType Directory -Path $tempRoot | Out-Null
 
 try {
+    $realRepoCurrentEvidencePackPath = Join-Path $RepoRoot "status\evidence-packs\CURRENT-EVIDENCE-PACK.md"
+    $realRepoCurrentEvidenceSessionPath = Join-Path $RepoRoot "status\evidence-packs\CURRENT-EVIDENCE-SESSION.md"
+    $realRepoCurrentReleaseControlCenterPath = Join-Path $RepoRoot "status\releases\CURRENT-RELEASE-CONTROL-CENTER.md"
+    $realRepoEvidencePackStatusPath = Join-Path $RepoRoot "status\evidence-packs\2026-04-07\evidence-pack-status-ci-release-smoke.md"
+    $realRepoEvidenceSessionStatusPath = Join-Path $RepoRoot "status\evidence-packs\2026-04-07\evidence-session-status-ci-release-smoke.md"
+    $realRepoReleaseControlSummaryPath = Join-Path $RepoRoot "status\releases\2026-04-07\release-control-center-ci-release-smoke.md"
+
+    $realRepoCurrentEvidencePackContent = if (Test-Path $realRepoCurrentEvidencePackPath) { Get-Content -Raw $realRepoCurrentEvidencePackPath } else { "__missing__" }
+    $realRepoCurrentEvidenceSessionContent = if (Test-Path $realRepoCurrentEvidenceSessionPath) { Get-Content -Raw $realRepoCurrentEvidenceSessionPath } else { "__missing__" }
+    $realRepoCurrentReleaseControlCenterContent = if (Test-Path $realRepoCurrentReleaseControlCenterPath) { Get-Content -Raw $realRepoCurrentReleaseControlCenterPath } else { "__missing__" }
+    $realRepoEvidencePackStatusContent = if (Test-Path $realRepoEvidencePackStatusPath) { Get-Content -Raw $realRepoEvidencePackStatusPath } else { "__missing__" }
+    $realRepoEvidenceSessionStatusContent = if (Test-Path $realRepoEvidenceSessionStatusPath) { Get-Content -Raw $realRepoEvidenceSessionStatusPath } else { "__missing__" }
+    $realRepoReleaseControlSummaryContent = if (Test-Path $realRepoReleaseControlSummaryPath) { Get-Content -Raw $realRepoReleaseControlSummaryPath } else { "__missing__" }
+
     $smokeRunLabel = "ci-release-smoke"
     $startCycleRunLabel = "ci-imported-build-smoke"
     $isoPath = Join-Path $tempRoot "lumina-smoke.iso"
@@ -467,8 +481,23 @@ try {
     & $captureReleaseEvidenceScript `
         -EvidenceSessionPath $releaseEvidenceSessionPath `
         -Target "all" `
+        -SyntheticCompletion `
         -RepoRoot $tempRoot `
         -OutputPathOnly | Out-Null
+
+    $realRepoCurrentEvidencePackContentAfterCapture = if (Test-Path $realRepoCurrentEvidencePackPath) { Get-Content -Raw $realRepoCurrentEvidencePackPath } else { "__missing__" }
+    $realRepoCurrentEvidenceSessionContentAfterCapture = if (Test-Path $realRepoCurrentEvidenceSessionPath) { Get-Content -Raw $realRepoCurrentEvidenceSessionPath } else { "__missing__" }
+    $realRepoCurrentReleaseControlCenterContentAfterCapture = if (Test-Path $realRepoCurrentReleaseControlCenterPath) { Get-Content -Raw $realRepoCurrentReleaseControlCenterPath } else { "__missing__" }
+    $realRepoEvidencePackStatusContentAfterCapture = if (Test-Path $realRepoEvidencePackStatusPath) { Get-Content -Raw $realRepoEvidencePackStatusPath } else { "__missing__" }
+    $realRepoEvidenceSessionStatusContentAfterCapture = if (Test-Path $realRepoEvidenceSessionStatusPath) { Get-Content -Raw $realRepoEvidenceSessionStatusPath } else { "__missing__" }
+    $realRepoReleaseControlSummaryContentAfterCapture = if (Test-Path $realRepoReleaseControlSummaryPath) { Get-Content -Raw $realRepoReleaseControlSummaryPath } else { "__missing__" }
+
+    Assert-Condition -Condition ($realRepoCurrentEvidencePackContentAfterCapture -eq $realRepoCurrentEvidencePackContent) -Message "Synthetic evidence capture polluted the real repo current evidence-pack pointer."
+    Assert-Condition -Condition ($realRepoCurrentEvidenceSessionContentAfterCapture -eq $realRepoCurrentEvidenceSessionContent) -Message "Synthetic evidence capture polluted the real repo current evidence-session pointer."
+    Assert-Condition -Condition ($realRepoCurrentReleaseControlCenterContentAfterCapture -eq $realRepoCurrentReleaseControlCenterContent) -Message "Synthetic evidence capture polluted the real repo current release-control-center pointer."
+    Assert-Condition -Condition ($realRepoEvidencePackStatusContentAfterCapture -eq $realRepoEvidencePackStatusContent) -Message "Synthetic evidence capture polluted the real repo evidence-pack smoke summary."
+    Assert-Condition -Condition ($realRepoEvidenceSessionStatusContentAfterCapture -eq $realRepoEvidenceSessionStatusContent) -Message "Synthetic evidence capture polluted the real repo evidence-session smoke summary."
+    Assert-Condition -Condition ($realRepoReleaseControlSummaryContentAfterCapture -eq $realRepoReleaseControlSummaryContent) -Message "Synthetic evidence capture polluted the real repo release-control smoke summary."
 
 
     $syncedReleaseEvidencePackPath = & $syncReleaseEvidencePackScript `

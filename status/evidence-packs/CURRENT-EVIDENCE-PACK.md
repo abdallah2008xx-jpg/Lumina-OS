@@ -1,22 +1,19 @@
-﻿# Lumina-OS Current Release Evidence Pack
+# Lumina-OS Current Release Evidence Pack
 
-- Updated At: 2026-04-07T06:41:45
-- Evidence Pack State: ready-for-rc-gating
-- Latest Summary: C:\Users\abdal\Downloads\AhmadOS-Rebuild\status\evidence-packs\2026-04-07\evidence-pack-status-ci-release-smoke.md
-- Evidence Pack: C:\Users\abdal\AppData\Local\Temp\lumina-workflow-smoke-1cd7e67bec9542b38974cc1933321a11\status\evidence-packs\2026-04-07\release-evidence-pack-ci-release-smoke.md
-- Run Label: ci-release-smoke
-- Primary Mode: stable
-- Release Version: 0.1.0-ci
-- Runbook Path: C:\Users\abdal\AppData\Local\Temp\lumina-workflow-smoke-1cd7e67bec9542b38974cc1933321a11\status\evidence-packs\2026-04-07\release-evidence-runbook-ci-release-smoke.md
-- Login-Test Status: completed
-- Install Status: completed
-- Hardware Status: completed
+- Updated At: not-recorded-yet
+- Evidence Pack State: not-recorded-yet
+- Latest Summary: not-recorded-yet
+- Evidence Pack: not-recorded-yet
+- Run Label: not-recorded-yet
+- Primary Mode: not-recorded-yet
+- Release Version: not-recorded-yet
+- Runbook Path: not-recorded-yet
+- Login-Test Status: not-recorded-yet
+- Install Status: not-recorded-yet
+- Hardware Status: not-recorded-yet
 
 ## Summary
-- This evidence pack is ready for RC gating.
-- Login-Test Status: completed
-- Install Status: completed
-- Hardware Status: completed
+- no shared evidence pack has been synced yet
 
 ## Next Step
-- use this pack for release evidence audit or release-candidate prep.
+- run `scripts/start-release-evidence-session.ps1` or `scripts/new-release-evidence-pack.ps1` before RC gating

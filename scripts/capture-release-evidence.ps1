@@ -1,9 +1,11 @@
 param(
-    [string]$EvidenceSessionPath = "",
+    [Parameter(Mandatory = $true)]
+    [string]$EvidenceSessionPath,
     [ValidateSet("login-test", "install", "hardware", "all")]
     [string]$Target = "all",
     [string]$Tester = "automated-capture",
     [string]$Notes = "",
+    [switch]$SyntheticCompletion,
     [switch]$OutputPathOnly,
     [string]$RepoRoot = ""
 )
@@ -48,10 +50,6 @@ function Get-RecordedValue {
     return $value
 }
 
-if ([string]::IsNullOrWhiteSpace($EvidenceSessionPath) -or -not (Test-Path $EvidenceSessionPath)) {
-    $EvidenceSessionPath = Join-Path $RepoRoot "status\evidence-packs\CURRENT-EVIDENCE-SESSION.md"
-}
-
 if (-not (Test-Path $EvidenceSessionPath)) {
     throw "Evidence session not found at: $EvidenceSessionPath"
 }
@@ -63,6 +61,16 @@ $loginTestReportPath = Get-RecordedValue -Content $sessionContent -Label "Login-
 $installReportPath = Get-RecordedValue -Content $sessionContent -Label "Install Report"
 $hardwareReportPath = Get-RecordedValue -Content $sessionContent -Label "Hardware Report"
 $releaseVersionValue = Get-RecordedValue -Content $sessionContent -Label "Release Version"
+$runLabelValue = Get-RecordedValue -Content $sessionContent -Label "Run Label"
+
+if (-not $SyntheticCompletion) {
+    throw "capture-release-evidence.ps1 is restricted to synthetic smoke capture. Use explicit report editing for real evidence."
+}
+
+$isSyntheticRun = $runLabelValue -match '^ci-' -or $releaseVersionValue -match '(^|[^a-z0-9])ci($|[^a-z0-9])'
+if (-not $isSyntheticRun) {
+    throw "Synthetic evidence capture is allowed only for CI/smoke sessions."
+}
 
 $reportsToUpdate = @()
 if ($Target -eq "all" -or $Target -eq "login-test") {
@@ -91,23 +99,21 @@ foreach ($reportPath in $reportsToUpdate) {
     if (-not (Test-Path $reportPath)) { continue }
     $reportContent = Get-Content -Raw $reportPath
 
-    # Complete the status
     $reportContent = $reportContent -replace '(?m)^- Overall Status: .+$', '- Overall Status: completed'
-    
-    # Complete checkboxes
     $reportContent = $reportContent -replace '(?m)^- \[\s*\]', '- [x]'
-    
-    # Update Tester if pending
     if (-not [string]::IsNullOrWhiteSpace($Tester)) {
         $reportContent = $reportContent -replace '(?m)^- Tester: pending$', "- Tester: $Tester"
     }
 
-    # Auto-add note
     if (-not [string]::IsNullOrWhiteSpace($Notes)) {
         $notesPattern = "(?m)^## Notes\r?\n"
         if ($reportContent -match $notesPattern) {
             $reportContent = $reportContent -replace $notesPattern, ("## Notes`r`n- $Notes`r`n")
         }
+    }
+
+    if ($reportContent -notmatch '(?m)^## Notes\r?\n- Synthetic Capture: ') {
+        $reportContent = $reportContent -replace "(?m)^## Notes\r?\n", ("## Notes`r`n- Synthetic Capture: completed by capture-release-evidence.ps1 for CI/smoke validation only.`r`n")
     }
 
     Set-Content -Path $reportPath -Value $reportContent -Encoding UTF8
@@ -119,13 +125,12 @@ foreach ($reportPath in $reportsToUpdate) {
 $syncScript = Join-Path $PSScriptRoot "sync-release-evidence-session.ps1"
 if (Test-Path $syncScript) {
     if ($OutputPathOnly) {
-        $null = & $syncScript -EvidenceSessionPath $resolvedEvidenceSessionPath -ReleaseVersion $releaseVersionValue -OutputPathOnly
-        # Return the generated file paths for tooling
+        $null = & $syncScript -EvidenceSessionPath $resolvedEvidenceSessionPath -ReleaseVersion $releaseVersionValue -RepoRoot $RepoRoot -OutputPathOnly
         foreach ($reportPath in $reportsToUpdate) {
             Write-Output $reportPath
         }
     } else {
-        $null = & $syncScript -EvidenceSessionPath $resolvedEvidenceSessionPath -ReleaseVersion $releaseVersionValue
+        $null = & $syncScript -EvidenceSessionPath $resolvedEvidenceSessionPath -ReleaseVersion $releaseVersionValue -RepoRoot $RepoRoot
         Write-Host "Evidence session synced."
     }
 }

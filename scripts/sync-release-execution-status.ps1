@@ -109,6 +109,7 @@ $cycleHandoffPath = Get-RecordedValue -Content $executionContent -Label "Cycle H
 $evidenceSessionPath = Get-RecordedValue -Content $executionContent -Label "Evidence Session"
 $evidencePackPath = Get-RecordedValue -Content $executionContent -Label "Evidence Pack"
 $runbookPath = Get-RecordedValue -Content $executionContent -Label "Runbook Path"
+$executionRunbookPath = Get-RecordedValue -Content $executionContent -Label "Execution Runbook Path"
 $currentEvidenceSessionPath = Get-RecordedValue -Content $executionContent -Label "Current Evidence Session"
 $currentControlCenterPath = Get-RecordedValue -Content $executionContent -Label "Current Release Control Center"
 
@@ -158,6 +159,7 @@ $summaryContent = @"
 - Evidence Session: $evidenceSessionPath
 - Evidence Pack: $evidencePackPath
 - Runbook Path: $runbookPath
+- Execution Runbook Path: $executionRunbookPath
 - Current Evidence Session: $currentEvidenceSessionPath
 - Current Release Control Center: $currentControlCenterPath
 
@@ -184,6 +186,7 @@ $currentContent = @"
 - Evidence Session: $(Get-ResolvedValue -Value $evidenceSessionPath)
 - Evidence Pack: $(Get-ResolvedValue -Value $evidencePackPath)
 - Runbook Path: $(Get-ResolvedValue -Value $runbookPath)
+- Execution Runbook Path: $(Get-ResolvedValue -Value $executionRunbookPath)
 
 ## Summary
 $(Format-Items -Items $summaryItems)

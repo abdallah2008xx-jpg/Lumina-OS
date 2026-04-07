@@ -74,6 +74,7 @@ $releaseEvidencePackScript = Join-Path $PSScriptRoot "new-release-evidence-pack.
 $releaseEvidenceRunbookScript = Join-Path $PSScriptRoot "new-release-evidence-runbook.ps1"
 $releaseEvidenceSessionScript = Join-Path $PSScriptRoot "start-release-evidence-session.ps1"
 $releaseValidationPassScript = Join-Path $PSScriptRoot "start-release-validation-pass.ps1"
+$releaseValidationRunbookScript = Join-Path $PSScriptRoot "new-release-validation-runbook.ps1"
 $syncReleaseExecutionStatusScript = Join-Path $PSScriptRoot "sync-release-execution-status.ps1"
 $syncReleaseEvidenceSessionStatusScript = Join-Path $PSScriptRoot "sync-release-evidence-session-status.ps1"
 $syncReleaseEvidencePackScript = Join-Path $PSScriptRoot "sync-release-evidence-pack.ps1"
@@ -134,6 +135,10 @@ if (-not (Test-Path $releaseEvidenceSessionScript)) {
 
 if (-not (Test-Path $releaseValidationPassScript)) {
     throw "Missing smoke-test target: $releaseValidationPassScript"
+}
+
+if (-not (Test-Path $releaseValidationRunbookScript)) {
+    throw "Missing smoke-test target: $releaseValidationRunbookScript"
 }
 
 if (-not (Test-Path $syncReleaseExecutionStatusScript)) {
@@ -405,11 +410,17 @@ try {
     Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Execution State: ready-to-execute")) -Message "Release validation pass did not record the expected execution state."
     Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Cycle Handoff:")) -Message "Release validation pass did not record the cycle handoff."
     Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Evidence Session:")) -Message "Release validation pass did not record the evidence session."
+    $releaseExecutionRunbookPath = Get-MetadataValue -Content $releaseExecutionContent -Label "Execution Runbook Path"
+    Assert-Condition -Condition (-not [string]::IsNullOrWhiteSpace($releaseExecutionRunbookPath) -and (Test-Path $releaseExecutionRunbookPath)) -Message "Release validation pass did not produce an execution runbook."
+    $releaseExecutionRunbookContent = Get-Content -Raw $releaseExecutionRunbookPath
+    Assert-Condition -Condition ($releaseExecutionRunbookContent -match [regex]::Escape("- Release Execution: $releaseExecutionPath")) -Message "Release validation runbook did not record the execution path."
+    Assert-Condition -Condition ($releaseExecutionRunbookContent -match [regex]::Escape("- Evidence Session: $releaseEvidenceSessionPath")) -Message "Release validation runbook did not record the evidence session path."
     $currentReleaseExecutionPath = Join-Path $tempRoot "status\\releases\\CURRENT-RELEASE-EXECUTION.md"
     Assert-Condition -Condition (Test-Path $currentReleaseExecutionPath) -Message "Current release execution summary was not created."
     $currentReleaseExecutionContent = Get-Content -Raw $currentReleaseExecutionPath
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Execution State: ready-to-execute")) -Message "Current release execution summary did not record the expected execution state."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Release Execution: $releaseExecutionPath")) -Message "Current release execution summary did not record the latest execution path."
+    Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Execution Runbook Path: $releaseExecutionRunbookPath")) -Message "Current release execution summary did not record the execution runbook path."
 
     $releaseLoginTestReportContent = (Get-Content -Raw $releaseLoginTestReportPath) -replace '(?m)^- Overall Status: .+$', '- Overall Status: completed'
     Set-Content -Path $releaseLoginTestReportPath -Value $releaseLoginTestReportContent -Encoding UTF8

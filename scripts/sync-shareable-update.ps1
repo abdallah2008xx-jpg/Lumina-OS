@@ -258,6 +258,12 @@ $executionState = if (Test-Path $currentExecutionPath) {
 else {
     ""
 }
+$executionRunbookPath = if (Test-Path $currentExecutionPath) {
+    Get-MetadataValue -Content (Get-Content -Raw $currentExecutionPath) -Label "Execution Runbook Path"
+}
+else {
+    ""
+}
 $evidenceAuditState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Evidence Audit State"
 $evidenceSoftGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Soft Gate State"
 $evidenceStrictGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Strict Gate State"
@@ -345,6 +351,7 @@ $content = @"
 - Release Candidate State: $(Get-ResolvedPathOrDefault -Value $candidateState -DefaultValue "not-recorded-yet")
 - Release Execution: $(if (Test-Path $currentExecutionPath) { $currentExecutionPath } else { "not-recorded-yet" })
 - Release Execution State: $(Get-ResolvedPathOrDefault -Value $executionState -DefaultValue "not-recorded-yet")
+- Release Execution Runbook: $(Get-ResolvedPathOrDefault -Value $executionRunbookPath -DefaultValue "not-recorded-yet")
 - Release Evidence Session: $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
 - Release Evidence Session State: $(Get-ResolvedPathOrDefault -Value $evidenceSessionState -DefaultValue "not-recorded-yet")
 - Release Evidence Pack: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidencePackPath -DefaultValue "not-recorded-yet")

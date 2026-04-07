@@ -90,6 +90,7 @@ $content = @"
 - [ ] Update install evidence from: $evidenceSessionPath
 - [ ] Update hardware evidence from: $evidenceSessionPath
 - [ ] Sync the shared evidence pack after report updates
+- [ ] Refresh the release validation pass after evidence sync
 - [ ] Review the current pointers before RC prep
 - [ ] Run evidence audit
 - [ ] Prepare the release candidate
@@ -97,6 +98,7 @@ $content = @"
 
 ## Commands
 - .\scripts\sync-release-evidence-pack.ps1 -EvidencePackPath "$evidencePackPath" -ReleaseVersion "$releaseVersion"
+- .\scripts\sync-release-validation-pass.ps1 -ExecutionPath "$resolvedExecutionPath" -ReleaseVersion "$releaseVersion"
 - .\scripts\audit-release-evidence.ps1 -Version "$releaseVersion" -Mode $mode -RunLabel "$runLabel" -EvidencePackPath "$evidencePackPath"
 - .\scripts\prepare-release-candidate.ps1 -Version "$releaseVersion" -Mode $mode -RunLabel "$runLabel" -EvidencePackPath "$evidencePackPath"
 - .\scripts\audit-release-readiness.ps1 -Version "$releaseVersion" -Mode $mode -RunLabel "$runLabel" -EvidencePackPath "$evidencePackPath"

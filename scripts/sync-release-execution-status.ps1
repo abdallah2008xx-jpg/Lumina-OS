@@ -99,6 +99,7 @@ $resolvedExecutionPath = (Resolve-Path $ExecutionPath).Path
 $executionContent = Get-Content -Raw $resolvedExecutionPath
 
 $createdAt = Get-RecordedValue -Content $executionContent -Label "Created At"
+$syncedAt = Get-RecordedValue -Content $executionContent -Label "Synced At"
 $executionState = Get-RecordedValue -Content $executionContent -Label "Execution State"
 $runLabel = Get-RecordedValue -Content $executionContent -Label "Run Label"
 $releaseVersion = Get-RecordedValue -Content $executionContent -Label "Release Version"
@@ -118,6 +119,7 @@ $summaryItems = [System.Collections.Generic.List[string]]::new()
 $summaryItems.Add("Run Label: $runLabel") | Out-Null
 $summaryItems.Add("Mode: $mode") | Out-Null
 $summaryItems.Add("Execution State: $executionState") | Out-Null
+$summaryItems.Add("Synced At: $syncedAt") | Out-Null
 
 $nextItems = [System.Collections.Generic.List[string]]::new()
 switch ($executionState) {
@@ -156,6 +158,7 @@ $summaryContent = @"
 - VM Type: $vmType
 - Firmware: $firmware
 - Created At: $createdAt
+- Synced At: $syncedAt
 - Cycle Handoff: $cycleHandoffPath
 - Evidence Session: $evidenceSessionPath
 - Evidence Pack: $evidencePackPath
@@ -184,6 +187,7 @@ $currentContent = @"
 - Mode: $mode
 - VM Type: $vmType
 - Firmware: $firmware
+- Synced At: $syncedAt
 - Cycle Handoff: $(Get-ResolvedValue -Value $cycleHandoffPath)
 - Evidence Session: $(Get-ResolvedValue -Value $evidenceSessionPath)
 - Evidence Pack: $(Get-ResolvedValue -Value $evidencePackPath)

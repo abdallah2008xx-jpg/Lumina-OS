@@ -106,30 +106,37 @@ After report updates, refresh the pack:
 .\scripts\sync-release-evidence-pack.ps1 -EvidencePackPath "$evidencePackPath" -ReleaseVersion "$releaseVersionValue"
 ```
 
-## Step 4: Review Current Pointers
+## Step 4: Refresh This Validation Pass
+After evidence updates, refresh the execution, runbook, and workboard together:
+
+```powershell
+.\scripts\sync-release-validation-pass.ps1 -ExecutionPath "$resolvedExecutionPath" -ReleaseVersion "$releaseVersionValue"
+```
+
+## Step 5: Review Current Pointers
 - `status\\releases\\CURRENT-RELEASE-EXECUTION.md`
 - `status\\evidence-packs\\CURRENT-EVIDENCE-SESSION.md`
 - `status\\evidence-packs\\CURRENT-EVIDENCE-PACK.md`
 - `status\\releases\\CURRENT-RELEASE-CONTROL-CENTER.md`
 
-## Step 5: Run Evidence Audit
+## Step 6: Run Evidence Audit
 ```powershell
 .\scripts\audit-release-evidence.ps1 -Version "$releaseVersionValue" -Mode $mode -RunLabel "$runLabel" -EvidencePackPath "$evidencePackPath"
 ```
 
-## Step 6: Prepare Release Candidate
+## Step 7: Prepare Release Candidate
 ```powershell
 .\scripts\prepare-release-candidate.ps1 -Version "$releaseVersionValue" -Mode $mode -RunLabel "$runLabel" -EvidencePackPath "$evidencePackPath"
 ```
 
-## Step 7: Run Readiness Audit
+## Step 8: Run Readiness Audit
 ```powershell
 .\scripts\audit-release-readiness.ps1 -Version "$releaseVersionValue" -Mode $mode -RunLabel "$runLabel" -EvidencePackPath "$evidencePackPath"
 ```
 
 ## Notes
 - keep this runbook on the same run label as the cycle handoff and evidence session
-- if the evidence pack is regenerated or replaced, regenerate this runbook too
+- if the evidence pack is regenerated or replaced, refresh this validation pass too
 - if you want the evidence-only detail view, use the linked evidence runbook:
   $evidenceRunbookPath
 "@

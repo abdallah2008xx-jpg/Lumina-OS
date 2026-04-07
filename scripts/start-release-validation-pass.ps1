@@ -74,12 +74,9 @@ function Get-SafeFileSegment {
 
 $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
 $evidenceSessionScript = Join-Path $PSScriptRoot "start-release-evidence-session.ps1"
-$executionRunbookScript = Join-Path $PSScriptRoot "new-release-validation-runbook.ps1"
-$executionWorkboardScript = Join-Path $PSScriptRoot "new-release-validation-workboard.ps1"
-$syncExecutionStatusScript = Join-Path $PSScriptRoot "sync-release-execution-status.ps1"
-$syncControlCenterScript = Join-Path $PSScriptRoot "sync-release-control-center.ps1"
+$syncValidationPassScript = Join-Path $PSScriptRoot "sync-release-validation-pass.ps1"
 
-foreach ($requiredScript in @($handoffScript, $evidenceSessionScript, $executionRunbookScript, $executionWorkboardScript, $syncExecutionStatusScript, $syncControlCenterScript)) {
+foreach ($requiredScript in @($handoffScript, $evidenceSessionScript, $syncValidationPassScript)) {
     if (-not (Test-Path $requiredScript)) {
         throw "Missing helper script: $requiredScript"
     }
@@ -115,8 +112,6 @@ $releaseVersionValue = Get-RecordedValue -Content $sessionContent -Label "Releas
 $evidencePackPath = Get-RecordedValue -Content $sessionContent -Label "Evidence Pack"
 $runbookPath = Get-RecordedValue -Content $sessionContent -Label "Runbook Path"
 $currentEvidenceSessionPath = Join-Path $RepoRoot "status\evidence-packs\CURRENT-EVIDENCE-SESSION.md"
-
-$null = & $syncControlCenterScript -RepoRoot $RepoRoot -OutputPathOnly
 $currentReleaseControlCenterPath = Join-Path $RepoRoot "status\releases\CURRENT-RELEASE-CONTROL-CENTER.md"
 
 $dateStamp = Get-Date -Format "yyyy-MM-dd"
@@ -130,6 +125,7 @@ $content = @"
 # Lumina-OS Release Validation Pass
 
 - Created At: $(Get-Date -Format s)
+- Synced At: not-recorded-yet
 - Execution State: ready-to-execute
 - Run Label: $runLabelValue
 - Release Version: $releaseVersionValue
@@ -150,7 +146,9 @@ $content = @"
    $resolvedHandoffPath
 2. Use the evidence session to keep login-test, install, and hardware evidence on the same run label:
    $resolvedEvidenceSessionPath
-3. Review the current evidence-session and control-center pointers before RC prep.
+3. After evidence updates, refresh this validation pass with:
+   .\scripts\sync-release-validation-pass.ps1 -ExecutionPath "$executionPath" -ReleaseVersion "$releaseVersionValue"
+4. Review the current evidence-session and control-center pointers before RC prep.
 
 ## Goal
 - start one real release-focused validation pass from a single entry point
@@ -159,24 +157,9 @@ $content = @"
 
 Set-Content -Path $executionPath -Value $content -Encoding UTF8
 
-$executionRunbookPath = & $executionRunbookScript `
+$null = & $syncValidationPassScript `
     -ExecutionPath $executionPath `
     -ReleaseVersion $releaseVersionValue `
-    -RepoRoot $RepoRoot `
-    -OutputPathOnly
-
-$executionWorkboardPath = & $executionWorkboardScript `
-    -ExecutionPath $executionPath `
-    -RepoRoot $RepoRoot `
-    -OutputPathOnly
-
-$executionContent = (Get-Content -Raw $executionPath) `
-    -replace '(?m)^- Execution Runbook Path: .+$', ('- Execution Runbook Path: ' + $executionRunbookPath) `
-    -replace '(?m)^- Workboard Path: .+$', ('- Workboard Path: ' + $executionWorkboardPath)
-Set-Content -Path $executionPath -Value $executionContent -Encoding UTF8
-
-$null = & $syncExecutionStatusScript `
-    -ExecutionPath $executionPath `
     -RepoRoot $RepoRoot `
     -OutputPathOnly
 

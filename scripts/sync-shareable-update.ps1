@@ -240,7 +240,10 @@ else {
 $completedItems = Get-SectionItems -Content $statusContent -Heading "Completed"
 $nextItems = Get-SectionItems -Content $statusContent -Heading "Next"
 $recentProgress = Get-TopItems -Items $completedItems -Count 5 -FromEnd
-$immediateNext = Get-TopItems -Items $nextItems -Count 5
+$immediateNext = [System.Collections.Generic.List[string]]::new()
+foreach ($item in (Get-TopItems -Items $nextItems -Count 5)) {
+    $immediateNext.Add($item) | Out-Null
+}
 
 $readinessState = Get-MetadataValue -Content $readinessContent -Label "Readiness State"
 $validationState = Get-MetadataValue -Content $validationContent -Label "Overall State"
@@ -275,6 +278,18 @@ $evidenceSoftGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent
 $evidenceStrictGateState = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Strict Gate State"
 $evidenceAuditRunLabel = Get-MetadataValue -Content $releaseEvidenceAuditContent -Label "Run Label"
 $releaseReadinessState = Get-MetadataValue -Content $releaseReadinessAuditContent -Label "Overall Readiness"
+$nextEvidenceTarget = if (Test-Path $currentEvidenceSessionPath) {
+    Get-MetadataValue -Content (Get-Content -Raw $currentEvidenceSessionPath) -Label "Next Evidence Target"
+}
+else {
+    ""
+}
+$nextEvidenceReportPath = if (Test-Path $currentEvidenceSessionPath) {
+    Get-MetadataValue -Content (Get-Content -Raw $currentEvidenceSessionPath) -Label "Next Evidence Report"
+}
+else {
+    ""
+}
 $controlCenterState = if (Test-Path $controlCenterPath) {
     Get-MetadataValue -Content (Get-Content -Raw $controlCenterPath) -Label "Release Control State"
 }
@@ -324,6 +339,10 @@ if (-not [string]::IsNullOrWhiteSpace($controlCenterState)) {
     $shareableSummary.Add("Release control center: $controlCenterState") | Out-Null
 }
 
+if (-not [string]::IsNullOrWhiteSpace($nextEvidenceTarget) -and $nextEvidenceTarget -ne "not-recorded-yet") {
+    $shareableSummary.Add("Next missing evidence target: $nextEvidenceTarget") | Out-Null
+}
+
 if (-not [string]::IsNullOrWhiteSpace($evidenceSoftGateState)) {
     $shareableSummary.Add("Release evidence soft gate: $evidenceSoftGateState") | Out-Null
 }
@@ -338,6 +357,13 @@ if (-not [string]::IsNullOrWhiteSpace($version) -and $version -ne "not-recorded-
 
 if (-not [string]::IsNullOrWhiteSpace($runLabel) -and $runLabel -ne "not-recorded-yet") {
     $shareableSummary.Add("Current tracked run label: $runLabel") | Out-Null
+}
+
+if (-not [string]::IsNullOrWhiteSpace($nextEvidenceTarget) -and $nextEvidenceTarget -ne "not-recorded-yet") {
+    $immediateNext.Insert(0, "Next missing evidence target: $nextEvidenceTarget") | Out-Null
+}
+if (-not [string]::IsNullOrWhiteSpace($nextEvidenceReportPath) -and $nextEvidenceReportPath -ne "not-recorded-yet") {
+    $immediateNext.Insert([Math]::Min(1, $immediateNext.Count), "Next evidence report: $nextEvidenceReportPath") | Out-Null
 }
 
 $dateStamp = Get-Date -Format "yyyy-MM-dd"
@@ -361,6 +387,8 @@ $content = @"
 - Release Execution Workboard: $(Get-ResolvedPathOrDefault -Value $executionWorkboardPath -DefaultValue "not-recorded-yet")
 - Release Evidence Session: $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
 - Release Evidence Session State: $(Get-ResolvedPathOrDefault -Value $evidenceSessionState -DefaultValue "not-recorded-yet")
+- Release Next Evidence Target: $(Get-ResolvedPathOrDefault -Value $nextEvidenceTarget -DefaultValue "not-recorded-yet")
+- Release Next Evidence Report: $(Get-ResolvedPathOrDefault -Value $nextEvidenceReportPath -DefaultValue "not-recorded-yet")
 - Release Evidence Pack: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidencePackPath -DefaultValue "not-recorded-yet")
 - Release Evidence Pack State: $(Get-ResolvedPathOrDefault -Value $evidencePackState -DefaultValue "not-recorded-yet")
 - Release Evidence Audit: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidenceAuditPath -DefaultValue "not-recorded-yet")

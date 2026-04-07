@@ -129,6 +129,8 @@ $runLabel = Get-FirstNonEmptyValue @(
 $packState = Get-MetadataValue -Content $evidencePackContent -Label "Evidence Pack State"
 $sessionState = Get-MetadataValue -Content $evidenceSessionContent -Label "Session State"
 $executionState = Get-MetadataValue -Content $executionContent -Label "Execution State"
+$nextEvidenceTarget = Get-MetadataValue -Content $evidenceSessionContent -Label "Next Evidence Target"
+$nextEvidenceReportPath = Get-MetadataValue -Content $evidenceSessionContent -Label "Next Evidence Report"
 $evidenceAuditState = Get-MetadataValue -Content $evidenceAuditContent -Label "Evidence Audit State"
 $readinessState = Get-MetadataValue -Content $readinessContent -Label "Overall Readiness"
 $candidateState = Get-MetadataValue -Content $candidateContent -Label "Candidate State"
@@ -147,6 +149,7 @@ $summaryItems = [System.Collections.Generic.List[string]]::new()
 $summaryItems.Add("Release Execution State: $(Get-ResolvedValue -Value $executionState)") | Out-Null
 $summaryItems.Add("Evidence Session State: $(Get-ResolvedValue -Value $sessionState)") | Out-Null
 $summaryItems.Add("Evidence Pack State: $(Get-ResolvedValue -Value $packState)") | Out-Null
+$summaryItems.Add("Next Evidence Target: $(Get-ResolvedValue -Value $nextEvidenceTarget)") | Out-Null
 $summaryItems.Add("Evidence Audit State: $(Get-ResolvedValue -Value $evidenceAuditState)") | Out-Null
 $summaryItems.Add("Release Readiness: $(Get-ResolvedValue -Value $readinessState)") | Out-Null
 $summaryItems.Add("Release Candidate State: $(Get-ResolvedValue -Value $candidateState)") | Out-Null
@@ -173,6 +176,12 @@ switch ($controlState) {
     }
     default {
         $nextItems.Add("Finish missing login/install/hardware evidence and sync the evidence pack again.") | Out-Null
+        if (-not [string]::IsNullOrWhiteSpace($nextEvidenceTarget) -and $nextEvidenceTarget -ne "not-recorded-yet") {
+            $nextItems.Add("Next Evidence Target: $nextEvidenceTarget") | Out-Null
+        }
+        if (-not [string]::IsNullOrWhiteSpace($nextEvidenceReportPath) -and $nextEvidenceReportPath -ne "not-recorded-yet") {
+            $nextItems.Add("Next Evidence Report: $nextEvidenceReportPath") | Out-Null
+        }
     }
 }
 
@@ -200,6 +209,8 @@ $summaryContent = @"
 - Run Label: $(Get-ResolvedValue -Value $runLabel)
 - Current Release Execution: $(if (Test-Path $currentExecutionPath) { $currentExecutionPath } else { "not-recorded-yet" })
 - Current Evidence Session: $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
+- Next Evidence Target: $(Get-ResolvedValue -Value $nextEvidenceTarget)
+- Next Evidence Report: $(Get-ResolvedValue -Value $nextEvidenceReportPath)
 - Current Evidence Pack: $(if (Test-Path $currentEvidencePackPath) { $currentEvidencePackPath } else { "not-recorded-yet" })
 - Current Release Evidence: $(if (Test-Path $currentEvidenceAuditPath) { $currentEvidenceAuditPath } else { "not-recorded-yet" })
 - Current Release Readiness: $(if (Test-Path $currentReadinessPath) { $currentReadinessPath } else { "not-recorded-yet" })
@@ -223,6 +234,8 @@ $currentContent = @"
 - Run Label: $(Get-ResolvedValue -Value $runLabel)
 - Current Release Execution: $(if (Test-Path $currentExecutionPath) { $currentExecutionPath } else { "not-recorded-yet" })
 - Current Evidence Session: $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
+- Next Evidence Target: $(Get-ResolvedValue -Value $nextEvidenceTarget)
+- Next Evidence Report: $(Get-ResolvedValue -Value $nextEvidenceReportPath)
 - Current Evidence Pack: $(if (Test-Path $currentEvidencePackPath) { $currentEvidencePackPath } else { "not-recorded-yet" })
 - Current Release Evidence: $(if (Test-Path $currentEvidenceAuditPath) { $currentEvidenceAuditPath } else { "not-recorded-yet" })
 - Current Release Readiness: $(if (Test-Path $currentReadinessPath) { $currentReadinessPath } else { "not-recorded-yet" })

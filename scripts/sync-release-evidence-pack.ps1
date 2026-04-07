@@ -42,58 +42,23 @@ function Get-RecordedValue {
     return $value
 }
 
-function Get-StateValue {
-    param(
-        [string]$Content,
-        [string[]]$Labels
-    )
-
-    foreach ($label in $Labels) {
-        $value = Get-MetadataValue -Content $Content -Label $label
-        if (-not [string]::IsNullOrWhiteSpace($value)) {
-            return $value
-        }
-    }
-
-    return ""
-}
-
-function Get-ReportSnapshot {
+function Get-ReportAudit {
     param(
         [string]$Path,
-        [string[]]$StatusLabels,
-        [string[]]$PassStates
+        [string]$Target
     )
 
-    $result = @{
-        Path = $Path
-        Exists = $false
-        Status = "not-recorded-yet"
-        RunLabel = "not-recorded-yet"
-        Pass = $false
+    $rawJson = (& $reportAuditScript `
+        -ReportPath $Path `
+        -Target $Target `
+        -AsJson) | Out-String
+
+    $trimmedJson = $rawJson.Trim()
+    if ([string]::IsNullOrWhiteSpace($trimmedJson)) {
+        throw "Failed to audit release evidence target: $Path"
     }
 
-    if ([string]::IsNullOrWhiteSpace($Path) -or $Path -eq "not-recorded-yet" -or -not (Test-Path $Path)) {
-        return $result
-    }
-
-    $content = Get-Content -Raw $Path -ErrorAction SilentlyContinue
-    $status = Get-StateValue -Content $content -Labels $StatusLabels
-    $runLabel = Get-MetadataValue -Content $content -Label "Run Label"
-    $normalizedStatus = if ([string]::IsNullOrWhiteSpace($status)) { "" } else { $status.Trim().ToLowerInvariant() }
-
-    $result.Exists = $true
-    if (-not [string]::IsNullOrWhiteSpace($status)) {
-        $result.Status = $status
-    }
-    if (-not [string]::IsNullOrWhiteSpace($runLabel)) {
-        $result.RunLabel = $runLabel
-    }
-    if (-not [string]::IsNullOrWhiteSpace($normalizedStatus) -and $PassStates -contains $normalizedStatus) {
-        $result.Pass = $true
-    }
-
-    return $result
+    return ($trimmedJson | ConvertFrom-Json)
 }
 
 if (-not (Test-Path $EvidencePackPath)) {
@@ -103,6 +68,11 @@ if (-not (Test-Path $EvidencePackPath)) {
 $runbookScript = Join-Path $PSScriptRoot "new-release-evidence-runbook.ps1"
 if (-not (Test-Path $runbookScript)) {
     throw "Missing helper script: $runbookScript"
+}
+
+$reportAuditScript = Join-Path $PSScriptRoot "audit-release-evidence-target.ps1"
+if (-not (Test-Path $reportAuditScript)) {
+    throw "Missing helper script: $reportAuditScript"
 }
 
 $statusScript = Join-Path $PSScriptRoot "sync-release-evidence-pack-status.ps1"
@@ -128,17 +98,33 @@ $installReportPath = Get-RecordedValue -Content $packContent -Label "Install Rep
 $hardwareReportPath = Get-RecordedValue -Content $packContent -Label "Hardware Report"
 $runbookPath = Get-RecordedValue -Content $packContent -Label "Runbook Path"
 
-$loginTestSnapshot = Get-ReportSnapshot -Path $loginTestReportPath -StatusLabels @("Overall Status", "Overall State", "Result") -PassStates @("pass", "passed", "complete", "completed", "success", "successful", "ready-for-release")
-$installSnapshot = Get-ReportSnapshot -Path $installReportPath -StatusLabels @("Overall Status", "Overall State", "Result") -PassStates @("pass", "passed", "complete", "completed", "success", "successful", "ready-for-release")
-$hardwareSnapshot = Get-ReportSnapshot -Path $hardwareReportPath -StatusLabels @("Overall Status", "Hardware Readiness", "Overall State", "Result") -PassStates @("pass", "passed", "complete", "completed", "success", "successful", "ready-for-real-device-smoke", "ready-for-release")
+$loginTestSnapshot = Get-ReportAudit -Path $loginTestReportPath -Target "login-test"
+$installSnapshot = Get-ReportAudit -Path $installReportPath -Target "install"
+$hardwareSnapshot = Get-ReportAudit -Path $hardwareReportPath -Target "hardware"
 
 $allExist = $loginTestSnapshot.Exists -and $installSnapshot.Exists -and $hardwareSnapshot.Exists
-$allPass = $loginTestSnapshot.Pass -and $installSnapshot.Pass -and $hardwareSnapshot.Pass
+$allPass = $loginTestSnapshot.ReadyForGate -and $installSnapshot.ReadyForGate -and $hardwareSnapshot.ReadyForGate
 $runLabelMatch = (
     $loginTestSnapshot.RunLabel -eq $runLabel -and
     $installSnapshot.RunLabel -eq $runLabel -and
     $hardwareSnapshot.RunLabel -eq $runLabel
 )
+
+$readyCount = @(
+    [bool]$loginTestSnapshot.ReadyForGate,
+    [bool]$installSnapshot.ReadyForGate,
+    [bool]$hardwareSnapshot.ReadyForGate
+) | Where-Object { $_ } | Measure-Object | Select-Object -ExpandProperty Count
+$readyCountSummary = "$readyCount/3"
+$totalChecklistItems = [int]$loginTestSnapshot.TotalChecklistItems + [int]$installSnapshot.TotalChecklistItems + [int]$hardwareSnapshot.TotalChecklistItems
+$checkedChecklistItems = [int]$loginTestSnapshot.CheckedChecklistItems + [int]$installSnapshot.CheckedChecklistItems + [int]$hardwareSnapshot.CheckedChecklistItems
+$checklistProgressSummary = if ($totalChecklistItems -gt 0) {
+    $progressPercent = [int][Math]::Round(($checkedChecklistItems / $totalChecklistItems) * 100)
+    "$checkedChecklistItems/$totalChecklistItems complete ($progressPercent%)"
+}
+else {
+    "0/0 complete (0%)"
+}
 
 $evidencePackState = if (-not $allExist) {
     "missing-evidence"
@@ -167,20 +153,41 @@ $content = @"
 - Device Label: $deviceLabel
 - Boot Source: $bootSource
 - Evidence Pack State: $evidencePackState
+- Evidence Ready Count: $readyCountSummary
+- Evidence Checklist Progress: $checklistProgressSummary
 - Login-Test Report: $loginTestReportPath
 - Login-Test Status: $($loginTestSnapshot.Status)
 - Login-Test Run Label: $($loginTestSnapshot.RunLabel)
+- Login-Test Tester: $($loginTestSnapshot.Tester)
+- Login-Test Progress State: $($loginTestSnapshot.ProgressState)
+- Login-Test Checklist Progress: $($loginTestSnapshot.ChecklistSummary)
+- Login-Test Open Items: $($loginTestSnapshot.OpenChecklistItems)
+- Login-Test Findings State: $($loginTestSnapshot.FindingsState)
+- Login-Test Blockers State: $($loginTestSnapshot.BlockersState)
 - Install Report: $installReportPath
 - Install Status: $($installSnapshot.Status)
 - Install Run Label: $($installSnapshot.RunLabel)
+- Install Tester: $($installSnapshot.Tester)
+- Install Progress State: $($installSnapshot.ProgressState)
+- Install Checklist Progress: $($installSnapshot.ChecklistSummary)
+- Install Open Items: $($installSnapshot.OpenChecklistItems)
+- Install Findings State: $($installSnapshot.FindingsState)
+- Install Blockers State: $($installSnapshot.BlockersState)
 - Hardware Report: $hardwareReportPath
 - Hardware Status: $($hardwareSnapshot.Status)
 - Hardware Run Label: $($hardwareSnapshot.RunLabel)
+- Hardware Tester: $($hardwareSnapshot.Tester)
+- Hardware Progress State: $($hardwareSnapshot.ProgressState)
+- Hardware Checklist Progress: $($hardwareSnapshot.ChecklistSummary)
+- Hardware Open Items: $($hardwareSnapshot.OpenChecklistItems)
+- Hardware Findings State: $($hardwareSnapshot.FindingsState)
+- Hardware Blockers State: $($hardwareSnapshot.BlockersState)
 - Runbook Path: $runbookPath
 
 ## Purpose
 - keep `login-test`, `install`, and `hardware` evidence on the same `Run Label`
 - reduce release-prep drift before the final RC gate
+- keep real report progress visible instead of relying on status labels alone
 
 ## Next Step
 - rerun `new-release-evidence-runbook.ps1` or use this pack directly in release evidence audit and RC prep

@@ -109,15 +109,26 @@ $releaseVersion = Get-RecordedValue -Content $packContent -Label "Release Versio
 $deviceLabel = Get-RecordedValue -Content $packContent -Label "Device Label"
 $bootSource = Get-RecordedValue -Content $packContent -Label "Boot Source"
 $packState = Get-RecordedValue -Content $packContent -Label "Evidence Pack State"
+$evidenceReadyCount = Get-RecordedValue -Content $packContent -Label "Evidence Ready Count"
+$evidenceChecklistProgress = Get-RecordedValue -Content $packContent -Label "Evidence Checklist Progress"
 $loginTestReportPath = Get-RecordedValue -Content $packContent -Label "Login-Test Report"
 $loginTestStatus = Get-RecordedValue -Content $packContent -Label "Login-Test Status"
 $loginTestRunLabel = Get-RecordedValue -Content $packContent -Label "Login-Test Run Label"
+$loginTestTester = Get-RecordedValue -Content $packContent -Label "Login-Test Tester"
+$loginTestProgressState = Get-RecordedValue -Content $packContent -Label "Login-Test Progress State"
+$loginTestChecklistProgress = Get-RecordedValue -Content $packContent -Label "Login-Test Checklist Progress"
 $installReportPath = Get-RecordedValue -Content $packContent -Label "Install Report"
 $installStatus = Get-RecordedValue -Content $packContent -Label "Install Status"
 $installRunLabel = Get-RecordedValue -Content $packContent -Label "Install Run Label"
+$installTester = Get-RecordedValue -Content $packContent -Label "Install Tester"
+$installProgressState = Get-RecordedValue -Content $packContent -Label "Install Progress State"
+$installChecklistProgress = Get-RecordedValue -Content $packContent -Label "Install Checklist Progress"
 $hardwareReportPath = Get-RecordedValue -Content $packContent -Label "Hardware Report"
 $hardwareStatus = Get-RecordedValue -Content $packContent -Label "Hardware Status"
 $hardwareRunLabel = Get-RecordedValue -Content $packContent -Label "Hardware Run Label"
+$hardwareTester = Get-RecordedValue -Content $packContent -Label "Hardware Tester"
+$hardwareProgressState = Get-RecordedValue -Content $packContent -Label "Hardware Progress State"
+$hardwareChecklistProgress = Get-RecordedValue -Content $packContent -Label "Hardware Checklist Progress"
 $runbookPath = Get-RecordedValue -Content $packContent -Label "Runbook Path"
 
 $summaryItems = [System.Collections.Generic.List[string]]::new()
@@ -139,9 +150,11 @@ switch ($packState) {
     }
 }
 
-$summaryItems.Add("Login-Test Status: $loginTestStatus") | Out-Null
-$summaryItems.Add("Install Status: $installStatus") | Out-Null
-$summaryItems.Add("Hardware Status: $hardwareStatus") | Out-Null
+$summaryItems.Add("Evidence Ready Count: $evidenceReadyCount") | Out-Null
+$summaryItems.Add("Evidence Checklist Progress: $evidenceChecklistProgress") | Out-Null
+$summaryItems.Add("Login-Test: $loginTestStatus | $loginTestChecklistProgress | tester: $loginTestTester") | Out-Null
+$summaryItems.Add("Install: $installStatus | $installChecklistProgress | tester: $installTester") | Out-Null
+$summaryItems.Add("Hardware: $hardwareStatus | $hardwareChecklistProgress | tester: $hardwareTester") | Out-Null
 
 $dateStamp = Get-Date -Format "yyyy-MM-dd"
 $summaryRoot = Join-Path $RepoRoot ("status\evidence-packs\" + $dateStamp)
@@ -173,18 +186,29 @@ $summaryContent = @"
 - Boot Source: $bootSource
 - Created At: $createdAt
 - Synced At: $syncedAt
+- Evidence Ready Count: $evidenceReadyCount
+- Evidence Checklist Progress: $evidenceChecklistProgress
 - Runbook Path: $runbookPath
 
 ## Linked Evidence
 - Login-Test Report: $loginTestReportPath
 - Login-Test Status: $loginTestStatus
 - Login-Test Run Label: $loginTestRunLabel
+- Login-Test Tester: $loginTestTester
+- Login-Test Progress State: $loginTestProgressState
+- Login-Test Checklist Progress: $loginTestChecklistProgress
 - Install Report: $installReportPath
 - Install Status: $installStatus
 - Install Run Label: $installRunLabel
+- Install Tester: $installTester
+- Install Progress State: $installProgressState
+- Install Checklist Progress: $installChecklistProgress
 - Hardware Report: $hardwareReportPath
 - Hardware Status: $hardwareStatus
 - Hardware Run Label: $hardwareRunLabel
+- Hardware Tester: $hardwareTester
+- Hardware Progress State: $hardwareProgressState
+- Hardware Checklist Progress: $hardwareChecklistProgress
 
 ## Summary
 $(Format-Items -Items $summaryItems)
@@ -209,10 +233,15 @@ $currentContent = @"
 - Run Label: $runLabel
 - Primary Mode: $mode
 - Release Version: $releaseVersion
+- Evidence Ready Count: $evidenceReadyCount
+- Evidence Checklist Progress: $evidenceChecklistProgress
 - Runbook Path: $(Get-ResolvedValue -Value $runbookPath)
 - Login-Test Status: $loginTestStatus
+- Login-Test Checklist Progress: $loginTestChecklistProgress
 - Install Status: $installStatus
+- Install Checklist Progress: $installChecklistProgress
 - Hardware Status: $hardwareStatus
+- Hardware Checklist Progress: $hardwareChecklistProgress
 
 ## Summary
 $(Format-Items -Items $summaryItems)

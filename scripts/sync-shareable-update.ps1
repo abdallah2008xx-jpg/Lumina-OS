@@ -249,6 +249,8 @@ $readinessState = Get-MetadataValue -Content $readinessContent -Label "Readiness
 $validationState = Get-MetadataValue -Content $validationContent -Label "Overall State"
 $candidateState = Get-MetadataValue -Content $releaseCandidateContent -Label "Candidate State"
 $evidencePackState = Get-MetadataValue -Content $releaseEvidencePackContent -Label "Evidence Pack State"
+$evidenceReadyCount = Get-MetadataValue -Content $releaseEvidencePackContent -Label "Evidence Ready Count"
+$evidenceChecklistProgress = Get-MetadataValue -Content $releaseEvidencePackContent -Label "Evidence Checklist Progress"
 $evidenceSessionState = if (Test-Path $currentEvidenceSessionPath) {
     Get-MetadataValue -Content (Get-Content -Raw $currentEvidenceSessionPath) -Label "Session State"
 }
@@ -290,6 +292,18 @@ $nextEvidenceReportPath = if (Test-Path $currentEvidenceSessionPath) {
 else {
     ""
 }
+$nextEvidenceTester = if (Test-Path $currentEvidenceSessionPath) {
+    Get-MetadataValue -Content (Get-Content -Raw $currentEvidenceSessionPath) -Label "Next Evidence Tester"
+}
+else {
+    ""
+}
+$nextEvidenceProgress = if (Test-Path $currentEvidenceSessionPath) {
+    Get-MetadataValue -Content (Get-Content -Raw $currentEvidenceSessionPath) -Label "Next Evidence Progress"
+}
+else {
+    ""
+}
 $controlCenterState = if (Test-Path $controlCenterPath) {
     Get-MetadataValue -Content (Get-Content -Raw $controlCenterPath) -Label "Release Control State"
 }
@@ -327,6 +341,14 @@ if (-not [string]::IsNullOrWhiteSpace($evidencePackState)) {
     $shareableSummary.Add("Current evidence pack: $evidencePackState") | Out-Null
 }
 
+if (-not [string]::IsNullOrWhiteSpace($evidenceReadyCount)) {
+    $shareableSummary.Add("Evidence ready count: $evidenceReadyCount") | Out-Null
+}
+
+if (-not [string]::IsNullOrWhiteSpace($evidenceChecklistProgress)) {
+    $shareableSummary.Add("Evidence checklist progress: $evidenceChecklistProgress") | Out-Null
+}
+
 if (-not [string]::IsNullOrWhiteSpace($evidenceAuditState)) {
     $shareableSummary.Add("Current evidence audit: $evidenceAuditState") | Out-Null
 }
@@ -341,6 +363,10 @@ if (-not [string]::IsNullOrWhiteSpace($controlCenterState)) {
 
 if (-not [string]::IsNullOrWhiteSpace($nextEvidenceTarget) -and $nextEvidenceTarget -ne "not-recorded-yet") {
     $shareableSummary.Add("Next missing evidence target: $nextEvidenceTarget") | Out-Null
+}
+
+if (-not [string]::IsNullOrWhiteSpace($nextEvidenceProgress) -and $nextEvidenceProgress -ne "not-recorded-yet") {
+    $shareableSummary.Add("Next missing evidence progress: $nextEvidenceProgress") | Out-Null
 }
 
 if (-not [string]::IsNullOrWhiteSpace($evidenceSoftGateState)) {
@@ -364,6 +390,12 @@ if (-not [string]::IsNullOrWhiteSpace($nextEvidenceTarget) -and $nextEvidenceTar
 }
 if (-not [string]::IsNullOrWhiteSpace($nextEvidenceReportPath) -and $nextEvidenceReportPath -ne "not-recorded-yet") {
     $immediateNext.Insert([Math]::Min(1, $immediateNext.Count), "Next evidence report: $nextEvidenceReportPath") | Out-Null
+}
+if (-not [string]::IsNullOrWhiteSpace($nextEvidenceProgress) -and $nextEvidenceProgress -ne "not-recorded-yet") {
+    $immediateNext.Insert([Math]::Min(2, $immediateNext.Count), "Next evidence progress: $nextEvidenceProgress") | Out-Null
+}
+if (-not [string]::IsNullOrWhiteSpace($nextEvidenceTester) -and $nextEvidenceTester -ne "not-recorded-yet") {
+    $immediateNext.Insert([Math]::Min(3, $immediateNext.Count), "Next evidence tester: $nextEvidenceTester") | Out-Null
 }
 
 $dateStamp = Get-Date -Format "yyyy-MM-dd"
@@ -389,8 +421,12 @@ $content = @"
 - Release Evidence Session State: $(Get-ResolvedPathOrDefault -Value $evidenceSessionState -DefaultValue "not-recorded-yet")
 - Release Next Evidence Target: $(Get-ResolvedPathOrDefault -Value $nextEvidenceTarget -DefaultValue "not-recorded-yet")
 - Release Next Evidence Report: $(Get-ResolvedPathOrDefault -Value $nextEvidenceReportPath -DefaultValue "not-recorded-yet")
+- Release Next Evidence Tester: $(Get-ResolvedPathOrDefault -Value $nextEvidenceTester -DefaultValue "not-recorded-yet")
+- Release Next Evidence Progress: $(Get-ResolvedPathOrDefault -Value $nextEvidenceProgress -DefaultValue "not-recorded-yet")
 - Release Evidence Pack: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidencePackPath -DefaultValue "not-recorded-yet")
 - Release Evidence Pack State: $(Get-ResolvedPathOrDefault -Value $evidencePackState -DefaultValue "not-recorded-yet")
+- Release Evidence Ready Count: $(Get-ResolvedPathOrDefault -Value $evidenceReadyCount -DefaultValue "not-recorded-yet")
+- Release Evidence Checklist Progress: $(Get-ResolvedPathOrDefault -Value $evidenceChecklistProgress -DefaultValue "not-recorded-yet")
 - Release Evidence Audit: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidenceAuditPath -DefaultValue "not-recorded-yet")
 - Release Evidence Audit State: $(Get-ResolvedPathOrDefault -Value $evidenceAuditState -DefaultValue "not-recorded-yet")
 - Release Readiness Audit: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseReadinessAuditPath -DefaultValue "not-recorded-yet")

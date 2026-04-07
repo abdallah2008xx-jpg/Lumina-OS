@@ -121,12 +121,24 @@ if ($evidenceSessionPath -ne "not-recorded-yet" -and (Test-Path $evidenceSession
     $evidenceSessionContent = Get-Content -Raw $evidenceSessionPath
 }
 
+$evidenceReadyCount = Get-RecordedValue -Content $evidenceSessionContent -Label "Evidence Ready Count"
+$evidenceChecklistProgress = Get-RecordedValue -Content $evidenceSessionContent -Label "Evidence Checklist Progress"
 $loginTestStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Status"
-$installStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Status"
-$hardwareStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Status"
 $loginTestReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Report"
+$loginTestTester = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Tester"
+$loginTestChecklistProgress = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Checklist Progress"
+$installStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Status"
 $installReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Report"
+$installTester = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Tester"
+$installChecklistProgress = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Checklist Progress"
+$hardwareStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Status"
 $hardwareReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Report"
+$hardwareTester = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Tester"
+$hardwareChecklistProgress = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Checklist Progress"
+$nextEvidenceTarget = Get-RecordedValue -Content $evidenceSessionContent -Label "Next Evidence Target"
+$nextEvidenceReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Next Evidence Report"
+$nextEvidenceTester = Get-RecordedValue -Content $evidenceSessionContent -Label "Next Evidence Tester"
+$nextEvidenceProgress = Get-RecordedValue -Content $evidenceSessionContent -Label "Next Evidence Progress"
 
 $summaryItems = [System.Collections.Generic.List[string]]::new()
 $summaryItems.Add("Run Label: $runLabel") | Out-Null
@@ -134,6 +146,8 @@ $summaryItems.Add("Mode: $mode") | Out-Null
 $summaryItems.Add("Execution State: $executionState") | Out-Null
 $summaryItems.Add("Synced At: $syncedAt") | Out-Null
 $summaryItems.Add("Evidence Pack State: $evidencePackState") | Out-Null
+$summaryItems.Add("Evidence Ready Count: $evidenceReadyCount") | Out-Null
+$summaryItems.Add("Evidence Checklist Progress: $evidenceChecklistProgress") | Out-Null
 $summaryItems.Add("Login-Test Status: $loginTestStatus") | Out-Null
 $summaryItems.Add("Install Status: $installStatus") | Out-Null
 $summaryItems.Add("Hardware Status: $hardwareStatus") | Out-Null
@@ -150,14 +164,20 @@ switch ($executionState) {
     "awaiting-login-test-evidence" {
         $nextItems.Add("Complete the login-test report before moving to install and hardware evidence.") | Out-Null
         $nextItems.Add("Login-Test Report: $loginTestReportPath") | Out-Null
+        $nextItems.Add("Login-Test Progress: $loginTestChecklistProgress") | Out-Null
+        $nextItems.Add("Login-Test Tester: $loginTestTester") | Out-Null
     }
     "awaiting-install-evidence" {
         $nextItems.Add("Login-test evidence looks good; complete the install report next.") | Out-Null
         $nextItems.Add("Install Report: $installReportPath") | Out-Null
+        $nextItems.Add("Install Progress: $installChecklistProgress") | Out-Null
+        $nextItems.Add("Install Tester: $installTester") | Out-Null
     }
     "awaiting-hardware-evidence" {
         $nextItems.Add("Login-test and install evidence look good; complete the real-device hardware report next.") | Out-Null
         $nextItems.Add("Hardware Report: $hardwareReportPath") | Out-Null
+        $nextItems.Add("Hardware Progress: $hardwareChecklistProgress") | Out-Null
+        $nextItems.Add("Hardware Tester: $hardwareTester") | Out-Null
     }
     "ready-for-rc-gating" {
         $nextItems.Add("All three evidence targets look complete for this run label.") | Out-Null
@@ -203,15 +223,27 @@ $summaryContent = @"
 - Evidence Session: $evidenceSessionPath
 - Evidence Pack: $evidencePackPath
 - Evidence Pack State: $evidencePackState
+- Evidence Ready Count: $evidenceReadyCount
+- Evidence Checklist Progress: $evidenceChecklistProgress
 - Runbook Path: $runbookPath
 - Execution Runbook Path: $executionRunbookPath
 - Workboard Path: $workboardPath
 - Login-Test Report: $loginTestReportPath
 - Login-Test Status: $loginTestStatus
+- Login-Test Tester: $loginTestTester
+- Login-Test Checklist Progress: $loginTestChecklistProgress
 - Install Report: $installReportPath
 - Install Status: $installStatus
+- Install Tester: $installTester
+- Install Checklist Progress: $installChecklistProgress
 - Hardware Report: $hardwareReportPath
 - Hardware Status: $hardwareStatus
+- Hardware Tester: $hardwareTester
+- Hardware Checklist Progress: $hardwareChecklistProgress
+- Next Evidence Target: $nextEvidenceTarget
+- Next Evidence Report: $nextEvidenceReportPath
+- Next Evidence Tester: $nextEvidenceTester
+- Next Evidence Progress: $nextEvidenceProgress
 - Current Evidence Session: $currentEvidenceSessionPath
 - Current Release Control Center: $currentControlCenterPath
 
@@ -239,15 +271,24 @@ $currentContent = @"
 - Evidence Session: $(Get-ResolvedValue -Value $evidenceSessionPath)
 - Evidence Pack: $(Get-ResolvedValue -Value $evidencePackPath)
 - Evidence Pack State: $evidencePackState
+- Evidence Ready Count: $(Get-ResolvedValue -Value $evidenceReadyCount)
+- Evidence Checklist Progress: $(Get-ResolvedValue -Value $evidenceChecklistProgress)
 - Runbook Path: $(Get-ResolvedValue -Value $runbookPath)
 - Execution Runbook Path: $(Get-ResolvedValue -Value $executionRunbookPath)
 - Workboard Path: $(Get-ResolvedValue -Value $workboardPath)
 - Login-Test Report: $(Get-ResolvedValue -Value $loginTestReportPath)
 - Login-Test Status: $loginTestStatus
+- Login-Test Checklist Progress: $loginTestChecklistProgress
 - Install Report: $(Get-ResolvedValue -Value $installReportPath)
 - Install Status: $installStatus
+- Install Checklist Progress: $installChecklistProgress
 - Hardware Report: $(Get-ResolvedValue -Value $hardwareReportPath)
 - Hardware Status: $hardwareStatus
+- Hardware Checklist Progress: $hardwareChecklistProgress
+- Next Evidence Target: $(Get-ResolvedValue -Value $nextEvidenceTarget)
+- Next Evidence Report: $(Get-ResolvedValue -Value $nextEvidenceReportPath)
+- Next Evidence Tester: $(Get-ResolvedValue -Value $nextEvidenceTester)
+- Next Evidence Progress: $(Get-ResolvedValue -Value $nextEvidenceProgress)
 
 ## Summary
 $(Format-Items -Items $summaryItems)
@@ -267,7 +308,7 @@ if ($OutputPathOnly) {
     Write-Output $summaryPath
 }
 else {
-    Write-Host "Updated current release execution:"
+    Write-Host "Updated release execution status:"
     Write-Host "Summary: $summaryPath"
     Write-Host "State:   $executionState"
 }

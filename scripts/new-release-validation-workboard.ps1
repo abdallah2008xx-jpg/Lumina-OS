@@ -65,15 +65,23 @@ if ($evidenceSessionPath -ne "not-recorded-yet" -and (Test-Path $evidenceSession
 }
 
 $evidencePackState = Get-RecordedValue -Content $evidenceSessionContent -Label "Evidence Pack State"
+$evidenceReadyCount = Get-RecordedValue -Content $evidenceSessionContent -Label "Evidence Ready Count"
+$evidenceChecklistProgress = Get-RecordedValue -Content $evidenceSessionContent -Label "Evidence Checklist Progress"
 $loginTestReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Report"
 $loginTestStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Status"
 $loginTestRunLabel = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Run Label"
+$loginTestTester = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Tester"
+$loginTestChecklistProgress = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Checklist Progress"
 $installReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Report"
 $installStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Status"
 $installRunLabel = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Run Label"
+$installTester = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Tester"
+$installChecklistProgress = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Checklist Progress"
 $hardwareReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Report"
 $hardwareStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Status"
 $hardwareRunLabel = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Run Label"
+$hardwareTester = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Tester"
+$hardwareChecklistProgress = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Checklist Progress"
 
 $executionLeaf = Split-Path -Leaf $resolvedExecutionPath
 $workboardLeaf = if ($executionLeaf -like "release-validation-pass-*.md") {
@@ -98,17 +106,25 @@ $content = @"
 - Evidence Session: $evidenceSessionPath
 - Evidence Pack: $evidencePackPath
 - Evidence Pack State: $evidencePackState
+- Evidence Ready Count: $evidenceReadyCount
+- Evidence Checklist Progress: $evidenceChecklistProgress
 - Evidence Runbook: $evidenceRunbookPath
 - Execution Runbook: $executionRunbookPath
 - Login-Test Report: $loginTestReportPath
 - Login-Test Status: $loginTestStatus
 - Login-Test Run Label: $loginTestRunLabel
+- Login-Test Tester: $loginTestTester
+- Login-Test Checklist Progress: $loginTestChecklistProgress
 - Install Report: $installReportPath
 - Install Status: $installStatus
 - Install Run Label: $installRunLabel
+- Install Tester: $installTester
+- Install Checklist Progress: $installChecklistProgress
 - Hardware Report: $hardwareReportPath
 - Hardware Status: $hardwareStatus
 - Hardware Run Label: $hardwareRunLabel
+- Hardware Tester: $hardwareTester
+- Hardware Checklist Progress: $hardwareChecklistProgress
 
 ## Track Now
 - [ ] Run the VM cycle from: $cycleHandoffPath
@@ -126,12 +142,18 @@ $content = @"
 - Login-Test Report: $loginTestReportPath
 - Login-Test Status: $loginTestStatus
 - Login-Test Run Label: $loginTestRunLabel
+- Login-Test Tester: $loginTestTester
+- Login-Test Checklist Progress: $loginTestChecklistProgress
 - Install Report: $installReportPath
 - Install Status: $installStatus
 - Install Run Label: $installRunLabel
+- Install Tester: $installTester
+- Install Checklist Progress: $installChecklistProgress
 - Hardware Report: $hardwareReportPath
 - Hardware Status: $hardwareStatus
 - Hardware Run Label: $hardwareRunLabel
+- Hardware Tester: $hardwareTester
+- Hardware Checklist Progress: $hardwareChecklistProgress
 
 ## Commands
 - .\scripts\sync-release-evidence-session.ps1 -EvidenceSessionPath "$evidenceSessionPath" -ReleaseVersion "$releaseVersion"

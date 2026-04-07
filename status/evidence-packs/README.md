@@ -15,8 +15,9 @@ Keep one manifest here when you want to prepare `login-test`, `install`, and `ha
    - `scripts/audit-release-readiness.ps1 -EvidencePackPath "<path-to-pack>"`
    - `scripts/prepare-release-candidate.ps1 -EvidencePackPath "<path-to-pack>"`
 8. Review `CURRENT-EVIDENCE-SESSION.md` when you want the latest practical evidence-session summary in one place
-   - it now shows the next missing evidence target and its direct report path
+   - it now shows the next missing evidence target, its direct report path, its tester, and its checklist progress
 9. Review `CURRENT-EVIDENCE-PACK.md` when you want the latest synced pack summary in one place
+   - it now shows `Evidence Ready Count` and `Evidence Checklist Progress` across login-test, install, and hardware
 10. Review `../releases/CURRENT-RELEASE-CONTROL-CENTER.md` when you want the top-level release state after evidence, readiness, and candidate syncs
 
 ## Intended Contents
@@ -27,5 +28,6 @@ Keep one manifest here when you want to prepare `login-test`, `install`, and `ha
 - one current pointer to the latest evidence session
 - one synced state snapshot per shared evidence set
 - a current pointer to the latest synced evidence pack
+- pack/session summaries that surface real checklist progress instead of only high-level status
 - links to login-test, install, and hardware reports
 - one exact `Run Label` to carry into release gating

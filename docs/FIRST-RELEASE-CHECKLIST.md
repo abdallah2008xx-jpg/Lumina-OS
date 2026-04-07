@@ -66,17 +66,17 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Recommended: start one combined release validation pass with `.\scripts\start-release-validation-pass.ps1 -Mode stable -RunLabel "<run-label>"`
 - [ ] Recommended: start one shared evidence session with `.\scripts\start-release-evidence-session.ps1 -Mode stable -RunLabel "<run-label>"`
 - [ ] Optional but recommended: review `status/releases/CURRENT-RELEASE-EXECUTION.md` after starting the combined validation pass
-- [ ] Optional but recommended: use `CURRENT-RELEASE-EXECUTION.md` to see which evidence target is still blocking RC gating
+- [ ] Optional but recommended: use `CURRENT-RELEASE-EXECUTION.md` to see which evidence target is still blocking RC gating and how far that report has progressed
 - [ ] Optional but recommended: review the generated `release-validation-runbook-*.md` from the combined validation pass
 - [ ] Optional but recommended: review the generated `release-validation-workboard-*.md` from the combined validation pass because it now lists the direct login-test, install, and hardware report paths
 - [ ] Optional but recommended: after evidence updates, run `.\scripts\sync-release-evidence-session.ps1 -EvidenceSessionPath "<path-to-evidence-session>"` to refresh the evidence session, report statuses, and current evidence-session pointer together
 - [ ] Optional but recommended: after evidence updates, run `.\scripts\sync-release-validation-pass.ps1 -ExecutionPath "<path-to-release-validation-pass>"` to refresh the execution runbook, workboard, and current execution pointer together
 - [ ] Optional but recommended: review `status/evidence-packs/CURRENT-EVIDENCE-SESSION.md` after starting the shared evidence session
-- [ ] Optional but recommended: use `CURRENT-EVIDENCE-SESSION.md` to see the next missing evidence target and its direct report path
+- [ ] Optional but recommended: use `CURRENT-EVIDENCE-SESSION.md` to see the next missing evidence target, its direct report path, and its current checklist progress
 - [ ] Optional but recommended: use `.\scripts\open-next-release-evidence.ps1` if you want to jump straight to that next missing evidence file
 - [ ] Optional but recommended: create one shared evidence pack with `.\scripts\new-release-evidence-pack.ps1 -Mode stable -RunLabel "<run-label>"`
 - [ ] Optional but recommended: review the generated `release-evidence-runbook-*.md` from the shared evidence pack before RC prep
-- [ ] Optional but recommended: review `status/evidence-packs/CURRENT-EVIDENCE-PACK.md` after evidence updates
+- [ ] Optional but recommended: review `status/evidence-packs/CURRENT-EVIDENCE-PACK.md` after evidence updates to confirm ready-count and checklist-progress totals
 - [ ] `status/readiness/CURRENT-READINESS.md` is no longer `needs-build`
 - [ ] `status/validation-matrix/CURRENT-VALIDATION-MATRIX.md` shows acceptable mode coverage
 - [ ] No blocking issue remains for the chosen release candidate
@@ -90,6 +90,7 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Run `.\scripts\audit-release-readiness.ps1 -Version "<version>" -Mode stable -RunLabel "<run-label>"` after RC prep to confirm the final go/no-go state, or pass the shared pack with `-EvidencePackPath`
 - [ ] Review `status/releases/CURRENT-RELEASE-READINESS.md` after the readiness audit
 - [ ] Review `status/releases/CURRENT-RELEASE-CONTROL-CENTER.md` before publish
+- [ ] Review `status/SHAREABLE-UPDATE.md` if you want the next missing evidence target and progress surfaced in one brief summary
 - [ ] If the ISO was built in a separate Arch clone or VM, a local Windows-accessible copy has been imported with `.\scripts\import-iso-artifact.ps1`
 - [ ] If the build manifest and ISO were transferred together, the handoff folder has been imported with `.\scripts\import-build-handoff.ps1`
 - [ ] ISO checksum is generated

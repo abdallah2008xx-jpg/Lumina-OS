@@ -107,16 +107,30 @@ else {
     $ReleaseVersion.Trim()
 }
 $evidencePackState = Get-RecordedValue -Content $packContent -Label "Evidence Pack State"
+$evidenceReadyCount = Get-RecordedValue -Content $packContent -Label "Evidence Ready Count"
+$evidenceChecklistProgress = Get-RecordedValue -Content $packContent -Label "Evidence Checklist Progress"
 $runbookPath = Get-RecordedValue -Content $packContent -Label "Runbook Path"
 $loginTestReportPath = Get-RecordedValue -Content $packContent -Label "Login-Test Report"
 $loginTestStatus = Get-RecordedValue -Content $packContent -Label "Login-Test Status"
 $loginTestRunLabel = Get-RecordedValue -Content $packContent -Label "Login-Test Run Label"
+$loginTestTester = Get-RecordedValue -Content $packContent -Label "Login-Test Tester"
+$loginTestProgressState = Get-RecordedValue -Content $packContent -Label "Login-Test Progress State"
+$loginTestChecklistProgress = Get-RecordedValue -Content $packContent -Label "Login-Test Checklist Progress"
+$loginTestOpenItems = Get-RecordedValue -Content $packContent -Label "Login-Test Open Items"
 $installReportPath = Get-RecordedValue -Content $packContent -Label "Install Report"
 $installStatus = Get-RecordedValue -Content $packContent -Label "Install Status"
 $installRunLabel = Get-RecordedValue -Content $packContent -Label "Install Run Label"
+$installTester = Get-RecordedValue -Content $packContent -Label "Install Tester"
+$installProgressState = Get-RecordedValue -Content $packContent -Label "Install Progress State"
+$installChecklistProgress = Get-RecordedValue -Content $packContent -Label "Install Checklist Progress"
+$installOpenItems = Get-RecordedValue -Content $packContent -Label "Install Open Items"
 $hardwareReportPath = Get-RecordedValue -Content $packContent -Label "Hardware Report"
 $hardwareStatus = Get-RecordedValue -Content $packContent -Label "Hardware Status"
 $hardwareRunLabel = Get-RecordedValue -Content $packContent -Label "Hardware Run Label"
+$hardwareTester = Get-RecordedValue -Content $packContent -Label "Hardware Tester"
+$hardwareProgressState = Get-RecordedValue -Content $packContent -Label "Hardware Progress State"
+$hardwareChecklistProgress = Get-RecordedValue -Content $packContent -Label "Hardware Checklist Progress"
+$hardwareOpenItems = Get-RecordedValue -Content $packContent -Label "Hardware Open Items"
 
 $null = & $syncControlCenterScript `
     -RepoRoot $RepoRoot `
@@ -135,21 +149,31 @@ $sessionState = switch ($evidencePackState) {
 
 $nextEvidenceTarget = "not-recorded-yet"
 $nextEvidenceReportPath = "not-recorded-yet"
+$nextEvidenceTester = "not-recorded-yet"
+$nextEvidenceProgress = "not-recorded-yet"
 if (-not (Test-PassState -Value $loginTestStatus)) {
     $nextEvidenceTarget = "login-test"
     $nextEvidenceReportPath = $loginTestReportPath
+    $nextEvidenceTester = $loginTestTester
+    $nextEvidenceProgress = $loginTestChecklistProgress
 }
 elseif (-not (Test-PassState -Value $installStatus)) {
     $nextEvidenceTarget = "install"
     $nextEvidenceReportPath = $installReportPath
+    $nextEvidenceTester = $installTester
+    $nextEvidenceProgress = $installChecklistProgress
 }
 elseif (-not (Test-PassState -Value $hardwareStatus)) {
     $nextEvidenceTarget = "hardware"
     $nextEvidenceReportPath = $hardwareReportPath
+    $nextEvidenceTester = $hardwareTester
+    $nextEvidenceProgress = $hardwareChecklistProgress
 }
 elseif ($evidencePackState -eq "ready-for-rc-gating") {
     $nextEvidenceTarget = "rc-gating"
     $nextEvidenceReportPath = $runbookPath
+    $nextEvidenceTester = "n/a"
+    $nextEvidenceProgress = $evidenceChecklistProgress
 }
 
 $content = @"
@@ -163,18 +187,34 @@ $content = @"
 - Mode: $modeValue
 - Evidence Pack: $resolvedEvidencePackPath
 - Evidence Pack State: $evidencePackState
+- Evidence Ready Count: $evidenceReadyCount
+- Evidence Checklist Progress: $evidenceChecklistProgress
 - Runbook Path: $runbookPath
 - Login-Test Report: $loginTestReportPath
 - Login-Test Status: $loginTestStatus
 - Login-Test Run Label: $loginTestRunLabel
+- Login-Test Tester: $loginTestTester
+- Login-Test Progress State: $loginTestProgressState
+- Login-Test Checklist Progress: $loginTestChecklistProgress
+- Login-Test Open Items: $loginTestOpenItems
 - Install Report: $installReportPath
 - Install Status: $installStatus
 - Install Run Label: $installRunLabel
+- Install Tester: $installTester
+- Install Progress State: $installProgressState
+- Install Checklist Progress: $installChecklistProgress
+- Install Open Items: $installOpenItems
 - Hardware Report: $hardwareReportPath
 - Hardware Status: $hardwareStatus
 - Hardware Run Label: $hardwareRunLabel
+- Hardware Tester: $hardwareTester
+- Hardware Progress State: $hardwareProgressState
+- Hardware Checklist Progress: $hardwareChecklistProgress
+- Hardware Open Items: $hardwareOpenItems
 - Next Evidence Target: $nextEvidenceTarget
 - Next Evidence Report: $nextEvidenceReportPath
+- Next Evidence Tester: $nextEvidenceTester
+- Next Evidence Progress: $nextEvidenceProgress
 - Current Evidence Pack Summary: $(if (Test-Path $currentEvidencePackSummaryPath) { $currentEvidencePackSummaryPath } else { "not-recorded-yet" })
 - Current Release Control Center: $(if (Test-Path $currentReleaseControlCenterPath) { $currentReleaseControlCenterPath } else { "not-recorded-yet" })
 
@@ -191,6 +231,7 @@ $content = @"
 ## Goal
 - keep the real validation session on one shared Run Label
 - move from scaffolding into real login-test, install, and hardware evidence capture
+- keep evidence progress visible from the pack, session, execution, and shareable summaries
 "@
 
 Set-Content -Path $resolvedEvidenceSessionPath -Value $content -Encoding UTF8

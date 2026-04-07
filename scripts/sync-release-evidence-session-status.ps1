@@ -106,15 +106,25 @@ $releaseVersion = Get-RecordedValue -Content $sessionContent -Label "Release Ver
 $mode = Get-RecordedValue -Content $sessionContent -Label "Mode"
 $evidencePackPath = Get-RecordedValue -Content $sessionContent -Label "Evidence Pack"
 $evidencePackState = Get-RecordedValue -Content $sessionContent -Label "Evidence Pack State"
+$evidenceReadyCount = Get-RecordedValue -Content $sessionContent -Label "Evidence Ready Count"
+$evidenceChecklistProgress = Get-RecordedValue -Content $sessionContent -Label "Evidence Checklist Progress"
 $runbookPath = Get-RecordedValue -Content $sessionContent -Label "Runbook Path"
 $loginTestReportPath = Get-RecordedValue -Content $sessionContent -Label "Login-Test Report"
 $loginTestStatus = Get-RecordedValue -Content $sessionContent -Label "Login-Test Status"
+$loginTestTester = Get-RecordedValue -Content $sessionContent -Label "Login-Test Tester"
+$loginTestChecklistProgress = Get-RecordedValue -Content $sessionContent -Label "Login-Test Checklist Progress"
 $installReportPath = Get-RecordedValue -Content $sessionContent -Label "Install Report"
 $installStatus = Get-RecordedValue -Content $sessionContent -Label "Install Status"
+$installTester = Get-RecordedValue -Content $sessionContent -Label "Install Tester"
+$installChecklistProgress = Get-RecordedValue -Content $sessionContent -Label "Install Checklist Progress"
 $hardwareReportPath = Get-RecordedValue -Content $sessionContent -Label "Hardware Report"
 $hardwareStatus = Get-RecordedValue -Content $sessionContent -Label "Hardware Status"
+$hardwareTester = Get-RecordedValue -Content $sessionContent -Label "Hardware Tester"
+$hardwareChecklistProgress = Get-RecordedValue -Content $sessionContent -Label "Hardware Checklist Progress"
 $nextEvidenceTarget = Get-RecordedValue -Content $sessionContent -Label "Next Evidence Target"
 $nextEvidenceReportPath = Get-RecordedValue -Content $sessionContent -Label "Next Evidence Report"
+$nextEvidenceTester = Get-RecordedValue -Content $sessionContent -Label "Next Evidence Tester"
+$nextEvidenceProgress = Get-RecordedValue -Content $sessionContent -Label "Next Evidence Progress"
 $currentEvidencePackSummaryPath = Get-RecordedValue -Content $sessionContent -Label "Current Evidence Pack Summary"
 $currentReleaseControlCenterPath = Get-RecordedValue -Content $sessionContent -Label "Current Release Control Center"
 
@@ -123,7 +133,10 @@ $summaryItems.Add("Run Label: $runLabel") | Out-Null
 $summaryItems.Add("Mode: $mode") | Out-Null
 $summaryItems.Add("Session State: $sessionState") | Out-Null
 $summaryItems.Add("Evidence Pack State: $evidencePackState") | Out-Null
+$summaryItems.Add("Evidence Ready Count: $evidenceReadyCount") | Out-Null
+$summaryItems.Add("Evidence Checklist Progress: $evidenceChecklistProgress") | Out-Null
 $summaryItems.Add("Next Evidence Target: $nextEvidenceTarget") | Out-Null
+$summaryItems.Add("Next Evidence Progress: $nextEvidenceProgress") | Out-Null
 $summaryItems.Add("Synced At: $syncedAt") | Out-Null
 
 $nextItems = [System.Collections.Generic.List[string]]::new()
@@ -132,12 +145,16 @@ switch ($sessionState) {
         $nextItems.Add("Start with the next missing evidence target from this session.") | Out-Null
         $nextItems.Add("Next Evidence Target: $nextEvidenceTarget") | Out-Null
         $nextItems.Add("Next Evidence Report: $nextEvidenceReportPath") | Out-Null
+        $nextItems.Add("Next Evidence Progress: $nextEvidenceProgress") | Out-Null
+        $nextItems.Add("Next Evidence Tester: $nextEvidenceTester") | Out-Null
         $nextItems.Add("Rerun sync-release-evidence-session.ps1 after each real evidence update.") | Out-Null
     }
     "evidence-in-progress" {
         $nextItems.Add("Continue with the next missing evidence target from this session.") | Out-Null
         $nextItems.Add("Next Evidence Target: $nextEvidenceTarget") | Out-Null
         $nextItems.Add("Next Evidence Report: $nextEvidenceReportPath") | Out-Null
+        $nextItems.Add("Next Evidence Progress: $nextEvidenceProgress") | Out-Null
+        $nextItems.Add("Next Evidence Tester: $nextEvidenceTester") | Out-Null
         $nextItems.Add("Rerun sync-release-evidence-session.ps1 after each report update.") | Out-Null
     }
     "ready-for-rc-gating" {
@@ -175,19 +192,29 @@ $summaryContent = @"
 - Synced At: $syncedAt
 - Evidence Pack: $evidencePackPath
 - Evidence Pack State: $evidencePackState
+- Evidence Ready Count: $evidenceReadyCount
+- Evidence Checklist Progress: $evidenceChecklistProgress
 - Runbook Path: $runbookPath
 - Next Evidence Target: $nextEvidenceTarget
 - Next Evidence Report: $nextEvidenceReportPath
+- Next Evidence Tester: $nextEvidenceTester
+- Next Evidence Progress: $nextEvidenceProgress
 - Current Evidence Pack Summary: $currentEvidencePackSummaryPath
 - Current Release Control Center: $currentReleaseControlCenterPath
 
 ## Linked Reports
 - Login-Test Report: $loginTestReportPath
 - Login-Test Status: $loginTestStatus
+- Login-Test Tester: $loginTestTester
+- Login-Test Checklist Progress: $loginTestChecklistProgress
 - Install Report: $installReportPath
 - Install Status: $installStatus
+- Install Tester: $installTester
+- Install Checklist Progress: $installChecklistProgress
 - Hardware Report: $hardwareReportPath
 - Hardware Status: $hardwareStatus
+- Hardware Tester: $hardwareTester
+- Hardware Checklist Progress: $hardwareChecklistProgress
 
 ## Summary
 $(Format-Items -Items $summaryItems)
@@ -208,9 +235,13 @@ $currentContent = @"
 - Mode: $mode
 - Evidence Pack: $(Get-ResolvedValue -Value $evidencePackPath)
 - Evidence Pack State: $(Get-ResolvedValue -Value $evidencePackState)
+- Evidence Ready Count: $(Get-ResolvedValue -Value $evidenceReadyCount)
+- Evidence Checklist Progress: $(Get-ResolvedValue -Value $evidenceChecklistProgress)
 - Runbook Path: $(Get-ResolvedValue -Value $runbookPath)
 - Next Evidence Target: $(Get-ResolvedValue -Value $nextEvidenceTarget)
 - Next Evidence Report: $(Get-ResolvedValue -Value $nextEvidenceReportPath)
+- Next Evidence Tester: $(Get-ResolvedValue -Value $nextEvidenceTester)
+- Next Evidence Progress: $(Get-ResolvedValue -Value $nextEvidenceProgress)
 - Synced At: $(Get-ResolvedValue -Value $syncedAt)
 - Current Evidence Pack Summary: $(Get-ResolvedValue -Value $currentEvidencePackSummaryPath)
 - Current Release Control Center: $(Get-ResolvedValue -Value $currentReleaseControlCenterPath)

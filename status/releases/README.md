@@ -27,7 +27,7 @@ Store prepared release packages here.
 6. Optionally start one combined pass with `scripts/start-release-validation-pass.ps1`
 7. After evidence updates, refresh the combined pass with `scripts/sync-release-validation-pass.ps1 -ExecutionPath "<path-to-release-validation-pass>"`
 8. Review `status/releases/CURRENT-RELEASE-EXECUTION.md`
-   - it now shows the current execution gate and the next missing evidence target
+   - it now shows the current execution gate, the next missing evidence target, and the progress for that report
 9. Review the generated `release-validation-runbook-*.md`
 10. Review the generated `release-validation-workboard-*.md` for the direct login-test, install, and hardware report paths and statuses
 11. Review `status/evidence-packs/CURRENT-EVIDENCE-SESSION.md`
@@ -35,6 +35,7 @@ Store prepared release packages here.
 13. Review `status/releases/CURRENT-RELEASE-EVIDENCE.md`
 14. Review `status/releases/CURRENT-RELEASE-READINESS.md`
 15. Review `status/releases/CURRENT-RELEASE-CONTROL-CENTER.md`
+   - it now shows `Evidence Ready Count`, `Evidence Checklist Progress`, and the next evidence target from one place
 16. Review `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md`
 17. Review the generated `release-manifest.md`
 18. Review the generated `release-notes.md`

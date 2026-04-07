@@ -157,6 +157,9 @@ $evidencePackState = Get-RecordedValue -Content $evidenceSessionContent -Label "
 $loginTestStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Status"
 $installStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Status"
 $hardwareStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Status"
+$evidenceActionPackPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Action Pack Path"
+$evidenceNextActionPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Next Action Path"
+$evidenceNextActionLauncherPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Next Action Launcher"
 
 $executionState = switch ($evidencePackState) {
     "ready-for-rc-gating" { "ready-for-rc-gating"; break }
@@ -194,6 +197,10 @@ $executionState = switch ($evidencePackState) {
     default { "ready-to-execute" }
 }
 
+$executionContent = Set-OrAddMetadataValue -Content $executionContent -Label "Evidence Action Pack Path" -Value $evidenceActionPackPath
+$executionContent = Set-OrAddMetadataValue -Content $executionContent -Label "Evidence Next Action Path" -Value $evidenceNextActionPath
+$executionContent = Set-OrAddMetadataValue -Content $executionContent -Label "Evidence Next Action Launcher" -Value $evidenceNextActionLauncherPath
+
 $actionPackPath = & $actionPackScript `
     -ExecutionPath $resolvedExecutionPath `
     -ReleaseVersion $releaseVersionValue `
@@ -225,6 +232,9 @@ $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionCont
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Execution Runbook Path" -Value $executionRunbookPath
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Workboard Path" -Value $executionWorkboardPath
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Action Pack Path" -Value $actionPackPath
+$updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Evidence Action Pack Path" -Value $evidenceActionPackPath
+$updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Evidence Next Action Path" -Value $evidenceNextActionPath
+$updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Evidence Next Action Launcher" -Value $evidenceNextActionLauncherPath
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Current Evidence Session" -Value $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Current Release Control Center" -Value $(if (Test-Path $currentReleaseControlCenterPath) { $currentReleaseControlCenterPath } else { "not-recorded-yet" })
 

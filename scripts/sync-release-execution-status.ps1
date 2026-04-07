@@ -119,6 +119,9 @@ $runbookPath = Get-RecordedValue -Content $executionContent -Label "Runbook Path
 $executionRunbookPath = Get-RecordedValue -Content $executionContent -Label "Execution Runbook Path"
 $workboardPath = Get-RecordedValue -Content $executionContent -Label "Workboard Path"
 $actionPackPath = Get-RecordedValue -Content $executionContent -Label "Action Pack Path"
+$evidenceActionPackPath = Get-RecordedValue -Content $executionContent -Label "Evidence Action Pack Path"
+$evidenceNextActionPath = Get-RecordedValue -Content $executionContent -Label "Evidence Next Action Path"
+$evidenceNextActionLauncherPath = Get-RecordedValue -Content $executionContent -Label "Evidence Next Action Launcher"
 $currentEvidenceSessionPath = Get-RecordedValue -Content $executionContent -Label "Current Evidence Session"
 $currentControlCenterPath = Get-RecordedValue -Content $executionContent -Label "Current Release Control Center"
 
@@ -161,6 +164,8 @@ $summaryItems.Add("Evidence Checklist Progress: $evidenceChecklistProgress") | O
 $summaryItems.Add("Login-Test Status: $loginTestStatus") | Out-Null
 $summaryItems.Add("Install Status: $installStatus") | Out-Null
 $summaryItems.Add("Hardware Status: $hardwareStatus") | Out-Null
+$summaryItems.Add("Evidence Action Pack: $(Get-ResolvedValue -Value $evidenceActionPackPath)") | Out-Null
+$summaryItems.Add("Evidence Next Action: $(Get-ResolvedValue -Value $evidenceNextActionPath)") | Out-Null
 $summaryItems.Add("Next Action Path: $nextActionPath") | Out-Null
 
 $nextItems = [System.Collections.Generic.List[string]]::new()
@@ -171,6 +176,12 @@ switch ($executionState) {
         $nextItems.Add("Login-Test Report: $loginTestReportPath") | Out-Null
         $nextItems.Add("Install Report: $installReportPath") | Out-Null
         $nextItems.Add("Hardware Report: $hardwareReportPath") | Out-Null
+        if ($evidenceActionPackPath -ne "not-recorded-yet") {
+            $nextItems.Add("Evidence Action Pack: $evidenceActionPackPath") | Out-Null
+        }
+        if ($evidenceNextActionPath -ne "not-recorded-yet") {
+            $nextItems.Add("Evidence Next Action: $evidenceNextActionPath") | Out-Null
+        }
         $nextItems.Add("Next Action Path: $nextActionPath") | Out-Null
     }
     "awaiting-login-test-evidence" {
@@ -180,6 +191,12 @@ switch ($executionState) {
         $nextItems.Add("Login-Test Tester: $loginTestTester") | Out-Null
         if ($actionPackPath -ne "not-recorded-yet") {
             $nextItems.Add("Action Pack: $actionPackPath") | Out-Null
+        }
+        if ($evidenceActionPackPath -ne "not-recorded-yet") {
+            $nextItems.Add("Evidence Action Pack: $evidenceActionPackPath") | Out-Null
+        }
+        if ($evidenceNextActionLauncherPath -ne "not-recorded-yet") {
+            $nextItems.Add("Evidence Next Action Launcher: $evidenceNextActionLauncherPath") | Out-Null
         }
         $nextItems.Add("Next Action Path: $nextActionPath") | Out-Null
     }
@@ -191,6 +208,12 @@ switch ($executionState) {
         if ($actionPackPath -ne "not-recorded-yet") {
             $nextItems.Add("Action Pack: $actionPackPath") | Out-Null
         }
+        if ($evidenceActionPackPath -ne "not-recorded-yet") {
+            $nextItems.Add("Evidence Action Pack: $evidenceActionPackPath") | Out-Null
+        }
+        if ($evidenceNextActionLauncherPath -ne "not-recorded-yet") {
+            $nextItems.Add("Evidence Next Action Launcher: $evidenceNextActionLauncherPath") | Out-Null
+        }
         $nextItems.Add("Next Action Path: $nextActionPath") | Out-Null
     }
     "awaiting-hardware-evidence" {
@@ -201,6 +224,12 @@ switch ($executionState) {
         if ($actionPackPath -ne "not-recorded-yet") {
             $nextItems.Add("Action Pack: $actionPackPath") | Out-Null
         }
+        if ($evidenceActionPackPath -ne "not-recorded-yet") {
+            $nextItems.Add("Evidence Action Pack: $evidenceActionPackPath") | Out-Null
+        }
+        if ($evidenceNextActionLauncherPath -ne "not-recorded-yet") {
+            $nextItems.Add("Evidence Next Action Launcher: $evidenceNextActionLauncherPath") | Out-Null
+        }
         $nextItems.Add("Next Action Path: $nextActionPath") | Out-Null
     }
     "ready-for-rc-gating" {
@@ -208,6 +237,12 @@ switch ($executionState) {
         $nextItems.Add("Run the evidence audit, then prepare the release candidate.") | Out-Null
         if ($actionPackPath -ne "not-recorded-yet") {
             $nextItems.Add("Action Pack: $actionPackPath") | Out-Null
+        }
+        if ($evidenceActionPackPath -ne "not-recorded-yet") {
+            $nextItems.Add("Evidence Action Pack: $evidenceActionPackPath") | Out-Null
+        }
+        if ($evidenceNextActionPath -ne "not-recorded-yet") {
+            $nextItems.Add("Evidence Next Action: $evidenceNextActionPath") | Out-Null
         }
         $nextItems.Add("Next Action Path: $nextActionPath") | Out-Null
     }
@@ -259,6 +294,9 @@ $summaryContent = @"
 - Execution Runbook Path: $executionRunbookPath
 - Workboard Path: $workboardPath
 - Action Pack Path: $actionPackPath
+- Evidence Action Pack Path: $evidenceActionPackPath
+- Evidence Next Action Path: $evidenceNextActionPath
+- Evidence Next Action Launcher: $evidenceNextActionLauncherPath
 - Login-Test Report: $loginTestReportPath
 - Login-Test Status: $loginTestStatus
 - Login-Test Tester: $loginTestTester
@@ -309,6 +347,9 @@ $currentContent = @"
 - Execution Runbook Path: $(Get-ResolvedValue -Value $executionRunbookPath)
 - Workboard Path: $(Get-ResolvedValue -Value $workboardPath)
 - Action Pack Path: $(Get-ResolvedValue -Value $actionPackPath)
+- Evidence Action Pack Path: $(Get-ResolvedValue -Value $evidenceActionPackPath)
+- Evidence Next Action Path: $(Get-ResolvedValue -Value $evidenceNextActionPath)
+- Evidence Next Action Launcher: $(Get-ResolvedValue -Value $evidenceNextActionLauncherPath)
 - Login-Test Report: $(Get-ResolvedValue -Value $loginTestReportPath)
 - Login-Test Status: $loginTestStatus
 - Login-Test Checklist Progress: $loginTestChecklistProgress

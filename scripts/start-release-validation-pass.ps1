@@ -139,6 +139,9 @@ $content = @"
 - Execution Runbook Path: not-recorded-yet
 - Workboard Path: not-recorded-yet
 - Action Pack Path: not-recorded-yet
+- Evidence Action Pack Path: not-recorded-yet
+- Evidence Next Action Path: not-recorded-yet
+- Evidence Next Action Launcher: not-recorded-yet
 - Current Evidence Session: $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
 - Current Release Control Center: $(if (Test-Path $currentReleaseControlCenterPath) { $currentReleaseControlCenterPath } else { "not-recorded-yet" })
 

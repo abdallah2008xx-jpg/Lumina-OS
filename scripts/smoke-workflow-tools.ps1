@@ -514,23 +514,40 @@ try {
     Assert-Condition -Condition (-not [string]::IsNullOrWhiteSpace($releaseExecutionWorkboardPath) -and (Test-Path $releaseExecutionWorkboardPath)) -Message "Release validation pass did not produce a workboard."
     $releaseExecutionActionPackPath = Get-MetadataValue -Content $releaseExecutionContent -Label "Action Pack Path"
     Assert-Condition -Condition (-not [string]::IsNullOrWhiteSpace($releaseExecutionActionPackPath) -and (Test-Path $releaseExecutionActionPackPath)) -Message "Release validation pass did not produce an action pack."
+    $releaseExecutionEvidenceActionPackPath = Get-MetadataValue -Content $releaseExecutionContent -Label "Evidence Action Pack Path"
+    $releaseExecutionEvidenceNextActionPath = Get-MetadataValue -Content $releaseExecutionContent -Label "Evidence Next Action Path"
+    $releaseExecutionEvidenceNextActionLauncherPath = Get-MetadataValue -Content $releaseExecutionContent -Label "Evidence Next Action Launcher"
+    Assert-Condition -Condition ((Resolve-Path $releaseExecutionEvidenceActionPackPath).Path -eq (Resolve-Path $releaseEvidenceActionPackPath).Path) -Message "Release validation pass did not bridge the evidence action pack path into execution metadata."
+    Assert-Condition -Condition ((Resolve-Path $releaseExecutionEvidenceNextActionPath).Path -eq (Resolve-Path $initialNextEvidenceActionPath).Path) -Message "Release validation pass did not bridge the initial evidence next action path into execution metadata."
+    Assert-Condition -Condition ((Resolve-Path $releaseExecutionEvidenceNextActionLauncherPath).Path -eq (Resolve-Path $initialNextEvidenceLauncherPath).Path) -Message "Release validation pass did not bridge the initial evidence next action launcher into execution metadata."
     $releaseExecutionRunbookContent = Get-Content -Raw $releaseExecutionRunbookPath
     Assert-Condition -Condition ($releaseExecutionRunbookContent -match [regex]::Escape("- Release Execution: $releaseExecutionPath")) -Message "Release validation runbook did not record the execution path."
     Assert-Condition -Condition ($releaseExecutionRunbookContent -match [regex]::Escape("- Evidence Session: $releaseEvidenceSessionPath")) -Message "Release validation runbook did not record the evidence session path."
     Assert-Condition -Condition ($releaseExecutionRunbookContent -match [regex]::Escape('.\scripts\sync-release-validation-pass.ps1 -ExecutionPath "' + $releaseExecutionPath + '" -ReleaseVersion "0.1.0-ci"')) -Message "Release validation runbook did not include the expected sync command."
     Assert-Condition -Condition ($releaseExecutionRunbookContent -match [regex]::Escape("- Action Pack Path: $releaseExecutionActionPackPath")) -Message "Release validation runbook did not record the action pack path."
+    Assert-Condition -Condition ($releaseExecutionRunbookContent -match [regex]::Escape("- Evidence Action Pack Path: $releaseEvidenceActionPackPath")) -Message "Release validation runbook did not record the evidence action pack path."
+    Assert-Condition -Condition ($releaseExecutionRunbookContent -match [regex]::Escape("- Evidence Next Action Path: $initialNextEvidenceActionPath")) -Message "Release validation runbook did not record the evidence next action path."
+    Assert-Condition -Condition ($releaseExecutionRunbookContent -match [regex]::Escape("- Evidence Next Action Launcher: $initialNextEvidenceLauncherPath")) -Message "Release validation runbook did not record the evidence next action launcher."
     $releaseExecutionWorkboardContent = Get-Content -Raw $releaseExecutionWorkboardPath
     Assert-Condition -Condition ($releaseExecutionWorkboardContent -match [regex]::Escape("- Release Execution: $releaseExecutionPath")) -Message "Release validation workboard did not record the execution path."
     Assert-Condition -Condition ($releaseExecutionWorkboardContent -match [regex]::Escape("- Evidence Session: $releaseEvidenceSessionPath")) -Message "Release validation workboard did not record the evidence session path."
     Assert-Condition -Condition ($releaseExecutionWorkboardContent -match [regex]::Escape('.\scripts\sync-release-validation-pass.ps1 -ExecutionPath "' + $releaseExecutionPath + '" -ReleaseVersion "0.1.0-ci"')) -Message "Release validation workboard did not include the expected sync command."
     Assert-Condition -Condition ($releaseExecutionWorkboardContent -match [regex]::Escape("- Action Pack Path: $releaseExecutionActionPackPath")) -Message "Release validation workboard did not record the action pack path."
+    Assert-Condition -Condition ($releaseExecutionWorkboardContent -match [regex]::Escape("- Evidence Action Pack Path: $releaseEvidenceActionPackPath")) -Message "Release validation workboard did not record the evidence action pack path."
+    Assert-Condition -Condition ($releaseExecutionWorkboardContent -match [regex]::Escape("- Evidence Next Action Path: $initialNextEvidenceActionPath")) -Message "Release validation workboard did not record the evidence next action path."
+    Assert-Condition -Condition ($releaseExecutionWorkboardContent -match [regex]::Escape("- Evidence Next Action Launcher: $initialNextEvidenceLauncherPath")) -Message "Release validation workboard did not record the evidence next action launcher."
     Assert-Condition -Condition ($releaseExecutionWorkboardContent -match [regex]::Escape("- Evidence Ready Count: 0/3")) -Message "Release validation workboard did not record the initial evidence ready count."
     Assert-Condition -Condition ($releaseExecutionWorkboardContent -match [regex]::Escape("- Login-Test Checklist Progress: $($initialLoginAudit.ChecklistSummary)")) -Message "Release validation workboard did not record the login-test checklist progress."
     $releaseExecutionActionPackContent = Get-Content -Raw $releaseExecutionActionPackPath
     $releaseExecutionActionPackDir = Split-Path -Parent $releaseExecutionActionPackPath
     Assert-Condition -Condition ($releaseExecutionActionPackContent -match [regex]::Escape("- Release Execution: $releaseExecutionPath")) -Message "Release validation action pack did not record the execution path."
+    Assert-Condition -Condition ($releaseExecutionActionPackContent -match [regex]::Escape("- Evidence Action Pack: $releaseEvidenceActionPackPath")) -Message "Release validation action pack did not record the evidence action pack path."
+    Assert-Condition -Condition ($releaseExecutionActionPackContent -match [regex]::Escape("- Evidence Next Action: $initialNextEvidenceActionPath")) -Message "Release validation action pack did not record the evidence next action path."
+    Assert-Condition -Condition ($releaseExecutionActionPackContent -match [regex]::Escape("- Evidence Next Action Launcher: $initialNextEvidenceLauncherPath")) -Message "Release validation action pack did not record the evidence next action launcher."
     Assert-Condition -Condition (Test-Path (Join-Path $releaseExecutionActionPackDir "00-run-next-step.ps1")) -Message "Release validation action pack did not create the next-step launcher."
     Assert-Condition -Condition (Test-Path (Join-Path $releaseExecutionActionPackDir "20-open-next-evidence.ps1")) -Message "Release validation action pack did not create the next-evidence helper."
+    Assert-Condition -Condition (Test-Path (Join-Path $releaseExecutionActionPackDir "24-open-evidence-action-pack.ps1")) -Message "Release validation action pack did not create the evidence-action-pack helper."
+    Assert-Condition -Condition (Test-Path (Join-Path $releaseExecutionActionPackDir "25-run-evidence-next-step.ps1")) -Message "Release validation action pack did not create the evidence next-step helper."
     Assert-Condition -Condition (Test-Path (Join-Path $releaseExecutionActionPackDir "31-sync-release-validation-pass.ps1")) -Message "Release validation action pack did not create the validation-sync helper."
     Assert-Condition -Condition (Test-Path (Join-Path $releaseExecutionActionPackDir "60-prepare-release-candidate.ps1")) -Message "Release validation action pack did not create the RC helper."
     $initialNextReleaseActionPath = & $openNextReleaseActionScript `
@@ -548,6 +565,9 @@ try {
     Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Execution Runbook Path: $releaseExecutionRunbookPath")) -Message "Release validation sync did not keep the execution runbook path."
     Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Workboard Path: $releaseExecutionWorkboardPath")) -Message "Release validation sync did not keep the workboard path."
     Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Action Pack Path: $releaseExecutionActionPackPath")) -Message "Release validation sync did not keep the action pack path."
+    Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Evidence Action Pack Path: $releaseEvidenceActionPackPath")) -Message "Release validation sync did not keep the evidence action pack path."
+    Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Evidence Next Action Path: $initialNextEvidenceActionPath")) -Message "Release validation sync did not keep the initial evidence next action path."
+    Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Evidence Next Action Launcher: $initialNextEvidenceLauncherPath")) -Message "Release validation sync did not keep the initial evidence next action launcher."
     Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Current Evidence Session: " + (Join-Path $tempRoot "status\evidence-packs\CURRENT-EVIDENCE-SESSION.md"))) -Message "Release validation sync did not update the current evidence-session pointer."
     $currentReleaseExecutionPath = Join-Path $tempRoot "status\\releases\\CURRENT-RELEASE-EXECUTION.md"
     Assert-Condition -Condition (Test-Path $currentReleaseExecutionPath) -Message "Current release execution summary was not created."
@@ -558,6 +578,9 @@ try {
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Execution Runbook Path: $releaseExecutionRunbookPath")) -Message "Current release execution summary did not record the execution runbook path."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Workboard Path: $releaseExecutionWorkboardPath")) -Message "Current release execution summary did not record the workboard path."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Action Pack Path: $releaseExecutionActionPackPath")) -Message "Current release execution summary did not record the action pack path."
+    Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Evidence Action Pack Path: $releaseEvidenceActionPackPath")) -Message "Current release execution summary did not record the evidence action pack path."
+    Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Evidence Next Action Path: $initialNextEvidenceActionPath")) -Message "Current release execution summary did not record the initial evidence next action path."
+    Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Evidence Next Action Launcher: $initialNextEvidenceLauncherPath")) -Message "Current release execution summary did not record the initial evidence next action launcher."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Next Action Path: $initialNextReleaseActionPath")) -Message "Current release execution summary did not record the initial next action path."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Evidence Ready Count: 0/3")) -Message "Current release execution summary did not record the initial evidence ready count."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Next Evidence Progress: $($initialLoginAudit.ChecklistSummary)")) -Message "Current release execution summary did not record the next evidence progress."
@@ -658,6 +681,9 @@ try {
     Assert-Condition -Condition ((Resolve-Path $postEvidenceExecutionPath).Path -eq (Resolve-Path $releaseExecutionPath).Path) -Message "Post-evidence release validation sync did not return the expected execution path."
     $releaseExecutionContent = Get-Content -Raw $releaseExecutionPath
     Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Execution State: ready-for-rc-gating")) -Message "Release validation pass did not advance to ready-for-rc-gating after evidence completion."
+    Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Evidence Action Pack Path: $releaseEvidenceActionPackPath")) -Message "Release validation pass did not keep the evidence action pack path after evidence completion."
+    Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Evidence Next Action Path: $completedNextEvidenceActionPath")) -Message "Release validation pass did not update the evidence next action path after evidence completion."
+    Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Evidence Next Action Launcher: $completedNextEvidenceLauncherPath")) -Message "Release validation pass did not keep the evidence next action launcher after evidence completion."
     $postEvidenceNextReleaseActionPath = & $openNextReleaseActionScript `
         -ExecutionPath $releaseExecutionPath `
         -RepoRoot $tempRoot `
@@ -665,6 +691,8 @@ try {
     Assert-Condition -Condition ((Resolve-Path $postEvidenceNextReleaseActionPath).Path -eq (Resolve-Path (Join-Path $releaseExecutionActionPackDir "50-audit-release-evidence.ps1")).Path) -Message "Next release action did not resolve to the evidence-audit helper after evidence completion."
     $currentReleaseExecutionContent = Get-Content -Raw $currentReleaseExecutionPath
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Execution State: ready-for-rc-gating")) -Message "Current release execution summary did not advance to ready-for-rc-gating."
+    Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Evidence Next Action Path: $completedNextEvidenceActionPath")) -Message "Current release execution summary did not update the evidence next action path after evidence completion."
+    Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Evidence Next Action Launcher: $completedNextEvidenceLauncherPath")) -Message "Current release execution summary did not keep the evidence next action launcher after evidence completion."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Next Action Path: $postEvidenceNextReleaseActionPath")) -Message "Current release execution summary did not update the next action path after evidence completion."
 
     $releaseEvidenceAuditPath = & $releaseEvidenceAuditScript `

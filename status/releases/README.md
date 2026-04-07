@@ -30,9 +30,11 @@ Store prepared release packages here.
 8. Review `status/releases/CURRENT-RELEASE-EXECUTION.md`
    - it now shows the current execution gate, the next missing evidence target, and the progress for that report
 9. Review the generated `release-validation-runbook-*.md`
+   - it now mirrors the evidence-session action pack, the evidence next action, and its launcher
 10. Review the generated `release-validation-workboard-*.md` for the direct login-test, install, and hardware report paths and statuses
+   - it now also shows the evidence action pack and the evidence next-action launcher from the same pass
 11. Review the generated `release-validation-actions-*/README.md` when you want direct helper scripts for open/sync/audit/RC
-   - it now includes `00-run-next-step.ps1` for the next practical release-validation action
+   - it now includes `00-run-next-step.ps1` for the next practical release-validation action plus bridge helpers into the evidence action pack
 12. Review `status/evidence-packs/CURRENT-EVIDENCE-SESSION.md`
    - it now includes the evidence-session action pack plus the direct next action path and launcher
 13. Review `status/evidence-packs/CURRENT-EVIDENCE-PACK.md`

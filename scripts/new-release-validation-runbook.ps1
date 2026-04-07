@@ -65,6 +65,9 @@ $evidenceSessionPath = Get-RecordedValue -Content $executionContent -Label "Evid
 $evidencePackPath = Get-RecordedValue -Content $executionContent -Label "Evidence Pack"
 $evidenceRunbookPath = Get-RecordedValue -Content $executionContent -Label "Runbook Path"
 $actionPackPath = Get-RecordedValue -Content $executionContent -Label "Action Pack Path"
+$evidenceActionPackPath = Get-RecordedValue -Content $executionContent -Label "Evidence Action Pack Path"
+$evidenceNextActionPath = Get-RecordedValue -Content $executionContent -Label "Evidence Next Action Path"
+$evidenceNextActionLauncherPath = Get-RecordedValue -Content $executionContent -Label "Evidence Next Action Launcher"
 
 $executionLeaf = Split-Path -Leaf $resolvedExecutionPath
 $runbookLeaf = if ($executionLeaf -like "release-validation-pass-*.md") {
@@ -90,6 +93,9 @@ $content = @"
 - Evidence Pack: $evidencePackPath
 - Evidence Runbook: $evidenceRunbookPath
 - Action Pack Path: $actionPackPath
+- Evidence Action Pack Path: $evidenceActionPackPath
+- Evidence Next Action Path: $evidenceNextActionPath
+- Evidence Next Action Launcher: $evidenceNextActionLauncherPath
 
 ## Step 1: Follow Cycle Handoff
 Use this file as the VM-cycle guide for the selected run label:
@@ -100,6 +106,15 @@ $cycleHandoffPath
 Use this file while collecting the real login-test, install, and hardware evidence:
 
 $evidenceSessionPath
+
+## Step 2A: Use The Evidence Action Pack
+When you want the smallest helper pack for the current missing evidence target, use:
+
+$evidenceActionPackPath
+
+The current evidence-side next step is:
+- Action Path: $evidenceNextActionPath
+- Launcher: $evidenceNextActionLauncherPath
 
 ## Step 3: Use The Validation Action Pack
 When you want direct helper scripts instead of manual command copying, use:

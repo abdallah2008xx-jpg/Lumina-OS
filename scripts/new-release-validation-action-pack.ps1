@@ -117,10 +117,23 @@ $executionRunbookPath = Get-RecordedValue -Content $executionContent -Label "Exe
 $workboardPath = Get-RecordedValue -Content $executionContent -Label "Workboard Path"
 $currentControlCenterPath = Get-RecordedValue -Content $executionContent -Label "Current Release Control Center"
 $currentEvidenceSessionPath = Get-RecordedValue -Content $executionContent -Label "Current Evidence Session"
+$evidenceActionPackPath = Get-RecordedValue -Content $executionContent -Label "Evidence Action Pack Path" -DefaultValue ""
+$evidenceNextActionPath = Get-RecordedValue -Content $executionContent -Label "Evidence Next Action Path" -DefaultValue ""
+$evidenceNextActionLauncherPath = Get-RecordedValue -Content $executionContent -Label "Evidence Next Action Launcher" -DefaultValue ""
 
 $evidenceSessionContent = ""
 if ($evidenceSessionPath -ne "not-recorded-yet" -and (Test-Path $evidenceSessionPath)) {
     $evidenceSessionContent = Get-Content -Raw $evidenceSessionPath
+}
+
+if ([string]::IsNullOrWhiteSpace($evidenceActionPackPath) -or $evidenceActionPackPath -eq "not-recorded-yet") {
+    $evidenceActionPackPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Action Pack Path" -DefaultValue ""
+}
+if ([string]::IsNullOrWhiteSpace($evidenceNextActionPath) -or $evidenceNextActionPath -eq "not-recorded-yet") {
+    $evidenceNextActionPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Next Action Path" -DefaultValue ""
+}
+if ([string]::IsNullOrWhiteSpace($evidenceNextActionLauncherPath) -or $evidenceNextActionLauncherPath -eq "not-recorded-yet") {
+    $evidenceNextActionLauncherPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Next Action Launcher" -DefaultValue ""
 }
 
 $loginTestReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Report"
@@ -169,6 +182,8 @@ $workboardPathLiteral = Convert-ToPsLiteral $workboardPath
 $releaseVersionLiteral = Convert-ToPsLiteral $releaseVersionValue
 $modeLiteral = Convert-ToPsLiteral $mode
 $runLabelLiteral = Convert-ToPsLiteral $runLabel
+$evidenceActionPackPathLiteral = Convert-ToPsLiteral $evidenceActionPackPath
+$evidenceNextActionLauncherLiteral = Convert-ToPsLiteral $evidenceNextActionLauncherPath
 
 Write-HelperScript -Path (Join-Path $packDir "00-run-next-step.ps1") -Body @"
 `$repoRoot = $repoRootLiteral
@@ -217,6 +232,27 @@ if (Test-Path `$path) {
 }
 else {
     throw "Hardware report not found: `$path"
+}
+"@
+
+Write-HelperScript -Path (Join-Path $packDir "24-open-evidence-action-pack.ps1") -Body @"
+`$path = $evidenceActionPackPathLiteral
+if (Test-Path `$path) {
+    Invoke-Item -LiteralPath `$path
+}
+else {
+    throw "Evidence action pack not found: `$path"
+}
+"@
+
+Write-HelperScript -Path (Join-Path $packDir "25-run-evidence-next-step.ps1") -Body @"
+`$repoRoot = $repoRootLiteral
+`$launcher = $evidenceNextActionLauncherLiteral
+if (Test-Path `$launcher) {
+    & `$launcher
+}
+else {
+    & (Join-Path `$repoRoot 'scripts\open-next-release-evidence.ps1') -EvidenceSessionPath $evidenceSessionPathLiteral -RepoRoot `$repoRoot -Open
 }
 "@
 
@@ -289,6 +325,9 @@ $readmeContent = @"
 - Evidence Runbook: $evidenceRunbookPath
 - Execution Runbook: $executionRunbookPath
 - Workboard: $workboardPath
+- Evidence Action Pack: $evidenceActionPackPath
+- Evidence Next Action: $evidenceNextActionPath
+- Evidence Next Action Launcher: $evidenceNextActionLauncherPath
 - Current Evidence Session: $currentEvidenceSessionPath
 - Current Release Control Center: $currentControlCenterPath
 
@@ -299,6 +338,8 @@ $readmeContent = @"
 - `21-open-login-test-report.ps1`
 - `22-open-install-report.ps1`
 - `23-open-hardware-report.ps1`
+- `24-open-evidence-action-pack.ps1`
+- `25-run-evidence-next-step.ps1`
 - `30-sync-evidence-session.ps1`
 - `31-sync-release-validation-pass.ps1`
 - `40-open-control-center.ps1`
@@ -312,6 +353,9 @@ $readmeContent = @"
 - Login-Test Report: $loginTestReportPath
 - Install Report: $installReportPath
 - Hardware Report: $hardwareReportPath
+- Evidence Action Pack: $evidenceActionPackPath
+- Evidence Next Action: $evidenceNextActionPath
+- Evidence Next Action Launcher: $evidenceNextActionLauncherPath
 
 ## Goal
 - reduce friction between runbook/workboard reading and real evidence execution

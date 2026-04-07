@@ -13,6 +13,7 @@ Keep one manifest here when you want to prepare `login-test`, `install`, and `ha
    - `scripts/audit-release-readiness.ps1 -EvidencePackPath "<path-to-pack>"`
    - `scripts/prepare-release-candidate.ps1 -EvidencePackPath "<path-to-pack>"`
 7. Review `CURRENT-EVIDENCE-SESSION.md` when you want the latest practical evidence-session summary in one place
+   - it now shows the next missing evidence target and its direct report path
 8. Review `CURRENT-EVIDENCE-PACK.md` when you want the latest synced pack summary in one place
 9. Review `../releases/CURRENT-RELEASE-CONTROL-CENTER.md` when you want the top-level release state after evidence, readiness, and candidate syncs
 

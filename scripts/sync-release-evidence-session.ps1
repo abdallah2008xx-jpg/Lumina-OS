@@ -46,6 +46,26 @@ function Get-RecordedValue {
     return $value
 }
 
+function Test-PassState {
+    param([string]$Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value) -or $Value -eq "not-recorded-yet") {
+        return $false
+    }
+
+    $normalized = $Value.Trim().ToLowerInvariant()
+    return @(
+        "pass",
+        "passed",
+        "complete",
+        "completed",
+        "success",
+        "successful",
+        "ready-for-release",
+        "ready-for-real-device-smoke"
+    ) -contains $normalized
+}
+
 $syncPackScript = Join-Path $PSScriptRoot "sync-release-evidence-pack.ps1"
 $syncSessionStatusScript = Join-Path $PSScriptRoot "sync-release-evidence-session-status.ps1"
 $syncControlCenterScript = Join-Path $PSScriptRoot "sync-release-control-center.ps1"
@@ -113,6 +133,25 @@ $sessionState = switch ($evidencePackState) {
     default { "ready-to-collect-evidence" }
 }
 
+$nextEvidenceTarget = "not-recorded-yet"
+$nextEvidenceReportPath = "not-recorded-yet"
+if (-not (Test-PassState -Value $loginTestStatus)) {
+    $nextEvidenceTarget = "login-test"
+    $nextEvidenceReportPath = $loginTestReportPath
+}
+elseif (-not (Test-PassState -Value $installStatus)) {
+    $nextEvidenceTarget = "install"
+    $nextEvidenceReportPath = $installReportPath
+}
+elseif (-not (Test-PassState -Value $hardwareStatus)) {
+    $nextEvidenceTarget = "hardware"
+    $nextEvidenceReportPath = $hardwareReportPath
+}
+elseif ($evidencePackState -eq "ready-for-rc-gating") {
+    $nextEvidenceTarget = "rc-gating"
+    $nextEvidenceReportPath = $runbookPath
+}
+
 $content = @"
 # Lumina-OS Release Evidence Session
 
@@ -134,6 +173,8 @@ $content = @"
 - Hardware Report: $hardwareReportPath
 - Hardware Status: $hardwareStatus
 - Hardware Run Label: $hardwareRunLabel
+- Next Evidence Target: $nextEvidenceTarget
+- Next Evidence Report: $nextEvidenceReportPath
 - Current Evidence Pack Summary: $(if (Test-Path $currentEvidencePackSummaryPath) { $currentEvidencePackSummaryPath } else { "not-recorded-yet" })
 - Current Release Control Center: $(if (Test-Path $currentReleaseControlCenterPath) { $currentReleaseControlCenterPath } else { "not-recorded-yet" })
 

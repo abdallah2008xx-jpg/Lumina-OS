@@ -113,6 +113,8 @@ $installReportPath = Get-RecordedValue -Content $sessionContent -Label "Install 
 $installStatus = Get-RecordedValue -Content $sessionContent -Label "Install Status"
 $hardwareReportPath = Get-RecordedValue -Content $sessionContent -Label "Hardware Report"
 $hardwareStatus = Get-RecordedValue -Content $sessionContent -Label "Hardware Status"
+$nextEvidenceTarget = Get-RecordedValue -Content $sessionContent -Label "Next Evidence Target"
+$nextEvidenceReportPath = Get-RecordedValue -Content $sessionContent -Label "Next Evidence Report"
 $currentEvidencePackSummaryPath = Get-RecordedValue -Content $sessionContent -Label "Current Evidence Pack Summary"
 $currentReleaseControlCenterPath = Get-RecordedValue -Content $sessionContent -Label "Current Release Control Center"
 
@@ -121,16 +123,21 @@ $summaryItems.Add("Run Label: $runLabel") | Out-Null
 $summaryItems.Add("Mode: $mode") | Out-Null
 $summaryItems.Add("Session State: $sessionState") | Out-Null
 $summaryItems.Add("Evidence Pack State: $evidencePackState") | Out-Null
+$summaryItems.Add("Next Evidence Target: $nextEvidenceTarget") | Out-Null
 $summaryItems.Add("Synced At: $syncedAt") | Out-Null
 
 $nextItems = [System.Collections.Generic.List[string]]::new()
 switch ($sessionState) {
     "ready-to-collect-evidence" {
-        $nextItems.Add("Update the login-test, install, and hardware reports linked from this session.") | Out-Null
+        $nextItems.Add("Start with the next missing evidence target from this session.") | Out-Null
+        $nextItems.Add("Next Evidence Target: $nextEvidenceTarget") | Out-Null
+        $nextItems.Add("Next Evidence Report: $nextEvidenceReportPath") | Out-Null
         $nextItems.Add("Rerun sync-release-evidence-session.ps1 after each real evidence update.") | Out-Null
     }
     "evidence-in-progress" {
-        $nextItems.Add("Keep updating the linked reports until all three move to completed or pass states.") | Out-Null
+        $nextItems.Add("Continue with the next missing evidence target from this session.") | Out-Null
+        $nextItems.Add("Next Evidence Target: $nextEvidenceTarget") | Out-Null
+        $nextItems.Add("Next Evidence Report: $nextEvidenceReportPath") | Out-Null
         $nextItems.Add("Rerun sync-release-evidence-session.ps1 after each report update.") | Out-Null
     }
     "ready-for-rc-gating" {
@@ -169,6 +176,8 @@ $summaryContent = @"
 - Evidence Pack: $evidencePackPath
 - Evidence Pack State: $evidencePackState
 - Runbook Path: $runbookPath
+- Next Evidence Target: $nextEvidenceTarget
+- Next Evidence Report: $nextEvidenceReportPath
 - Current Evidence Pack Summary: $currentEvidencePackSummaryPath
 - Current Release Control Center: $currentReleaseControlCenterPath
 
@@ -200,6 +209,8 @@ $currentContent = @"
 - Evidence Pack: $(Get-ResolvedValue -Value $evidencePackPath)
 - Evidence Pack State: $(Get-ResolvedValue -Value $evidencePackState)
 - Runbook Path: $(Get-ResolvedValue -Value $runbookPath)
+- Next Evidence Target: $(Get-ResolvedValue -Value $nextEvidenceTarget)
+- Next Evidence Report: $(Get-ResolvedValue -Value $nextEvidenceReportPath)
 - Synced At: $(Get-ResolvedValue -Value $syncedAt)
 - Current Evidence Pack Summary: $(Get-ResolvedValue -Value $currentEvidencePackSummaryPath)
 - Current Release Control Center: $(Get-ResolvedValue -Value $currentReleaseControlCenterPath)

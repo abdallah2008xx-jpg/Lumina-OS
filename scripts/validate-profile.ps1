@@ -493,7 +493,7 @@ $expectedExecMappings = @{
     "archiso-profile\airootfs\usr\share\applications\lumina-hardware-readiness-check.desktop" = "Exec=/usr/local/bin/lumina-hardware-readiness-check --open"
     "archiso-profile\airootfs\usr\share\applications\lumina-install-finalize-report.desktop" = "Exec=/usr/local/bin/lumina-open-install-finalize-report"
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop" = "Exec=/usr/local/bin/lumina-installer"
-    "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop" = "Exec=/usr/local/bin/lumina-windows-daily-home --launch"
+    "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop" = "Exec=/usr/local/bin/lumina-windows-apps"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-workflow-chooser.desktop" = "Exec=/usr/local/bin/lumina-windows-daily-home --choose-workflow --launch"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-launch-broker.desktop" = "Exec=/usr/local/bin/lumina-windows-launch-session --file %f --open-report"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop" = "Exec=/usr/local/bin/lumina-windows-compat-check"

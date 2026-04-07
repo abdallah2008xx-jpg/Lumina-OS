@@ -155,6 +155,7 @@ The current phase adds:
 - It now lets the app library recommend and launch the best published collection once a workflow is mature enough for daily use.
 - It now gives the main `Windows Apps` desktop entry a real daily surface, so Lumina can choose between setup guidance and everyday launch behavior instead of always dumping the user into one static report.
 - It now uses a visible report-opening fallback for the main `Windows Apps` entry and `.exe` launch sessions, so the user sees a real report window instead of a silent spinner-only background flow.
+- On lightweight/basic live sessions, the main `Windows Apps` entry now opens the lightweight bridge surface directly, and `.exe` intake falls back to a visible review report instead of trying to force the full hidden-workflow stack on first click.
 - It now exports lightweight daily menu shortcuts for the mature Windows path, so the user can jump straight to the daily surface, the best launch path, or the collection chooser.
 - It now exports a smaller daily app pack from published ready apps, so Lumina can bias direct use toward the smoothest known Windows launches instead of showing every app equally.
 - It now gives the daily surface a direct daily-app picker, so weaker machines can bias toward one lighter published app instead of always reaching for a broader collection first.

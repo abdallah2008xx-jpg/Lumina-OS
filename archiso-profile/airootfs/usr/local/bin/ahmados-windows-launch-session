@@ -36,11 +36,54 @@ broker_report="${state_root}/windows-launch-broker.md"
 warm_start_report="${state_root}/windows-vm-warm-start.md"
 launch_sync_report="${state_root}/windows-launch-results-sync.md"
 visible_open_bin="/usr/local/bin/ahmados-open-visible-path"
+bridge_report="${state_root}/windows-apps-bridge.md"
+compat_report="${state_root}/windows-compat-report.md"
 mkdir -p "${state_root}"
 
 if [[ -z "${target_file}" ]]; then
     printf 'No Windows launch file was provided.\n' >&2
     exit 1
+fi
+
+/usr/local/bin/ahmados-windows-apps --no-open >/dev/null 2>&1 || true
+
+compatibility_tier="$(awk -F': ' '/^- Compatibility Tier:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+resource_class="$(awk -F': ' '/^- Resource Class:/ {print $2; exit}' "${compat_report}" 2>/dev/null || true)"
+[[ -n "${compatibility_tier}" ]] || compatibility_tier="unknown"
+[[ -n "${resource_class}" ]] || resource_class="balanced"
+
+if [[ "${compatibility_tier}" == "basic-proton-only" || "${resource_class}" == "light" ]]; then
+    {
+        printf '# Lumina Windows Launch Session\n\n'
+        printf -- '- Generated At: %s\n' "$(date -Is)"
+        printf -- '- Target File: %s\n' "${target_file}"
+        printf -- '- Compatibility Tier: %s\n' "${compatibility_tier}"
+        printf -- '- Resource Class: %s\n' "${resource_class}"
+        printf -- '- Session Phase: %s\n' "lightweight-review"
+        printf -- '- Session Outcome: %s\n' "review-needed"
+        printf '\n## Session Note\n'
+        printf -- '- This live session is currently in lightweight guidance mode, so Lumina will show the Windows Apps review surface instead of pretending the EXE already launches invisibly.\n'
+        printf '\n## Related Reports\n'
+        printf -- '- Windows Apps Report: %s\n' "${bridge_report}"
+        printf -- '- Compatibility Report: %s\n' "${compat_report}"
+    } > "${session_report}"
+
+    if [[ ${open_report} -eq 1 ]]; then
+        if [[ -x "${visible_open_bin}" ]]; then
+            "${visible_open_bin}" --target "${session_report}" --fallback "${state_root}" --label "Lumina Windows Launch Session" >/dev/null 2>&1 || true
+        elif command -v xdg-open >/dev/null 2>&1; then
+            xdg-open "${session_report}" >/dev/null 2>&1 || true
+        fi
+    fi
+
+    printf '%s\n' '========================================'
+    printf '%s\n' '    Lumina Windows Launch Session'
+    printf '%s\n' '========================================'
+    printf '\n'
+    printf 'Outcome: %s\n' "review-needed"
+    printf 'Report: %s\n' "${session_report}"
+    printf '\n'
+    exit 0
 fi
 
 if [[ -n "${selected_profile_id}" ]]; then

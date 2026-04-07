@@ -17,6 +17,7 @@ done
 
 state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
 mkdir -p "${state_root}"
+visible_open_bin="/usr/local/bin/ahmados-open-visible-path"
 
 compat_report="${state_root}/windows-compat-report.md"
 lab_report="${state_root}/windows-vm-lab.md"
@@ -91,9 +92,13 @@ printf 'Summary: %s\n' "${experience_summary}"
 printf 'Report: %s\n' "${bridge_report}"
 printf '\n'
 
-if [[ ${open_reports} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
-    xdg-open "${bridge_report}" >/dev/null 2>&1 || true
-    xdg-open "${catalog_report}" >/dev/null 2>&1 || true
+if [[ ${open_reports} -eq 1 ]]; then
+    if [[ -x "${visible_open_bin}" ]]; then
+        "${visible_open_bin}" --target "${bridge_report}" --fallback "${state_root}" --label "Lumina Windows Apps" >/dev/null 2>&1 || true
+    elif command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "${bridge_report}" >/dev/null 2>&1 || true
+        xdg-open "${catalog_report}" >/dev/null 2>&1 || true
+    fi
 fi
 
 if [[ ${launch_advanced_lab} -eq 1 ]]; then

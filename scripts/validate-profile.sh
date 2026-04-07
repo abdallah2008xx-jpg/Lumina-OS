@@ -265,6 +265,7 @@ required_paths=(
     "${repo_root}/scripts/new-release-evidence-pack.ps1"
     "${repo_root}/scripts/new-release-evidence-runbook.ps1"
     "${repo_root}/scripts/start-release-evidence-session.ps1"
+    "${repo_root}/scripts/capture-release-evidence.ps1"
     "${repo_root}/scripts/sync-release-evidence-session.ps1"
     "${repo_root}/scripts/start-release-validation-pass.ps1"
     "${repo_root}/scripts/sync-release-validation-pass.ps1"

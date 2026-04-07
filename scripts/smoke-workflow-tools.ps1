@@ -73,6 +73,7 @@ $hardwareTestScript = Join-Path $PSScriptRoot "new-hardware-test-report.ps1"
 $releaseEvidencePackScript = Join-Path $PSScriptRoot "new-release-evidence-pack.ps1"
 $releaseEvidenceRunbookScript = Join-Path $PSScriptRoot "new-release-evidence-runbook.ps1"
 $releaseEvidenceSessionScript = Join-Path $PSScriptRoot "start-release-evidence-session.ps1"
+$captureReleaseEvidenceScript = Join-Path $PSScriptRoot "capture-release-evidence.ps1"
 $syncReleaseEvidenceSessionScript = Join-Path $PSScriptRoot "sync-release-evidence-session.ps1"
 $releaseValidationPassScript = Join-Path $PSScriptRoot "start-release-validation-pass.ps1"
 $syncReleaseValidationPassScript = Join-Path $PSScriptRoot "sync-release-validation-pass.ps1"
@@ -134,6 +135,10 @@ if (-not (Test-Path $releaseEvidenceRunbookScript)) {
 
 if (-not (Test-Path $releaseEvidenceSessionScript)) {
     throw "Missing smoke-test target: $releaseEvidenceSessionScript"
+}
+
+if (-not (Test-Path $captureReleaseEvidenceScript)) {
+    throw "Missing smoke-test target: $captureReleaseEvidenceScript"
 }
 
 if (-not (Test-Path $syncReleaseEvidenceSessionScript)) {
@@ -459,14 +464,12 @@ try {
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Execution Runbook Path: $releaseExecutionRunbookPath")) -Message "Current release execution summary did not record the execution runbook path."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Workboard Path: $releaseExecutionWorkboardPath")) -Message "Current release execution summary did not record the workboard path."
 
-    $releaseLoginTestReportContent = (Get-Content -Raw $releaseLoginTestReportPath) -replace '(?m)^- Overall Status: .+$', '- Overall Status: completed'
-    Set-Content -Path $releaseLoginTestReportPath -Value $releaseLoginTestReportContent -Encoding UTF8
+    & $captureReleaseEvidenceScript `
+        -EvidenceSessionPath $releaseEvidenceSessionPath `
+        -Target "all" `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly | Out-Null
 
-    $releaseInstallReportContent = (Get-Content -Raw $releaseInstallReportPath) -replace '(?m)^- Overall Status: .+$', '- Overall Status: completed'
-    Set-Content -Path $releaseInstallReportPath -Value $releaseInstallReportContent -Encoding UTF8
-
-    $releaseHardwareReportContent = (Get-Content -Raw $releaseHardwareReportPath) -replace '(?m)^- Overall Status: .+$', '- Overall Status: completed'
-    Set-Content -Path $releaseHardwareReportPath -Value $releaseHardwareReportContent -Encoding UTF8
 
     $syncedReleaseEvidencePackPath = & $syncReleaseEvidencePackScript `
         -EvidencePackPath $releaseEvidencePackPath `

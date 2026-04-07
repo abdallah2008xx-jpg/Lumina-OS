@@ -92,6 +92,11 @@ if (-not (Test-Path $openNextEvidenceScript)) {
     throw "Missing helper script: $openNextEvidenceScript"
 }
 
+$openNextReleaseActionScript = Join-Path $PSScriptRoot "open-next-release-action.ps1"
+if (-not (Test-Path $openNextReleaseActionScript)) {
+    throw "Missing helper script: $openNextReleaseActionScript"
+}
+
 $resolvedExecutionPath = (Resolve-Path $ExecutionPath).Path
 $executionContent = Get-Content -Raw $resolvedExecutionPath
 
@@ -164,6 +169,11 @@ $workboardPathLiteral = Convert-ToPsLiteral $workboardPath
 $releaseVersionLiteral = Convert-ToPsLiteral $releaseVersionValue
 $modeLiteral = Convert-ToPsLiteral $mode
 $runLabelLiteral = Convert-ToPsLiteral $runLabel
+
+Write-HelperScript -Path (Join-Path $packDir "00-run-next-step.ps1") -Body @"
+`$repoRoot = $repoRootLiteral
+& (Join-Path `$repoRoot 'scripts\open-next-release-action.ps1') -ExecutionPath $executionPathLiteral -RepoRoot `$repoRoot -Open
+"@
 
 Write-HelperScript -Path (Join-Path $packDir "10-open-cycle-handoff.ps1") -Body @"
 `$path = $cycleHandoffPathLiteral
@@ -283,6 +293,7 @@ $readmeContent = @"
 - Current Release Control Center: $currentControlCenterPath
 
 ## Helpers
+- `00-run-next-step.ps1`
 - `10-open-cycle-handoff.ps1`
 - `20-open-next-evidence.ps1`
 - `21-open-login-test-report.ps1`
@@ -305,6 +316,7 @@ $readmeContent = @"
 ## Goal
 - reduce friction between runbook/workboard reading and real evidence execution
 - keep one folder with direct helper scripts for the current release validation pass
+- let one launcher resolve and run the next practical release-validation step automatically
 "@
 
 Set-Content -Path $packReadmePath -Value $readmeContent -Encoding UTF8

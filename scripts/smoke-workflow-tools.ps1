@@ -75,6 +75,7 @@ $releaseEvidenceTargetAuditScript = Join-Path $PSScriptRoot "audit-release-evide
 $releaseEvidenceRunbookScript = Join-Path $PSScriptRoot "new-release-evidence-runbook.ps1"
 $releaseEvidenceSessionScript = Join-Path $PSScriptRoot "start-release-evidence-session.ps1"
 $openNextReleaseEvidenceScript = Join-Path $PSScriptRoot "open-next-release-evidence.ps1"
+$openNextReleaseActionScript = Join-Path $PSScriptRoot "open-next-release-action.ps1"
 $captureReleaseEvidenceScript = Join-Path $PSScriptRoot "capture-release-evidence.ps1"
 $syncReleaseEvidenceSessionScript = Join-Path $PSScriptRoot "sync-release-evidence-session.ps1"
 $releaseValidationPassScript = Join-Path $PSScriptRoot "start-release-validation-pass.ps1"
@@ -146,6 +147,10 @@ if (-not (Test-Path $releaseEvidenceSessionScript)) {
 
 if (-not (Test-Path $openNextReleaseEvidenceScript)) {
     throw "Missing smoke-test target: $openNextReleaseEvidenceScript"
+}
+
+if (-not (Test-Path $openNextReleaseActionScript)) {
+    throw "Missing smoke-test target: $openNextReleaseActionScript"
 }
 
 if (-not (Test-Path $captureReleaseEvidenceScript)) {
@@ -507,9 +512,15 @@ try {
     $releaseExecutionActionPackContent = Get-Content -Raw $releaseExecutionActionPackPath
     $releaseExecutionActionPackDir = Split-Path -Parent $releaseExecutionActionPackPath
     Assert-Condition -Condition ($releaseExecutionActionPackContent -match [regex]::Escape("- Release Execution: $releaseExecutionPath")) -Message "Release validation action pack did not record the execution path."
+    Assert-Condition -Condition (Test-Path (Join-Path $releaseExecutionActionPackDir "00-run-next-step.ps1")) -Message "Release validation action pack did not create the next-step launcher."
     Assert-Condition -Condition (Test-Path (Join-Path $releaseExecutionActionPackDir "20-open-next-evidence.ps1")) -Message "Release validation action pack did not create the next-evidence helper."
     Assert-Condition -Condition (Test-Path (Join-Path $releaseExecutionActionPackDir "31-sync-release-validation-pass.ps1")) -Message "Release validation action pack did not create the validation-sync helper."
     Assert-Condition -Condition (Test-Path (Join-Path $releaseExecutionActionPackDir "60-prepare-release-candidate.ps1")) -Message "Release validation action pack did not create the RC helper."
+    $initialNextReleaseActionPath = & $openNextReleaseActionScript `
+        -ExecutionPath $releaseExecutionPath `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+    Assert-Condition -Condition ((Resolve-Path $initialNextReleaseActionPath).Path -eq (Resolve-Path (Join-Path $releaseExecutionActionPackDir "20-open-next-evidence.ps1")).Path) -Message "Next release action did not resolve to the next-evidence helper before evidence completion."
     $syncedReleaseExecutionPath = & $syncReleaseValidationPassScript `
         -ExecutionPath $releaseExecutionPath `
         -ReleaseVersion "0.1.0-ci" `
@@ -530,6 +541,7 @@ try {
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Execution Runbook Path: $releaseExecutionRunbookPath")) -Message "Current release execution summary did not record the execution runbook path."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Workboard Path: $releaseExecutionWorkboardPath")) -Message "Current release execution summary did not record the workboard path."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Action Pack Path: $releaseExecutionActionPackPath")) -Message "Current release execution summary did not record the action pack path."
+    Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Next Action Path: $initialNextReleaseActionPath")) -Message "Current release execution summary did not record the initial next action path."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Evidence Ready Count: 0/3")) -Message "Current release execution summary did not record the initial evidence ready count."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Next Evidence Progress: $($initialLoginAudit.ChecklistSummary)")) -Message "Current release execution summary did not record the next evidence progress."
 
@@ -619,8 +631,14 @@ try {
     Assert-Condition -Condition ((Resolve-Path $postEvidenceExecutionPath).Path -eq (Resolve-Path $releaseExecutionPath).Path) -Message "Post-evidence release validation sync did not return the expected execution path."
     $releaseExecutionContent = Get-Content -Raw $releaseExecutionPath
     Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Execution State: ready-for-rc-gating")) -Message "Release validation pass did not advance to ready-for-rc-gating after evidence completion."
+    $postEvidenceNextReleaseActionPath = & $openNextReleaseActionScript `
+        -ExecutionPath $releaseExecutionPath `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+    Assert-Condition -Condition ((Resolve-Path $postEvidenceNextReleaseActionPath).Path -eq (Resolve-Path (Join-Path $releaseExecutionActionPackDir "50-audit-release-evidence.ps1")).Path) -Message "Next release action did not resolve to the evidence-audit helper after evidence completion."
     $currentReleaseExecutionContent = Get-Content -Raw $currentReleaseExecutionPath
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Execution State: ready-for-rc-gating")) -Message "Current release execution summary did not advance to ready-for-rc-gating."
+    Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Next Action Path: $postEvidenceNextReleaseActionPath")) -Message "Current release execution summary did not update the next action path after evidence completion."
 
     $releaseEvidenceAuditPath = & $releaseEvidenceAuditScript `
         -Version "0.1.0-ci" `
@@ -647,6 +665,11 @@ try {
     $currentReleaseEvidenceContent = Get-Content -Raw $currentReleaseEvidencePath
     Assert-Condition -Condition ($currentReleaseEvidenceContent -match [regex]::Escape("- Evidence Audit State: soft-and-strict-passed")) -Message "Current release evidence summary did not record the expected evidence state."
     Assert-Condition -Condition ($currentReleaseEvidenceContent -match [regex]::Escape("- Release Evidence Audit: $releaseEvidenceAuditPath")) -Message "Current release evidence summary did not point to the latest evidence audit."
+    $postAuditNextReleaseActionPath = & $openNextReleaseActionScript `
+        -ExecutionPath $releaseExecutionPath `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+    Assert-Condition -Condition ((Resolve-Path $postAuditNextReleaseActionPath).Path -eq (Resolve-Path (Join-Path $releaseExecutionActionPackDir "60-prepare-release-candidate.ps1")).Path) -Message "Next release action did not resolve to the RC helper after evidence audit."
     Assert-Condition -Condition ($currentReleaseEvidenceContent -match [regex]::Escape("- Evidence Pack: $releaseEvidencePackPath")) -Message "Current release evidence summary did not record the evidence-pack path."
     $currentReleaseControlCenterContent = Get-Content -Raw $currentReleaseControlCenterPath
     Assert-Condition -Condition ($currentReleaseControlCenterContent -match [regex]::Escape("- Release Control State: ready-for-readiness-audit")) -Message "Release control center did not advance to readiness-audit state."
@@ -954,11 +977,17 @@ try {
         -RepoRoot $tempRoot `
         -OutputPathOnly
 
+    $finalNextReleaseActionPath = & $openNextReleaseActionScript `
+        -ExecutionPath $releaseExecutionPath `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+
     Assert-Condition -Condition (Test-Path $shareableUpdatePath) -Message "Shareable update snapshot was not created."
     $shareableContent = Get-Content -Raw $shareableUpdatePath
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Candidate State: published")) -Message "Shareable update did not include the published release-candidate state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Execution State: ready-for-rc-gating")) -Message "Shareable update did not include the release execution state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Execution Action Pack: $releaseExecutionActionPackPath")) -Message "Shareable update did not include the release action pack path."
+    Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Next Action: $finalNextReleaseActionPath")) -Message "Shareable update did not include the resolved next release action."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Evidence Pack State: ready-for-rc-gating")) -Message "Shareable update did not include the evidence-pack state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Evidence Ready Count: 3/3")) -Message "Shareable update did not include the evidence ready count."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Evidence Checklist Progress: $completedChecklistSummary")) -Message "Shareable update did not include the evidence checklist progress."
@@ -980,6 +1009,7 @@ try {
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Candidate State: published")) -Message "English shareable brief did not include the published release-candidate state."
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Execution State: ready-for-rc-gating")) -Message "English shareable brief did not include the release execution state."
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Execution Action Pack: $releaseExecutionActionPackPath")) -Message "English shareable brief did not include the release action pack path."
+    Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Next Action: $finalNextReleaseActionPath")) -Message "English shareable brief did not include the resolved next release action."
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Evidence Pack State: ready-for-rc-gating")) -Message "English shareable brief did not include the evidence-pack state."
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Evidence Ready Count: 3/3")) -Message "English shareable brief did not include the evidence ready count."
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Evidence Checklist Progress: $completedChecklistSummary")) -Message "English shareable brief did not include the evidence checklist progress."
@@ -994,6 +1024,7 @@ try {
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Candidate State: published")) -Message "Arabic shareable brief did not include the published release-candidate state."
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Execution State: ready-for-rc-gating")) -Message "Arabic shareable brief did not include the release execution state."
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Execution Action Pack: $releaseExecutionActionPackPath")) -Message "Arabic shareable brief did not include the release action pack path."
+    Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Next Action: $finalNextReleaseActionPath")) -Message "Arabic shareable brief did not include the resolved next release action."
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Evidence Pack State: ready-for-rc-gating")) -Message "Arabic shareable brief did not include the evidence-pack state."
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Evidence Ready Count: 3/3")) -Message "Arabic shareable brief did not include the evidence ready count."
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Evidence Checklist Progress: $completedChecklistSummary")) -Message "Arabic shareable brief did not include the evidence checklist progress."

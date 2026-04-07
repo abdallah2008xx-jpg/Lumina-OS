@@ -143,6 +143,11 @@ function Get-LatestFile {
 $controlCenterPath = Join-Path $RepoRoot "status\releases\CURRENT-RELEASE-CONTROL-CENTER.md"
 $currentEvidenceSessionPath = Join-Path $RepoRoot "status\evidence-packs\CURRENT-EVIDENCE-SESSION.md"
 $currentExecutionPath = Join-Path $RepoRoot "status\releases\CURRENT-RELEASE-EXECUTION.md"
+$openNextReleaseActionScript = Join-Path $PSScriptRoot "open-next-release-action.ps1"
+
+if (-not (Test-Path $openNextReleaseActionScript)) {
+    throw "Missing required shareable update helper: $openNextReleaseActionScript"
+}
 
 $resolvedStatusPath = if ([string]::IsNullOrWhiteSpace($StatusPath)) {
     Join-Path $RepoRoot "status\CURRENT-STATUS.md"
@@ -275,6 +280,15 @@ $executionActionPackPath = if (Test-Path $currentExecutionPath) {
 else {
     ""
 }
+$nextReleaseActionPath = if (Test-Path $currentExecutionPath) {
+    & $openNextReleaseActionScript `
+        -ExecutionPath $currentExecutionPath `
+        -RepoRoot $RepoRoot `
+        -OutputPathOnly
+}
+else {
+    ""
+}
 $executionRunbookPath = if (Test-Path $currentExecutionPath) {
     Get-MetadataValue -Content (Get-Content -Raw $currentExecutionPath) -Label "Execution Runbook Path"
 }
@@ -375,6 +389,10 @@ if (-not [string]::IsNullOrWhiteSpace($nextEvidenceProgress) -and $nextEvidenceP
     $shareableSummary.Add("Next missing evidence progress: $nextEvidenceProgress") | Out-Null
 }
 
+if (-not [string]::IsNullOrWhiteSpace($nextReleaseActionPath) -and $nextReleaseActionPath -ne "not-recorded-yet") {
+    $shareableSummary.Add("Release next action: $nextReleaseActionPath") | Out-Null
+}
+
 if (-not [string]::IsNullOrWhiteSpace($evidenceSoftGateState)) {
     $shareableSummary.Add("Release evidence soft gate: $evidenceSoftGateState") | Out-Null
 }
@@ -403,6 +421,9 @@ if (-not [string]::IsNullOrWhiteSpace($nextEvidenceProgress) -and $nextEvidenceP
 if (-not [string]::IsNullOrWhiteSpace($nextEvidenceTester) -and $nextEvidenceTester -ne "not-recorded-yet") {
     $immediateNext.Insert([Math]::Min(3, $immediateNext.Count), "Next evidence tester: $nextEvidenceTester") | Out-Null
 }
+if (-not [string]::IsNullOrWhiteSpace($nextReleaseActionPath) -and $nextReleaseActionPath -ne "not-recorded-yet") {
+    $immediateNext.Insert([Math]::Min(4, $immediateNext.Count), "Release next action: $nextReleaseActionPath") | Out-Null
+}
 
 $dateStamp = Get-Date -Format "yyyy-MM-dd"
 $timeStamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -424,6 +445,7 @@ $content = @"
 - Release Execution Runbook: $(Get-ResolvedPathOrDefault -Value $executionRunbookPath -DefaultValue "not-recorded-yet")
 - Release Execution Workboard: $(Get-ResolvedPathOrDefault -Value $executionWorkboardPath -DefaultValue "not-recorded-yet")
 - Release Execution Action Pack: $(Get-ResolvedPathOrDefault -Value $executionActionPackPath -DefaultValue "not-recorded-yet")
+- Release Next Action: $(Get-ResolvedPathOrDefault -Value $nextReleaseActionPath -DefaultValue "not-recorded-yet")
 - Release Evidence Session: $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
 - Release Evidence Session State: $(Get-ResolvedPathOrDefault -Value $evidenceSessionState -DefaultValue "not-recorded-yet")
 - Release Next Evidence Target: $(Get-ResolvedPathOrDefault -Value $nextEvidenceTarget -DefaultValue "not-recorded-yet")

@@ -32,17 +32,19 @@ Store prepared release packages here.
 9. Review the generated `release-validation-runbook-*.md`
 10. Review the generated `release-validation-workboard-*.md` for the direct login-test, install, and hardware report paths and statuses
 11. Review the generated `release-validation-actions-*/README.md` when you want direct helper scripts for open/sync/audit/RC
+   - it now includes `00-run-next-step.ps1` for the next practical release-validation action
 12. Review `status/evidence-packs/CURRENT-EVIDENCE-SESSION.md`
 13. Review `status/evidence-packs/CURRENT-EVIDENCE-PACK.md`
 14. Review `status/releases/CURRENT-RELEASE-EVIDENCE.md`
 15. Review `status/releases/CURRENT-RELEASE-READINESS.md`
 16. Review `status/releases/CURRENT-RELEASE-CONTROL-CENTER.md`
    - it now shows `Evidence Ready Count`, `Evidence Checklist Progress`, and the next evidence target from one place
-17. Review `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md`
-18. Review the generated `release-manifest.md`
-19. Review the generated `release-notes.md`
-20. Confirm the linked cycle-chain audit reflects the intended run
-21. Run `scripts/validate-github-release-context.ps1`
-22. Run `scripts/publish-github-release.ps1` with the prepared manifest
-23. Confirm `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md` now shows the published state
-24. Verify the ISO and `SHA256SUMS.txt` assets in GitHub Releases
+17. Use `scripts/open-next-release-action.ps1` when you want one launcher that resolves the next practical release-validation step from the current execution/control state
+18. Review `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md`
+19. Review the generated `release-manifest.md`
+20. Review the generated `release-notes.md`
+21. Confirm the linked cycle-chain audit reflects the intended run
+22. Run `scripts/validate-github-release-context.ps1`
+23. Run `scripts/publish-github-release.ps1` with the prepared manifest
+24. Confirm `status/release-candidates/CURRENT-RELEASE-CANDIDATE.md` now shows the published state
+25. Verify the ISO and `SHA256SUMS.txt` assets in GitHub Releases

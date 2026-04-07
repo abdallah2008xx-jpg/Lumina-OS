@@ -258,6 +258,12 @@ $executionState = if (Test-Path $currentExecutionPath) {
 else {
     ""
 }
+$executionWorkboardPath = if (Test-Path $currentExecutionPath) {
+    Get-MetadataValue -Content (Get-Content -Raw $currentExecutionPath) -Label "Workboard Path"
+}
+else {
+    ""
+}
 $executionRunbookPath = if (Test-Path $currentExecutionPath) {
     Get-MetadataValue -Content (Get-Content -Raw $currentExecutionPath) -Label "Execution Runbook Path"
 }
@@ -352,6 +358,7 @@ $content = @"
 - Release Execution: $(if (Test-Path $currentExecutionPath) { $currentExecutionPath } else { "not-recorded-yet" })
 - Release Execution State: $(Get-ResolvedPathOrDefault -Value $executionState -DefaultValue "not-recorded-yet")
 - Release Execution Runbook: $(Get-ResolvedPathOrDefault -Value $executionRunbookPath -DefaultValue "not-recorded-yet")
+- Release Execution Workboard: $(Get-ResolvedPathOrDefault -Value $executionWorkboardPath -DefaultValue "not-recorded-yet")
 - Release Evidence Session: $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
 - Release Evidence Session State: $(Get-ResolvedPathOrDefault -Value $evidenceSessionState -DefaultValue "not-recorded-yet")
 - Release Evidence Pack: $(Get-ResolvedPathOrDefault -Value $resolvedReleaseEvidencePackPath -DefaultValue "not-recorded-yet")

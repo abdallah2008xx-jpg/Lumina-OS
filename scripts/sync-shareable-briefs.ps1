@@ -117,6 +117,7 @@ $validationState = Get-MetadataValue -Content $shareableContent -Label "Validati
 $candidateState = Get-MetadataValue -Content $shareableContent -Label "Release Candidate State"
 $executionState = Get-MetadataValue -Content $shareableContent -Label "Release Execution State"
 $executionRunbookPath = Get-MetadataValue -Content $shareableContent -Label "Release Execution Runbook"
+$executionWorkboardPath = Get-MetadataValue -Content $shareableContent -Label "Release Execution Workboard"
 $evidenceSessionState = Get-MetadataValue -Content $shareableContent -Label "Release Evidence Session State"
 $evidencePackState = Get-MetadataValue -Content $shareableContent -Label "Release Evidence Pack State"
 $evidenceAuditState = Get-MetadataValue -Content $shareableContent -Label "Release Evidence Audit State"
@@ -172,6 +173,7 @@ $englishLines.Add("- Validation Matrix State: $(if ([string]::IsNullOrWhiteSpace
 $englishLines.Add("- Release Candidate State: $(if ([string]::IsNullOrWhiteSpace($candidateState)) { "not-recorded-yet" } else { $candidateState })") | Out-Null
 $englishLines.Add("- Release Execution State: $(if ([string]::IsNullOrWhiteSpace($executionState)) { "not-recorded-yet" } else { $executionState })") | Out-Null
 $englishLines.Add("- Release Execution Runbook: $(if ([string]::IsNullOrWhiteSpace($executionRunbookPath)) { "not-recorded-yet" } else { $executionRunbookPath })") | Out-Null
+$englishLines.Add("- Release Execution Workboard: $(if ([string]::IsNullOrWhiteSpace($executionWorkboardPath)) { "not-recorded-yet" } else { $executionWorkboardPath })") | Out-Null
 $englishLines.Add("- Release Evidence Session State: $(if ([string]::IsNullOrWhiteSpace($evidenceSessionState)) { "not-recorded-yet" } else { $evidenceSessionState })") | Out-Null
 $englishLines.Add("- Release Evidence Pack State: $(if ([string]::IsNullOrWhiteSpace($evidencePackState)) { "not-recorded-yet" } else { $evidencePackState })") | Out-Null
 $englishLines.Add("- Release Evidence Audit State: $(if ([string]::IsNullOrWhiteSpace($evidenceAuditState)) { "not-recorded-yet" } else { $evidenceAuditState })") | Out-Null
@@ -210,6 +212,7 @@ $arabicLines.Add("- Validation Matrix State: $(if ([string]::IsNullOrWhiteSpace(
 $arabicLines.Add("- Release Candidate State: $(if ([string]::IsNullOrWhiteSpace($candidateState)) { "not-recorded-yet" } else { $candidateState })") | Out-Null
 $arabicLines.Add("- Release Execution State: $(if ([string]::IsNullOrWhiteSpace($executionState)) { "not-recorded-yet" } else { $executionState })") | Out-Null
 $arabicLines.Add("- Release Execution Runbook: $(if ([string]::IsNullOrWhiteSpace($executionRunbookPath)) { "not-recorded-yet" } else { $executionRunbookPath })") | Out-Null
+$arabicLines.Add("- Release Execution Workboard: $(if ([string]::IsNullOrWhiteSpace($executionWorkboardPath)) { "not-recorded-yet" } else { $executionWorkboardPath })") | Out-Null
 $arabicLines.Add("- Release Evidence Session State: $(if ([string]::IsNullOrWhiteSpace($evidenceSessionState)) { "not-recorded-yet" } else { $evidenceSessionState })") | Out-Null
 $arabicLines.Add("- Release Evidence Pack State: $(if ([string]::IsNullOrWhiteSpace($evidencePackState)) { "not-recorded-yet" } else { $evidencePackState })") | Out-Null
 $arabicLines.Add("- Release Evidence Audit State: $(if ([string]::IsNullOrWhiteSpace($evidenceAuditState)) { "not-recorded-yet" } else { $evidenceAuditState })") | Out-Null

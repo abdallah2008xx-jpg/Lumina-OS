@@ -75,10 +75,11 @@ function Get-SafeFileSegment {
 $handoffScript = Join-Path $PSScriptRoot "new-cycle-handoff.ps1"
 $evidenceSessionScript = Join-Path $PSScriptRoot "start-release-evidence-session.ps1"
 $executionRunbookScript = Join-Path $PSScriptRoot "new-release-validation-runbook.ps1"
+$executionWorkboardScript = Join-Path $PSScriptRoot "new-release-validation-workboard.ps1"
 $syncExecutionStatusScript = Join-Path $PSScriptRoot "sync-release-execution-status.ps1"
 $syncControlCenterScript = Join-Path $PSScriptRoot "sync-release-control-center.ps1"
 
-foreach ($requiredScript in @($handoffScript, $evidenceSessionScript, $executionRunbookScript, $syncExecutionStatusScript, $syncControlCenterScript)) {
+foreach ($requiredScript in @($handoffScript, $evidenceSessionScript, $executionRunbookScript, $executionWorkboardScript, $syncExecutionStatusScript, $syncControlCenterScript)) {
     if (-not (Test-Path $requiredScript)) {
         throw "Missing helper script: $requiredScript"
     }
@@ -140,6 +141,7 @@ $content = @"
 - Evidence Pack: $evidencePackPath
 - Runbook Path: $runbookPath
 - Execution Runbook Path: not-recorded-yet
+- Workboard Path: not-recorded-yet
 - Current Evidence Session: $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
 - Current Release Control Center: $(if (Test-Path $currentReleaseControlCenterPath) { $currentReleaseControlCenterPath } else { "not-recorded-yet" })
 
@@ -163,7 +165,14 @@ $executionRunbookPath = & $executionRunbookScript `
     -RepoRoot $RepoRoot `
     -OutputPathOnly
 
-$executionContent = (Get-Content -Raw $executionPath) -replace '(?m)^- Execution Runbook Path: .+$', ('- Execution Runbook Path: ' + $executionRunbookPath)
+$executionWorkboardPath = & $executionWorkboardScript `
+    -ExecutionPath $executionPath `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
+
+$executionContent = (Get-Content -Raw $executionPath) `
+    -replace '(?m)^- Execution Runbook Path: .+$', ('- Execution Runbook Path: ' + $executionRunbookPath) `
+    -replace '(?m)^- Workboard Path: .+$', ('- Workboard Path: ' + $executionWorkboardPath)
 Set-Content -Path $executionPath -Value $executionContent -Encoding UTF8
 
 $null = & $syncExecutionStatusScript `

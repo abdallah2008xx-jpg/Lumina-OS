@@ -105,11 +105,12 @@ function Test-PassState {
 
 $runbookScript = Join-Path $PSScriptRoot "new-release-validation-runbook.ps1"
 $workboardScript = Join-Path $PSScriptRoot "new-release-validation-workboard.ps1"
+$actionPackScript = Join-Path $PSScriptRoot "new-release-validation-action-pack.ps1"
 $syncExecutionStatusScript = Join-Path $PSScriptRoot "sync-release-execution-status.ps1"
 $syncEvidenceSessionScript = Join-Path $PSScriptRoot "sync-release-evidence-session.ps1"
 $syncControlCenterScript = Join-Path $PSScriptRoot "sync-release-control-center.ps1"
 
-foreach ($requiredScript in @($runbookScript, $workboardScript, $syncExecutionStatusScript, $syncEvidenceSessionScript, $syncControlCenterScript)) {
+foreach ($requiredScript in @($runbookScript, $workboardScript, $actionPackScript, $syncExecutionStatusScript, $syncEvidenceSessionScript, $syncControlCenterScript)) {
     if (-not (Test-Path $requiredScript)) {
         throw "Missing helper script: $requiredScript"
     }
@@ -193,6 +194,15 @@ $executionState = switch ($evidencePackState) {
     default { "ready-to-execute" }
 }
 
+$actionPackPath = & $actionPackScript `
+    -ExecutionPath $resolvedExecutionPath `
+    -ReleaseVersion $releaseVersionValue `
+    -RepoRoot $RepoRoot `
+    -OutputPathOnly
+
+$executionContent = Set-OrAddMetadataValue -Content $executionContent -Label "Action Pack Path" -Value $actionPackPath
+Set-Content -Path $resolvedExecutionPath -Value $executionContent -Encoding UTF8
+
 $executionRunbookPath = & $runbookScript `
     -ExecutionPath $resolvedExecutionPath `
     -ReleaseVersion $releaseVersionValue `
@@ -214,6 +224,7 @@ $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionCont
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Hardware Status" -Value $hardwareStatus
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Execution Runbook Path" -Value $executionRunbookPath
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Workboard Path" -Value $executionWorkboardPath
+$updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Action Pack Path" -Value $actionPackPath
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Current Evidence Session" -Value $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Current Release Control Center" -Value $(if (Test-Path $currentReleaseControlCenterPath) { $currentReleaseControlCenterPath } else { "not-recorded-yet" })
 

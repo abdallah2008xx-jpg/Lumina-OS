@@ -69,6 +69,7 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Optional but recommended: use `CURRENT-RELEASE-EXECUTION.md` to see which evidence target is still blocking RC gating and how far that report has progressed
 - [ ] Optional but recommended: review the generated `release-validation-runbook-*.md` from the combined validation pass
 - [ ] Optional but recommended: review the generated `release-validation-workboard-*.md` from the combined validation pass because it now lists the direct login-test, install, and hardware report paths
+- [ ] Optional but recommended: review the generated `release-validation-actions-*/README.md` because it now gives direct helper scripts for open/sync/audit/RC
 - [ ] Optional but recommended: after evidence updates, run `.\scripts\sync-release-evidence-session.ps1 -EvidenceSessionPath "<path-to-evidence-session>"` to refresh the evidence session, report statuses, and current evidence-session pointer together
 - [ ] Optional but recommended: after evidence updates, run `.\scripts\sync-release-validation-pass.ps1 -ExecutionPath "<path-to-release-validation-pass>"` to refresh the execution runbook, workboard, and current execution pointer together
 - [ ] Optional but recommended: review `status/evidence-packs/CURRENT-EVIDENCE-SESSION.md` after starting the shared evidence session

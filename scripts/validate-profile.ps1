@@ -259,6 +259,7 @@ $requiredPaths = @(
     "scripts\capture-release-evidence.ps1",
     "scripts\sync-release-evidence-session.ps1",
     "scripts\start-release-validation-pass.ps1",
+    "scripts\new-release-validation-action-pack.ps1",
     "scripts\sync-release-validation-pass.ps1",
     "scripts\new-release-validation-runbook.ps1",
     "scripts\new-release-validation-workboard.ps1",

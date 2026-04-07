@@ -58,6 +58,7 @@ $evidenceSessionPath = Get-RecordedValue -Content $executionContent -Label "Evid
 $evidencePackPath = Get-RecordedValue -Content $executionContent -Label "Evidence Pack"
 $evidenceRunbookPath = Get-RecordedValue -Content $executionContent -Label "Runbook Path"
 $executionRunbookPath = Get-RecordedValue -Content $executionContent -Label "Execution Runbook Path"
+$actionPackPath = Get-RecordedValue -Content $executionContent -Label "Action Pack Path"
 
 $evidenceSessionContent = ""
 if ($evidenceSessionPath -ne "not-recorded-yet" -and (Test-Path $evidenceSessionPath)) {
@@ -110,6 +111,7 @@ $content = @"
 - Evidence Checklist Progress: $evidenceChecklistProgress
 - Evidence Runbook: $evidenceRunbookPath
 - Execution Runbook: $executionRunbookPath
+- Action Pack Path: $actionPackPath
 - Login-Test Report: $loginTestReportPath
 - Login-Test Status: $loginTestStatus
 - Login-Test Run Label: $loginTestRunLabel
@@ -133,6 +135,7 @@ $content = @"
 - [ ] Update hardware evidence at: $hardwareReportPath
 - [ ] Sync the shared evidence pack after report updates
 - [ ] Refresh the release validation pass after evidence sync
+- [ ] Use the action pack if you want direct helper scripts for open/sync/audit/RC
 - [ ] Review the current pointers before RC prep
 - [ ] Run evidence audit
 - [ ] Prepare the release candidate
@@ -156,6 +159,7 @@ $content = @"
 - Hardware Checklist Progress: $hardwareChecklistProgress
 
 ## Commands
+- Action Pack README: $actionPackPath
 - .\scripts\sync-release-evidence-session.ps1 -EvidenceSessionPath "$evidenceSessionPath" -ReleaseVersion "$releaseVersion"
 - .\scripts\sync-release-evidence-pack.ps1 -EvidencePackPath "$evidencePackPath" -ReleaseVersion "$releaseVersion"
 - .\scripts\sync-release-validation-pass.ps1 -ExecutionPath "$resolvedExecutionPath" -ReleaseVersion "$releaseVersion"

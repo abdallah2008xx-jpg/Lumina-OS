@@ -138,6 +138,7 @@ $content = @"
 - Runbook Path: $runbookPath
 - Execution Runbook Path: not-recorded-yet
 - Workboard Path: not-recorded-yet
+- Action Pack Path: not-recorded-yet
 - Current Evidence Session: $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })
 - Current Release Control Center: $(if (Test-Path $currentReleaseControlCenterPath) { $currentReleaseControlCenterPath } else { "not-recorded-yet" })
 
@@ -146,9 +147,10 @@ $content = @"
    $resolvedHandoffPath
 2. Use the evidence session to keep login-test, install, and hardware evidence on the same run label:
    $resolvedEvidenceSessionPath
-3. After evidence updates, refresh this validation pass with:
+3. Use the generated action pack after sync for direct report-open, sync, and RC helpers.
+4. After evidence updates, refresh this validation pass with:
    .\scripts\sync-release-validation-pass.ps1 -ExecutionPath "$executionPath" -ReleaseVersion "$releaseVersionValue"
-4. Review the current evidence-session and control-center pointers before RC prep.
+5. Review the current evidence-session and control-center pointers before RC prep.
 
 ## Goal
 - start one real release-focused validation pass from a single entry point

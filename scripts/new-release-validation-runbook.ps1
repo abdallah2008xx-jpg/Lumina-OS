@@ -64,6 +64,7 @@ $cycleHandoffPath = Get-RecordedValue -Content $executionContent -Label "Cycle H
 $evidenceSessionPath = Get-RecordedValue -Content $executionContent -Label "Evidence Session"
 $evidencePackPath = Get-RecordedValue -Content $executionContent -Label "Evidence Pack"
 $evidenceRunbookPath = Get-RecordedValue -Content $executionContent -Label "Runbook Path"
+$actionPackPath = Get-RecordedValue -Content $executionContent -Label "Action Pack Path"
 
 $executionLeaf = Split-Path -Leaf $resolvedExecutionPath
 $runbookLeaf = if ($executionLeaf -like "release-validation-pass-*.md") {
@@ -88,6 +89,7 @@ $content = @"
 - Evidence Session: $evidenceSessionPath
 - Evidence Pack: $evidencePackPath
 - Evidence Runbook: $evidenceRunbookPath
+- Action Pack Path: $actionPackPath
 
 ## Step 1: Follow Cycle Handoff
 Use this file as the VM-cycle guide for the selected run label:
@@ -99,37 +101,42 @@ Use this file while collecting the real login-test, install, and hardware eviden
 
 $evidenceSessionPath
 
-## Step 3: Sync Shared Evidence
+## Step 3: Use The Validation Action Pack
+When you want direct helper scripts instead of manual command copying, use:
+
+$actionPackPath
+
+## Step 4: Sync Shared Evidence
 After report updates, refresh the pack:
 
 ```powershell
 .\scripts\sync-release-evidence-pack.ps1 -EvidencePackPath "$evidencePackPath" -ReleaseVersion "$releaseVersionValue"
 ```
 
-## Step 4: Refresh This Validation Pass
+## Step 5: Refresh This Validation Pass
 After evidence updates, refresh the execution, runbook, and workboard together:
 
 ```powershell
 .\scripts\sync-release-validation-pass.ps1 -ExecutionPath "$resolvedExecutionPath" -ReleaseVersion "$releaseVersionValue"
 ```
 
-## Step 5: Review Current Pointers
+## Step 6: Review Current Pointers
 - `status\\releases\\CURRENT-RELEASE-EXECUTION.md`
 - `status\\evidence-packs\\CURRENT-EVIDENCE-SESSION.md`
 - `status\\evidence-packs\\CURRENT-EVIDENCE-PACK.md`
 - `status\\releases\\CURRENT-RELEASE-CONTROL-CENTER.md`
 
-## Step 6: Run Evidence Audit
+## Step 7: Run Evidence Audit
 ```powershell
 .\scripts\audit-release-evidence.ps1 -Version "$releaseVersionValue" -Mode $mode -RunLabel "$runLabel" -EvidencePackPath "$evidencePackPath"
 ```
 
-## Step 7: Prepare Release Candidate
+## Step 8: Prepare Release Candidate
 ```powershell
 .\scripts\prepare-release-candidate.ps1 -Version "$releaseVersionValue" -Mode $mode -RunLabel "$runLabel" -EvidencePackPath "$evidencePackPath"
 ```
 
-## Step 8: Run Readiness Audit
+## Step 9: Run Readiness Audit
 ```powershell
 .\scripts\audit-release-readiness.ps1 -Version "$releaseVersionValue" -Mode $mode -RunLabel "$runLabel" -EvidencePackPath "$evidencePackPath"
 ```

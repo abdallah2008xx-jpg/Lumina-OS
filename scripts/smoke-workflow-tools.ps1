@@ -443,7 +443,7 @@ try {
 
     Assert-Condition -Condition (Test-Path $releaseExecutionPath) -Message "Release validation pass was not created."
     $releaseExecutionContent = Get-Content -Raw $releaseExecutionPath
-    Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Execution State: ready-to-execute")) -Message "Release validation pass did not record the expected execution state."
+    Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Execution State: awaiting-login-test-evidence")) -Message "Release validation pass did not record the expected initial execution state."
     Assert-Condition -Condition ($releaseExecutionContent -match "(?m)^- Synced At: (?!not-recorded-yet).+$") -Message "Release validation pass did not record an initial sync timestamp."
     Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Cycle Handoff:")) -Message "Release validation pass did not record the cycle handoff."
     Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Evidence Session:")) -Message "Release validation pass did not record the evidence session."
@@ -472,7 +472,7 @@ try {
     $currentReleaseExecutionPath = Join-Path $tempRoot "status\\releases\\CURRENT-RELEASE-EXECUTION.md"
     Assert-Condition -Condition (Test-Path $currentReleaseExecutionPath) -Message "Current release execution summary was not created."
     $currentReleaseExecutionContent = Get-Content -Raw $currentReleaseExecutionPath
-    Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Execution State: ready-to-execute")) -Message "Current release execution summary did not record the expected execution state."
+    Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Execution State: awaiting-login-test-evidence")) -Message "Current release execution summary did not record the expected initial execution state."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Release Execution: $releaseExecutionPath")) -Message "Current release execution summary did not record the latest execution path."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match "(?m)^- Synced At: (?!not-recorded-yet).+$") -Message "Current release execution summary did not record the sync timestamp."
     Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Execution Runbook Path: $releaseExecutionRunbookPath")) -Message "Current release execution summary did not record the execution runbook path."
@@ -534,6 +534,17 @@ try {
     Assert-Condition -Condition (Test-Path $currentReleaseControlCenterPath) -Message "Release control center was not created."
     $currentReleaseControlCenterContent = Get-Content -Raw $currentReleaseControlCenterPath
     Assert-Condition -Condition ($currentReleaseControlCenterContent -match [regex]::Escape("- Release Control State: ready-for-evidence-audit")) -Message "Release control center did not record the expected state after evidence-pack sync."
+
+    $postEvidenceExecutionPath = & $syncReleaseValidationPassScript `
+        -ExecutionPath $releaseExecutionPath `
+        -ReleaseVersion "0.1.0-ci" `
+        -RepoRoot $tempRoot `
+        -OutputPathOnly
+    Assert-Condition -Condition ((Resolve-Path $postEvidenceExecutionPath).Path -eq (Resolve-Path $releaseExecutionPath).Path) -Message "Post-evidence release validation sync did not return the expected execution path."
+    $releaseExecutionContent = Get-Content -Raw $releaseExecutionPath
+    Assert-Condition -Condition ($releaseExecutionContent -match [regex]::Escape("- Execution State: ready-for-rc-gating")) -Message "Release validation pass did not advance to ready-for-rc-gating after evidence completion."
+    $currentReleaseExecutionContent = Get-Content -Raw $currentReleaseExecutionPath
+    Assert-Condition -Condition ($currentReleaseExecutionContent -match [regex]::Escape("- Execution State: ready-for-rc-gating")) -Message "Current release execution summary did not advance to ready-for-rc-gating."
 
     $releaseEvidenceAuditPath = & $releaseEvidenceAuditScript `
         -Version "0.1.0-ci" `
@@ -870,7 +881,7 @@ try {
     Assert-Condition -Condition (Test-Path $shareableUpdatePath) -Message "Shareable update snapshot was not created."
     $shareableContent = Get-Content -Raw $shareableUpdatePath
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Candidate State: published")) -Message "Shareable update did not include the published release-candidate state."
-    Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Execution State: ready-to-execute")) -Message "Shareable update did not include the release execution state."
+    Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Execution State: ready-for-rc-gating")) -Message "Shareable update did not include the release execution state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Evidence Pack State: ready-for-rc-gating")) -Message "Shareable update did not include the evidence-pack state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Evidence Audit State: soft-and-strict-passed")) -Message "Shareable update did not include the evidence-audit state."
     Assert-Condition -Condition ($shareableContent -match [regex]::Escape("- Release Readiness State: ready-to-publish")) -Message "Shareable update did not include the release readiness state."
@@ -888,7 +899,7 @@ try {
     Assert-Condition -Condition (Test-Path $shareableBriefPath) -Message "English shareable brief was not created."
     $shareableBriefContent = Get-Content -Raw $shareableBriefPath
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Candidate State: published")) -Message "English shareable brief did not include the published release-candidate state."
-    Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Execution State: ready-to-execute")) -Message "English shareable brief did not include the release execution state."
+    Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Execution State: ready-for-rc-gating")) -Message "English shareable brief did not include the release execution state."
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Evidence Pack State: ready-for-rc-gating")) -Message "English shareable brief did not include the evidence-pack state."
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Evidence Audit State: soft-and-strict-passed")) -Message "English shareable brief did not include the evidence-audit state."
     Assert-Condition -Condition ($shareableBriefContent -match [regex]::Escape("- Release Readiness State: ready-to-publish")) -Message "English shareable brief did not include the release readiness state."
@@ -899,7 +910,7 @@ try {
     Assert-Condition -Condition (Test-Path $shareableArabicBriefPath) -Message "Arabic shareable brief was not created."
     $shareableArabicBriefContent = Get-Content -Raw $shareableArabicBriefPath
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Candidate State: published")) -Message "Arabic shareable brief did not include the published release-candidate state."
-    Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Execution State: ready-to-execute")) -Message "Arabic shareable brief did not include the release execution state."
+    Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Execution State: ready-for-rc-gating")) -Message "Arabic shareable brief did not include the release execution state."
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Evidence Pack State: ready-for-rc-gating")) -Message "Arabic shareable brief did not include the evidence-pack state."
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Evidence Audit State: soft-and-strict-passed")) -Message "Arabic shareable brief did not include the evidence-audit state."
     Assert-Condition -Condition ($shareableArabicBriefContent -match [regex]::Escape("- Release Readiness State: ready-to-publish")) -Message "Arabic shareable brief did not include the release readiness state."

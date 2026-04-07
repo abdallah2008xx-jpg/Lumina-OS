@@ -83,6 +83,26 @@ function Set-OrAddMetadataValue {
     return ($lines -join "`r`n")
 }
 
+function Test-PassState {
+    param([string]$Value)
+
+    if ([string]::IsNullOrWhiteSpace($Value) -or $Value -eq "not-recorded-yet") {
+        return $false
+    }
+
+    $normalized = $Value.Trim().ToLowerInvariant()
+    return @(
+        "pass",
+        "passed",
+        "complete",
+        "completed",
+        "success",
+        "successful",
+        "ready-for-release",
+        "ready-for-real-device-smoke"
+    ) -contains $normalized
+}
+
 $runbookScript = Join-Path $PSScriptRoot "new-release-validation-runbook.ps1"
 $workboardScript = Join-Path $PSScriptRoot "new-release-validation-workboard.ps1"
 $syncExecutionStatusScript = Join-Path $PSScriptRoot "sync-release-execution-status.ps1"
@@ -125,6 +145,54 @@ $null = & $syncControlCenterScript `
 $currentEvidenceSessionPath = Join-Path $RepoRoot "status\evidence-packs\CURRENT-EVIDENCE-SESSION.md"
 $currentReleaseControlCenterPath = Join-Path $RepoRoot "status\releases\CURRENT-RELEASE-CONTROL-CENTER.md"
 
+$resolvedEvidenceSessionPath = ""
+$evidenceSessionContent = ""
+if (-not [string]::IsNullOrWhiteSpace($evidenceSessionPath) -and $evidenceSessionPath -ne "not-recorded-yet" -and (Test-Path $evidenceSessionPath)) {
+    $resolvedEvidenceSessionPath = (Resolve-Path $evidenceSessionPath).Path
+    $evidenceSessionContent = Get-Content -Raw $resolvedEvidenceSessionPath
+}
+
+$evidencePackState = Get-RecordedValue -Content $evidenceSessionContent -Label "Evidence Pack State"
+$loginTestStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Status"
+$installStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Status"
+$hardwareStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Status"
+
+$executionState = switch ($evidencePackState) {
+    "ready-for-rc-gating" { "ready-for-rc-gating"; break }
+    "run-label-mismatch" { "evidence-run-label-mismatch"; break }
+    "missing-evidence" {
+        if (-not (Test-PassState -Value $loginTestStatus)) {
+            "awaiting-login-test-evidence"
+        }
+        elseif (-not (Test-PassState -Value $installStatus)) {
+            "awaiting-install-evidence"
+        }
+        elseif (-not (Test-PassState -Value $hardwareStatus)) {
+            "awaiting-hardware-evidence"
+        }
+        else {
+            "evidence-in-progress"
+        }
+        break
+    }
+    "incomplete" {
+        if (-not (Test-PassState -Value $loginTestStatus)) {
+            "awaiting-login-test-evidence"
+        }
+        elseif (-not (Test-PassState -Value $installStatus)) {
+            "awaiting-install-evidence"
+        }
+        elseif (-not (Test-PassState -Value $hardwareStatus)) {
+            "awaiting-hardware-evidence"
+        }
+        else {
+            "evidence-in-progress"
+        }
+        break
+    }
+    default { "ready-to-execute" }
+}
+
 $executionRunbookPath = & $runbookScript `
     -ExecutionPath $resolvedExecutionPath `
     -ReleaseVersion $releaseVersionValue `
@@ -139,6 +207,11 @@ $executionWorkboardPath = & $workboardScript `
 $updatedExecutionContent = $executionContent
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Release Version" -Value $releaseVersionValue
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Synced At" -Value (Get-Date -Format s)
+$updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Execution State" -Value $executionState
+$updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Evidence Pack State" -Value $evidencePackState
+$updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Login-Test Status" -Value $loginTestStatus
+$updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Install Status" -Value $installStatus
+$updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Hardware Status" -Value $hardwareStatus
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Execution Runbook Path" -Value $executionRunbookPath
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Workboard Path" -Value $executionWorkboardPath
 $updatedExecutionContent = Set-OrAddMetadataValue -Content $updatedExecutionContent -Label "Current Evidence Session" -Value $(if (Test-Path $currentEvidenceSessionPath) { $currentEvidenceSessionPath } else { "not-recorded-yet" })

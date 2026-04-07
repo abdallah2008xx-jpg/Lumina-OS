@@ -66,6 +66,7 @@ Ship the first public Lumina-OS test ISO with evidence, not guesswork.
 - [ ] Recommended: start one combined release validation pass with `.\scripts\start-release-validation-pass.ps1 -Mode stable -RunLabel "<run-label>"`
 - [ ] Recommended: start one shared evidence session with `.\scripts\start-release-evidence-session.ps1 -Mode stable -RunLabel "<run-label>"`
 - [ ] Optional but recommended: review `status/releases/CURRENT-RELEASE-EXECUTION.md` after starting the combined validation pass
+- [ ] Optional but recommended: use `CURRENT-RELEASE-EXECUTION.md` to see which evidence target is still blocking RC gating
 - [ ] Optional but recommended: review the generated `release-validation-runbook-*.md` from the combined validation pass
 - [ ] Optional but recommended: review the generated `release-validation-workboard-*.md` from the combined validation pass because it now lists the direct login-test, install, and hardware report paths
 - [ ] Optional but recommended: after evidence updates, run `.\scripts\sync-release-evidence-session.ps1 -EvidenceSessionPath "<path-to-evidence-session>"` to refresh the evidence session, report statuses, and current evidence-session pointer together

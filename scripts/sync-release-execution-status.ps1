@@ -109,6 +109,7 @@ $firmware = Get-RecordedValue -Content $executionContent -Label "Firmware"
 $cycleHandoffPath = Get-RecordedValue -Content $executionContent -Label "Cycle Handoff"
 $evidenceSessionPath = Get-RecordedValue -Content $executionContent -Label "Evidence Session"
 $evidencePackPath = Get-RecordedValue -Content $executionContent -Label "Evidence Pack"
+$evidencePackState = Get-RecordedValue -Content $executionContent -Label "Evidence Pack State"
 $runbookPath = Get-RecordedValue -Content $executionContent -Label "Runbook Path"
 $executionRunbookPath = Get-RecordedValue -Content $executionContent -Label "Execution Runbook Path"
 $workboardPath = Get-RecordedValue -Content $executionContent -Label "Workboard Path"
@@ -132,6 +133,7 @@ $summaryItems.Add("Run Label: $runLabel") | Out-Null
 $summaryItems.Add("Mode: $mode") | Out-Null
 $summaryItems.Add("Execution State: $executionState") | Out-Null
 $summaryItems.Add("Synced At: $syncedAt") | Out-Null
+$summaryItems.Add("Evidence Pack State: $evidencePackState") | Out-Null
 $summaryItems.Add("Login-Test Status: $loginTestStatus") | Out-Null
 $summaryItems.Add("Install Status: $installStatus") | Out-Null
 $summaryItems.Add("Hardware Status: $hardwareStatus") | Out-Null
@@ -144,6 +146,26 @@ switch ($executionState) {
         $nextItems.Add("Login-Test Report: $loginTestReportPath") | Out-Null
         $nextItems.Add("Install Report: $installReportPath") | Out-Null
         $nextItems.Add("Hardware Report: $hardwareReportPath") | Out-Null
+    }
+    "awaiting-login-test-evidence" {
+        $nextItems.Add("Complete the login-test report before moving to install and hardware evidence.") | Out-Null
+        $nextItems.Add("Login-Test Report: $loginTestReportPath") | Out-Null
+    }
+    "awaiting-install-evidence" {
+        $nextItems.Add("Login-test evidence looks good; complete the install report next.") | Out-Null
+        $nextItems.Add("Install Report: $installReportPath") | Out-Null
+    }
+    "awaiting-hardware-evidence" {
+        $nextItems.Add("Login-test and install evidence look good; complete the real-device hardware report next.") | Out-Null
+        $nextItems.Add("Hardware Report: $hardwareReportPath") | Out-Null
+    }
+    "ready-for-rc-gating" {
+        $nextItems.Add("All three evidence targets look complete for this run label.") | Out-Null
+        $nextItems.Add("Run the evidence audit, then prepare the release candidate.") | Out-Null
+    }
+    "evidence-run-label-mismatch" {
+        $nextItems.Add("One or more evidence reports do not match the release run label.") | Out-Null
+        $nextItems.Add("Re-run or relink the mismatched evidence before RC gating.") | Out-Null
     }
     default {
         $nextItems.Add("Review the linked handoff and evidence session before continuing the release chain.") | Out-Null
@@ -180,6 +202,7 @@ $summaryContent = @"
 - Cycle Handoff: $cycleHandoffPath
 - Evidence Session: $evidenceSessionPath
 - Evidence Pack: $evidencePackPath
+- Evidence Pack State: $evidencePackState
 - Runbook Path: $runbookPath
 - Execution Runbook Path: $executionRunbookPath
 - Workboard Path: $workboardPath
@@ -215,6 +238,7 @@ $currentContent = @"
 - Cycle Handoff: $(Get-ResolvedValue -Value $cycleHandoffPath)
 - Evidence Session: $(Get-ResolvedValue -Value $evidenceSessionPath)
 - Evidence Pack: $(Get-ResolvedValue -Value $evidencePackPath)
+- Evidence Pack State: $evidencePackState
 - Runbook Path: $(Get-ResolvedValue -Value $runbookPath)
 - Execution Runbook Path: $(Get-ResolvedValue -Value $executionRunbookPath)
 - Workboard Path: $(Get-ResolvedValue -Value $workboardPath)

@@ -64,6 +64,7 @@ if ($evidenceSessionPath -ne "not-recorded-yet" -and (Test-Path $evidenceSession
     $evidenceSessionContent = Get-Content -Raw $evidenceSessionPath
 }
 
+$evidencePackState = Get-RecordedValue -Content $evidenceSessionContent -Label "Evidence Pack State"
 $loginTestReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Report"
 $loginTestStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Status"
 $loginTestRunLabel = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Run Label"
@@ -96,6 +97,7 @@ $content = @"
 - Cycle Handoff: $cycleHandoffPath
 - Evidence Session: $evidenceSessionPath
 - Evidence Pack: $evidencePackPath
+- Evidence Pack State: $evidencePackState
 - Evidence Runbook: $evidenceRunbookPath
 - Execution Runbook: $executionRunbookPath
 - Login-Test Report: $loginTestReportPath

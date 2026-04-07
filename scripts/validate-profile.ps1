@@ -127,6 +127,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-daily-refresh",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-daily-home",
     "archiso-profile\airootfs\usr\local\bin\ahmados-windows-daily-home-refresh",
+    "archiso-profile\airootfs\usr\local\bin\ahmados-open-visible-path",
     "archiso-profile\airootfs\usr\local\bin\ahmados-open-install-finalize-report",
     "archiso-profile\airootfs\usr\local\bin\ahmados-hardware-readiness-check",
     "archiso-profile\airootfs\usr\local\bin\ahmados-capture-screenshot",
@@ -195,6 +196,7 @@ $requiredPaths = @(
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-daily-refresh",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-daily-home",
     "archiso-profile\airootfs\usr\local\bin\lumina-windows-daily-home-refresh",
+    "archiso-profile\airootfs\usr\local\bin\lumina-open-visible-path",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-install-finalize-report",
     "archiso-profile\airootfs\usr\local\bin\lumina-hardware-readiness-check",
     "archiso-profile\airootfs\usr\local\bin\lumina-open-firstboot-report",
@@ -493,7 +495,7 @@ $expectedExecMappings = @{
     "archiso-profile\airootfs\usr\share\applications\lumina-installer.desktop" = "Exec=/usr/local/bin/lumina-installer"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-apps.desktop" = "Exec=/usr/local/bin/lumina-windows-daily-home --launch"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-workflow-chooser.desktop" = "Exec=/usr/local/bin/lumina-windows-daily-home --choose-workflow --launch"
-    "archiso-profile\airootfs\usr\share\applications\lumina-windows-launch-broker.desktop" = "Exec=/usr/local/bin/lumina-windows-launch-session --file %f"
+    "archiso-profile\airootfs\usr\share\applications\lumina-windows-launch-broker.desktop" = "Exec=/usr/local/bin/lumina-windows-launch-session --file %f --open-report"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-compat-check.desktop" = "Exec=/usr/local/bin/lumina-windows-compat-check"
     "archiso-profile\airootfs\usr\share\applications\lumina-windows-vm-lab.desktop" = "Exec=/usr/local/bin/lumina-windows-vm-lab"
     "archiso-profile\airootfs\home\live\Desktop\Install Lumina-OS.desktop" = "Exec=/usr/local/bin/lumina-installer"
@@ -609,6 +611,8 @@ if (Test-Path $customizeAirootfsPath) {
         "/usr/local/bin/lumina-windows-daily-home",
         "/usr/local/bin/ahmados-windows-daily-home-refresh",
         "/usr/local/bin/lumina-windows-daily-home-refresh",
+        "/usr/local/bin/ahmados-open-visible-path",
+        "/usr/local/bin/lumina-open-visible-path",
         "/usr/local/bin/ahmados-open-install-finalize-report",
         "/usr/local/bin/lumina-open-install-finalize-report",
         "/usr/local/bin/ahmados-hardware-readiness-check",

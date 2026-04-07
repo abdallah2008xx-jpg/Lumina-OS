@@ -47,6 +47,7 @@ profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
 compat_report="${state_root}/windows-compat-report.md"
 daily_home_report="${state_root}/windows-daily-home.md"
 daily_home_state="${state_root}/windows-daily-home.env"
+visible_open_bin="/usr/local/bin/ahmados-open-visible-path"
 
 mkdir -p "${state_root}"
 
@@ -307,10 +308,10 @@ run_daily_home_action() {
             /usr/local/bin/ahmados-windows-daily-quick-launch --profile-id "${chosen_id}" --launch --no-open >/dev/null 2>&1 || true
             ;;
         daily-surface|guided-surface)
-            /usr/local/bin/ahmados-windows-daily-surface --profile-id "${chosen_id}" >/dev/null 2>&1 || true
+            /usr/local/bin/ahmados-windows-daily-surface --profile-id "${chosen_id}" --no-open >/dev/null 2>&1 || true
             ;;
         workflow-hub)
-            /usr/local/bin/ahmados-windows-workflow-hub --profile-id "${chosen_id}" >/dev/null 2>&1 || true
+            /usr/local/bin/ahmados-windows-workflow-hub --profile-id "${chosen_id}" --no-open >/dev/null 2>&1 || true
             ;;
     esac
 }
@@ -412,6 +413,10 @@ printf 'Recommended: %s\n' "${recommended_action}"
 printf 'Report: %s\n' "${daily_home_report}"
 printf '\n'
 
-if [[ ${perform_launch} -eq 0 && ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
-    xdg-open "${daily_home_report}" >/dev/null 2>&1 || true
+if [[ ${open_report} -eq 1 ]]; then
+    if [[ -x "${visible_open_bin}" ]]; then
+        "${visible_open_bin}" --target "${daily_home_report}" --fallback "${state_root}" --label "Lumina Windows Daily Home" >/dev/null 2>&1 || true
+    elif command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "${daily_home_report}" >/dev/null 2>&1 || true
+    fi
 fi

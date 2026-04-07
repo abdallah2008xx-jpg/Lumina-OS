@@ -63,6 +63,7 @@ done
 
 state_root="${XDG_STATE_HOME:-$HOME/.local/state}/ahmados"
 documents_root="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+visible_open_bin="/usr/local/bin/ahmados-open-visible-path"
 mkdir -p "${state_root}"
 
 profiles_path="/usr/share/lumina/windows-apps/profiles.tsv"
@@ -115,7 +116,7 @@ if [[ "${resource_class}" == "light" ]]; then
     default_profile_id="office-productivity"
 fi
 
-if [[ -z "${selected_profile_id}" && command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+if [[ -z "${selected_profile_id}" ]] && command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
     selected_profile_id="$(choose_profile_with_kdialog "${default_profile_id}" || true)"
 fi
 
@@ -193,12 +194,16 @@ run_surface_action() {
             /usr/local/bin/ahmados-windows-daily-quick-launch --profile-id "${profile_id}" --launch --no-open >/dev/null 2>&1 || true
             ;;
         open-library)
-            if command -v xdg-open >/dev/null 2>&1; then
+            if [[ -x "${visible_open_bin}" ]]; then
+                "${visible_open_bin}" --target "${app_library_report}" --fallback "${state_root}" --label "Lumina Windows App Library" >/dev/null 2>&1 || true
+            elif command -v xdg-open >/dev/null 2>&1; then
                 xdg-open "${app_library_report}" >/dev/null 2>&1 || true
             fi
             ;;
         open-hub)
-            if command -v xdg-open >/dev/null 2>&1; then
+            if [[ -x "${visible_open_bin}" ]]; then
+                "${visible_open_bin}" --target "${hub_report}" --fallback "${state_root}" --label "Lumina Windows Workflow Hub" >/dev/null 2>&1 || true
+            elif command -v xdg-open >/dev/null 2>&1; then
                 xdg-open "${hub_report}" >/dev/null 2>&1 || true
             fi
             ;;
@@ -392,6 +397,10 @@ printf 'Selected action: %s\n' "${selected_action}"
 printf 'Report: %s\n' "${daily_surface_report}"
 printf '\n'
 
-if [[ ${open_surface} -eq 1 && command -v xdg-open >/dev/null 2>&1 ]]; then
-    xdg-open "${daily_surface_report}" >/dev/null 2>&1 || true
+if [[ ${open_surface} -eq 1 ]]; then
+    if [[ -x "${visible_open_bin}" ]]; then
+        "${visible_open_bin}" --target "${daily_surface_report}" --fallback "${state_root}" --label "Lumina Windows Daily Surface" >/dev/null 2>&1 || true
+    elif command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "${daily_surface_report}" >/dev/null 2>&1 || true
+    fi
 fi

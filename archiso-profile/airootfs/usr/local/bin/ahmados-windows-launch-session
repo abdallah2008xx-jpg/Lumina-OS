@@ -3,7 +3,7 @@ set -euo pipefail
 
 selected_profile_id=""
 target_file=""
-open_report=0
+open_report=1
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -35,6 +35,7 @@ session_report="${state_root}/windows-launch-session.md"
 broker_report="${state_root}/windows-launch-broker.md"
 warm_start_report="${state_root}/windows-vm-warm-start.md"
 launch_sync_report="${state_root}/windows-launch-results-sync.md"
+visible_open_bin="/usr/local/bin/ahmados-open-visible-path"
 mkdir -p "${state_root}"
 
 if [[ -z "${target_file}" ]]; then
@@ -175,8 +176,12 @@ if command -v kdialog >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}
     esac
 fi
 
-if [[ ${open_report} -eq 1 ]] && command -v xdg-open >/dev/null 2>&1; then
-    xdg-open "${session_report}" >/dev/null 2>&1 || true
+if [[ ${open_report} -eq 1 ]]; then
+    if [[ -x "${visible_open_bin}" ]]; then
+        "${visible_open_bin}" --target "${session_report}" --fallback "${state_root}" --label "Lumina Windows Launch Session" >/dev/null 2>&1 || true
+    elif command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "${session_report}" >/dev/null 2>&1 || true
+    fi
 fi
 
 printf '%s\n' '========================================'

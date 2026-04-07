@@ -139,6 +139,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-refresh"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-home"
     "${profile_path}/airootfs/usr/local/bin/ahmados-windows-daily-home-refresh"
+    "${profile_path}/airootfs/usr/local/bin/ahmados-open-visible-path"
     "${profile_path}/airootfs/usr/local/bin/ahmados-open-install-finalize-report"
     "${profile_path}/airootfs/usr/local/bin/ahmados-hardware-readiness-check"
     "${profile_path}/airootfs/usr/local/bin/ahmados-capture-screenshot"
@@ -207,6 +208,7 @@ required_paths=(
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-refresh"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-home"
     "${profile_path}/airootfs/usr/local/bin/lumina-windows-daily-home-refresh"
+    "${profile_path}/airootfs/usr/local/bin/lumina-open-visible-path"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-install-finalize-report"
     "${profile_path}/airootfs/usr/local/bin/lumina-hardware-readiness-check"
     "${profile_path}/airootfs/usr/local/bin/lumina-open-firstboot-report"
@@ -556,6 +558,8 @@ if [[ -f "${customize_airootfs}" ]]; then
         /usr/local/bin/lumina-windows-daily-home \
         /usr/local/bin/ahmados-windows-daily-home-refresh \
         /usr/local/bin/lumina-windows-daily-home-refresh \
+        /usr/local/bin/ahmados-open-visible-path \
+        /usr/local/bin/lumina-open-visible-path \
         /usr/local/bin/ahmados-open-install-finalize-report \
         /usr/local/bin/lumina-open-install-finalize-report \
         /usr/local/bin/ahmados-hardware-readiness-check \
@@ -641,7 +645,7 @@ ${profile_path}/airootfs/usr/share/applications/lumina-install-finalize-report.d
 ${profile_path}/airootfs/usr/share/applications/lumina-installer.desktop|Exec=/usr/local/bin/lumina-installer
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-apps.desktop|Exec=/usr/local/bin/lumina-windows-daily-home --launch
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-workflow-chooser.desktop|Exec=/usr/local/bin/lumina-windows-daily-home --choose-workflow --launch
-${profile_path}/airootfs/usr/share/applications/lumina-windows-launch-broker.desktop|Exec=/usr/local/bin/lumina-windows-launch-session --file %f
+${profile_path}/airootfs/usr/share/applications/lumina-windows-launch-broker.desktop|Exec=/usr/local/bin/lumina-windows-launch-session --file %f --open-report
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-compat-check.desktop|Exec=/usr/local/bin/lumina-windows-compat-check
 ${profile_path}/airootfs/usr/share/applications/lumina-windows-vm-lab.desktop|Exec=/usr/local/bin/lumina-windows-vm-lab
 ${profile_path}/airootfs/home/live/Desktop/Install Lumina-OS.desktop|Exec=/usr/local/bin/lumina-installer

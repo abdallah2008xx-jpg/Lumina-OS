@@ -59,6 +59,21 @@ $evidencePackPath = Get-RecordedValue -Content $executionContent -Label "Evidenc
 $evidenceRunbookPath = Get-RecordedValue -Content $executionContent -Label "Runbook Path"
 $executionRunbookPath = Get-RecordedValue -Content $executionContent -Label "Execution Runbook Path"
 
+$evidenceSessionContent = ""
+if ($evidenceSessionPath -ne "not-recorded-yet" -and (Test-Path $evidenceSessionPath)) {
+    $evidenceSessionContent = Get-Content -Raw $evidenceSessionPath
+}
+
+$loginTestReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Report"
+$loginTestStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Status"
+$loginTestRunLabel = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Run Label"
+$installReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Report"
+$installStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Status"
+$installRunLabel = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Run Label"
+$hardwareReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Report"
+$hardwareStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Status"
+$hardwareRunLabel = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Run Label"
+
 $executionLeaf = Split-Path -Leaf $resolvedExecutionPath
 $workboardLeaf = if ($executionLeaf -like "release-validation-pass-*.md") {
     $executionLeaf -replace "^release-validation-pass-", "release-validation-workboard-"
@@ -83,12 +98,21 @@ $content = @"
 - Evidence Pack: $evidencePackPath
 - Evidence Runbook: $evidenceRunbookPath
 - Execution Runbook: $executionRunbookPath
+- Login-Test Report: $loginTestReportPath
+- Login-Test Status: $loginTestStatus
+- Login-Test Run Label: $loginTestRunLabel
+- Install Report: $installReportPath
+- Install Status: $installStatus
+- Install Run Label: $installRunLabel
+- Hardware Report: $hardwareReportPath
+- Hardware Status: $hardwareStatus
+- Hardware Run Label: $hardwareRunLabel
 
 ## Track Now
 - [ ] Run the VM cycle from: $cycleHandoffPath
-- [ ] Update login-test evidence from: $evidenceSessionPath
-- [ ] Update install evidence from: $evidenceSessionPath
-- [ ] Update hardware evidence from: $evidenceSessionPath
+- [ ] Update login-test evidence at: $loginTestReportPath
+- [ ] Update install evidence at: $installReportPath
+- [ ] Update hardware evidence at: $hardwareReportPath
 - [ ] Sync the shared evidence pack after report updates
 - [ ] Refresh the release validation pass after evidence sync
 - [ ] Review the current pointers before RC prep
@@ -96,7 +120,19 @@ $content = @"
 - [ ] Prepare the release candidate
 - [ ] Run readiness audit
 
+## Evidence Targets
+- Login-Test Report: $loginTestReportPath
+- Login-Test Status: $loginTestStatus
+- Login-Test Run Label: $loginTestRunLabel
+- Install Report: $installReportPath
+- Install Status: $installStatus
+- Install Run Label: $installRunLabel
+- Hardware Report: $hardwareReportPath
+- Hardware Status: $hardwareStatus
+- Hardware Run Label: $hardwareRunLabel
+
 ## Commands
+- .\scripts\sync-release-evidence-session.ps1 -EvidenceSessionPath "$evidenceSessionPath" -ReleaseVersion "$releaseVersion"
 - .\scripts\sync-release-evidence-pack.ps1 -EvidencePackPath "$evidencePackPath" -ReleaseVersion "$releaseVersion"
 - .\scripts\sync-release-validation-pass.ps1 -ExecutionPath "$resolvedExecutionPath" -ReleaseVersion "$releaseVersion"
 - .\scripts\audit-release-evidence.ps1 -Version "$releaseVersion" -Mode $mode -RunLabel "$runLabel" -EvidencePackPath "$evidencePackPath"

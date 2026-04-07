@@ -115,17 +115,35 @@ $workboardPath = Get-RecordedValue -Content $executionContent -Label "Workboard 
 $currentEvidenceSessionPath = Get-RecordedValue -Content $executionContent -Label "Current Evidence Session"
 $currentControlCenterPath = Get-RecordedValue -Content $executionContent -Label "Current Release Control Center"
 
+$evidenceSessionContent = ""
+if ($evidenceSessionPath -ne "not-recorded-yet" -and (Test-Path $evidenceSessionPath)) {
+    $evidenceSessionContent = Get-Content -Raw $evidenceSessionPath
+}
+
+$loginTestStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Status"
+$installStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Status"
+$hardwareStatus = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Status"
+$loginTestReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Login-Test Report"
+$installReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Install Report"
+$hardwareReportPath = Get-RecordedValue -Content $evidenceSessionContent -Label "Hardware Report"
+
 $summaryItems = [System.Collections.Generic.List[string]]::new()
 $summaryItems.Add("Run Label: $runLabel") | Out-Null
 $summaryItems.Add("Mode: $mode") | Out-Null
 $summaryItems.Add("Execution State: $executionState") | Out-Null
 $summaryItems.Add("Synced At: $syncedAt") | Out-Null
+$summaryItems.Add("Login-Test Status: $loginTestStatus") | Out-Null
+$summaryItems.Add("Install Status: $installStatus") | Out-Null
+$summaryItems.Add("Hardware Status: $hardwareStatus") | Out-Null
 
 $nextItems = [System.Collections.Generic.List[string]]::new()
 switch ($executionState) {
     "ready-to-execute" {
         $nextItems.Add("Use the cycle handoff to run the labeled VM validation flow.") | Out-Null
-        $nextItems.Add("Use the evidence session to collect login-test, install, and hardware evidence on the same run label.") | Out-Null
+        $nextItems.Add("Use the evidence session and workboard to collect login-test, install, and hardware evidence on the same run label.") | Out-Null
+        $nextItems.Add("Login-Test Report: $loginTestReportPath") | Out-Null
+        $nextItems.Add("Install Report: $installReportPath") | Out-Null
+        $nextItems.Add("Hardware Report: $hardwareReportPath") | Out-Null
     }
     default {
         $nextItems.Add("Review the linked handoff and evidence session before continuing the release chain.") | Out-Null
@@ -165,6 +183,12 @@ $summaryContent = @"
 - Runbook Path: $runbookPath
 - Execution Runbook Path: $executionRunbookPath
 - Workboard Path: $workboardPath
+- Login-Test Report: $loginTestReportPath
+- Login-Test Status: $loginTestStatus
+- Install Report: $installReportPath
+- Install Status: $installStatus
+- Hardware Report: $hardwareReportPath
+- Hardware Status: $hardwareStatus
 - Current Evidence Session: $currentEvidenceSessionPath
 - Current Release Control Center: $currentControlCenterPath
 
@@ -194,6 +218,12 @@ $currentContent = @"
 - Runbook Path: $(Get-ResolvedValue -Value $runbookPath)
 - Execution Runbook Path: $(Get-ResolvedValue -Value $executionRunbookPath)
 - Workboard Path: $(Get-ResolvedValue -Value $workboardPath)
+- Login-Test Report: $(Get-ResolvedValue -Value $loginTestReportPath)
+- Login-Test Status: $loginTestStatus
+- Install Report: $(Get-ResolvedValue -Value $installReportPath)
+- Install Status: $installStatus
+- Hardware Report: $(Get-ResolvedValue -Value $hardwareReportPath)
+- Hardware Status: $hardwareStatus
 
 ## Summary
 $(Format-Items -Items $summaryItems)
